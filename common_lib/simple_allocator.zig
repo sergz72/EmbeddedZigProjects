@@ -5,17 +5,17 @@ pub const SimpleAllocator = struct {
     control_array: []u8,
     data_array: []u8,
     item_size: usize,
-    first_free_index: usize,
+    first_free_index: usize = 0,
 
-    pub fn init_buffer(buffer: []u8, item_size: usize) SimpleAllocator {
-        const heap_size_items = buffer.len / item_size;
-        const heap_size = heap_size_items * item_size;
+    pub fn init_buffer(instance: *SimpleAllocator, buffer: []u8) void {
+        const heap_size_items = buffer.len / instance.item_size;
+        const heap_size = heap_size_items * instance.item_size;
         const data_size = heap_size - heap_size_items;
-        const data_size_items = data_size / item_size;
+        const data_size_items = data_size / instance.item_size;
         var data_offset = data_size_items;
-        if ((data_offset % item_size) != 0)
-            data_offset = (data_offset / item_size + 1) * item_size;
-        const data_size_corrected = data_size_items * item_size;
+        if ((data_offset % instance.item_size) != 0)
+            data_offset = (data_offset / instance.item_size + 1) * instance.item_size;
+        const data_size_corrected = data_size_items * instance.item_size;
         if (data_offset + data_size_corrected > buffer.len) {
             while (true) {}
         }
@@ -24,15 +24,12 @@ pub const SimpleAllocator = struct {
         @memset(control_array, 0);
         const data_array: []u8 = buffer[data_offset..data_offset+data_size_corrected];
 
-        return SimpleAllocator{
-            .control_array = control_array,
-            .data_array = data_array,
-            .item_size = item_size,
-            .first_free_index = 0
-        };
+        instance.control_array = control_array;
+        instance.data_array = data_array;
+        instance.first_free_index = 0;
     }
 
-    pub fn init(start_ptr: *anyopaque, end_ptr: *anyopaque, item_size: usize) SimpleAllocator {
+    pub fn init(instance: *SimpleAllocator, start_ptr: *anyopaque, end_ptr: *anyopaque) void {
         const start_addr = @intFromPtr(start_ptr);
         const end_addr = @intFromPtr(end_ptr);
 
@@ -42,7 +39,7 @@ pub const SimpleAllocator = struct {
 
         const heap_slice: []u8 = raw_ptr[0..heap_len];
 
-        return init_buffer(heap_slice, item_size);
+        init_buffer(instance, heap_slice);
     }
 
     pub fn allocator(self: *SimpleAllocator) Allocator {

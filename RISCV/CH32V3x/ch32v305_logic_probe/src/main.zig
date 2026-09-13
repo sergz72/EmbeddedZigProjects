@@ -8,6 +8,7 @@ const pfic = @import("pfic");
 const usart_writer = @import("usart_writer");
 const shell = @import("shell");
 const allocator = @import("allocator");
+const std = @import("std");
 
 const LED_PIN = 0;
 const LED_PIN_MASK: u16 = 1 << LED_PIN;
@@ -20,6 +21,28 @@ const TX_PORT = gpio.gpiob;
 const RX_PIN = 7;
 const RX_PIN_MASK: u16 = 1 << RX_PIN;
 const RX_PORT = gpio.gpiob;
+
+const shell_init = shell.ShellInit{
+    .max_commands = 50,
+    .max_parameters = 10,
+    .max_parameter_length = 50,
+    .max_command_length = 100,
+    .history_length = 20
+};
+
+const test_command = shell.ShellCommand{
+    .name = "test",
+    .help = "test",
+    .parameter_mask = 1,
+    .handler = test_handler
+};
+
+fn test_handler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.Writer.Error!isize {
+    _ = argc;
+    _ = argv;
+    try writer.print("test command\n", .{});
+    return 0;
+}
 
 export fn USART1_IRQHandler() callconv(.naked) void {
     if (usart.usart1.statr.rxne) {
@@ -47,9 +70,15 @@ export fn SystemInit() callconv(.c) void {
 
 export fn main() callconv(.c) noreturn {
     const a = allocator.build_allocator();
-    const address = a.alloc(u8, 1024) catch @panic("Out of memory!");
     usart_writer.usart_writer.writeCharFunc = usartWrite;
-    usart_writer.usart_writer.writer.print("Allocated address: {*}\n", .{address}) catch {};
+
+    var sh = shell.Shell.init(&shell_init, a, &usart_writer.usart_writer.writer) catch { while (true){} };
+
+    _ = sh.register_command(&test_command);
+
+    const rc = sh.execute("help") catch { while (true){} };
+    usart_writer.usart_writer.writer.print("shell returned {}\n", .{rc}) catch {};
+
     while (true) {
         LED_PORT.bshr = LED_PIN_MASK;
         system_timer.delayms(1000);

@@ -4,7 +4,13 @@ const simple_allocator = @import("simple_allocator");
 extern var _end: anyopaque;
 extern var _heap_end: anyopaque;
 
+var allocator = simple_allocator.SimpleAllocator{
+    .control_array = undefined,
+    .data_array = undefined,
+    .item_size = 16,
+};
+
 pub fn build_allocator() std.mem.Allocator {
-    var a = simple_allocator.SimpleAllocator.init(&_end, &_heap_end, 16);
-    return a.allocator();
+    simple_allocator.SimpleAllocator.init(&allocator, &_end, &_heap_end);
+    return allocator.allocator();
 }
