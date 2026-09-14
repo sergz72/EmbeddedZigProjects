@@ -126,6 +126,15 @@ pub fn build(b: *std.Build) !void {
     const lcd = b.addModule("lcd", .{
         .root_source_file = b.path("../../../common_lib/display/lcd_ssd1357.zig"),
         .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "system_timer", .module = system_timer }
+        },
+    });
+
+    const utils = b.addModule("utils", .{
+        .root_source_file = b.path("../../../common_lib/utils.zig"),
+        .target = target,
         .optimize = optimize
     });
 
@@ -158,6 +167,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "dac", .module = dac },
             .{ .name = "spi", .module = spi },
             .{ .name = "lcd", .module = lcd },
+            .{ .name = "utils", .module = utils },
         }
     });
 
@@ -174,6 +184,7 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "allocator", .module = allocator },
                 .{ .name = "hal", .module = hal },
                 .{ .name = "usart", .module = usart },
+                .{ .name = "lcd", .module = lcd },
                 .{ .name = "system_commands", .module = system_commands },
             },
         }),

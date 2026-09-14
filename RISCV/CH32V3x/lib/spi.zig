@@ -2,11 +2,22 @@ const SPI1_BASE: usize = 0x40013000;
 const SPI2_BASE: usize = 0x40003800;
 const SPI3_BASE: usize = 0x40003C00;
 
+pub const SpiBr = enum(u3) {
+    div2 = 0,
+    div4 = 1,
+    div8 = 2,
+    div16 = 3,
+    div32 = 4,
+    div64 = 5,
+    div128 = 6,
+    div256 = 7
+};
+
 pub const SpiCtlr1 = packed struct(u16) {
     cpha: bool = false,
     cpol: bool = false,
     mstr: bool = false,
-    br: u3 = 0,
+    br: SpiBr = .div2,
     spe: bool = false,
     lsbfirst: bool = false,
     ssi: bool = false,

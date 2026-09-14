@@ -27,23 +27,27 @@ const DAC_PIN = 5;
 const DAC_PIN_MASK: u16 = 1 << DAC_PIN;
 const DAC_PORT = gpio.gpioa;
 
-const SPI_PORT = gpio.gpioa;
-const SPI_RX_PIN = 5;
+const SPI_PORT = gpio.gpiob;
+const SPI_RX_PIN = 14;
 const SPI_RX_PIN_MASK: u16 = 1 << SPI_RX_PIN;
 
-const SPI_TX_PIN = 5;
+const SPI_TX_PIN = 15;
 const SPI_TX_PIN_MASK: u16 = 1 << SPI_TX_PIN;
 
-const SPI_CLK_PIN = 5;
+const SPI_CLK_PIN = 13;
 const SPI_CLK_PIN_MASK: u16 = 1 << SPI_CLK_PIN;
 
-const LCD_CS_PIN = 5;
+const LCD_RESET_PIN = 12;
+const LCD_RESET_PIN_MASK: u16 = 1 << LCD_RESET_PIN;
+const LCD_RESET_PORT = gpio.gpiob;
+
+const LCD_DC_PIN = 11;
+const LCD_DC_PIN_MASK: u16 = 1 << LCD_DC_PIN;
+const LCD_DC_PORT = gpio.gpiob;
+
+const LCD_CS_PIN = 10;
 const LCD_CS_PIN_MASK: u16 = 1 << LCD_CS_PIN;
 const LCD_CS_PORT = gpio.gpioa;
-
-const LCD_RESET_PIN = 5;
-const LCD_RESET_PIN_MASK: u16 = 1 << LCD_RESET_PIN;
-const LCD_RESET_PORT = gpio.gpioa;
 
 var command_buffer: [128]u8 = undefined;
 var command_idx: usize = undefined;
@@ -87,7 +91,9 @@ inline fn init_usart() void {
 
 inline fn init_spi() void {
     SPI_PORT.Init(SPI_TX_PIN_MASK|SPI_CLK_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfAlternatePushPull);
-    spi.spi1.ctlr1 = spi.SpiCtlr1{.spe = true};
+    SPI_PORT.bshr = SPI_RX_PIN_MASK; // pullup
+    SPI_PORT.Init(SPI_RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
+    spi.spi2.ctlr1 = spi.SpiCtlr1{.mstr = true, .spe = true, .br = .div8, .ssi = true, .ssm = true};
 }
 
 inline fn init_lcd() void {
@@ -95,6 +101,7 @@ inline fn init_lcd() void {
     LCD_CS_PORT.Init(LCD_CS_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfOutputPushPull);
     LCD_RESET_PORT.bshr = LCD_RESET_PIN_MASK;
     LCD_RESET_PORT.Init(LCD_RESET_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfOutputPushPull);
+    LCD_DC_PORT.Init(LCD_DC_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfOutputPushPull);
 }
 
 export fn SystemInit() callconv(.c) void {
