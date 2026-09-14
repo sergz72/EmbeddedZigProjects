@@ -7,7 +7,7 @@ extern var _heap_end: anyopaque;
 var allocator = simple_allocator.SimpleAllocator{
     .control_array = undefined,
     .data_array = undefined,
-    .item_size = 16,
+    .item_alignment = 4,
 };
 
 pub fn build_allocator() std.mem.Allocator {

@@ -1,21 +1,30 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
+const builtin = @import("builtin");
+
+const ShiftCount = if (builtin.target.ptrBitWidth() == 64) u6 else u5;
 
 pub const SimpleAllocator = struct {
     control_array: []u8,
     data_array: []u8,
-    item_size: usize,
+    item_alignment: ShiftCount,
+    item_size: usize = undefined,
+    item_lo_mask: usize = undefined,
     first_free_index: usize = 0,
 
     pub fn init_buffer(instance: *SimpleAllocator, buffer: []u8) void {
-        const heap_size_items = buffer.len / instance.item_size;
-        const heap_size = heap_size_items * instance.item_size;
+        instance.item_size = @as(usize, 1) << instance.item_alignment;
+        instance.item_lo_mask = instance.item_size - 1;
+        const item_hi_mask = ~instance.item_lo_mask;
+
+        const heap_size_items = buffer.len >> instance.item_alignment;
+        const heap_size = buffer.len & item_hi_mask;
         const data_size = heap_size - heap_size_items;
-        const data_size_items = data_size / instance.item_size;
+        const data_size_items = data_size >> instance.item_alignment;
         var data_offset = data_size_items;
-        if ((data_offset % instance.item_size) != 0)
-            data_offset = (data_offset / instance.item_size + 1) * instance.item_size;
-        const data_size_corrected = data_size_items * instance.item_size;
+        if (data_offset & instance.item_lo_mask != 0)
+            data_offset = (data_offset & item_hi_mask) + instance.item_size;
+        const data_size_corrected = data_size_items << instance.item_alignment;
         if (data_offset + data_size_corrected > buffer.len) {
             while (true) {}
         }
@@ -67,8 +76,8 @@ pub const SimpleAllocator = struct {
         _ = ra;
         if (n == 0) return null;
         const self: *SimpleAllocator = @ptrCast(@alignCast(ctx));
-        var item_count = n / self.item_size;
-        if ((n % self.item_size) != 0)
+        var item_count = n >> self.item_alignment;
+        if ((n & self.item_lo_mask) != 0)
             item_count += 1;
         if (item_count > 254) return null;
         var ptr_align = alignment.toByteUnits();
@@ -77,7 +86,7 @@ pub const SimpleAllocator = struct {
         const start_addr = @intFromPtr(self.data_array.ptr);
         const first_free_addr = start_addr + self.first_free_index;
         const aligned_addr = std.mem.alignForward(usize, first_free_addr, ptr_align);
-        const aligned_idx = (aligned_addr - start_addr) / self.item_size;
+        const aligned_idx = (aligned_addr - start_addr) >> self.item_alignment;
         if (aligned_idx + item_count > self.control_array.len) return null;
         var count_free: usize = 0;
         var start: usize = undefined;
@@ -90,7 +99,7 @@ pub const SimpleAllocator = struct {
                 if (count_free == item_count) {
                     self.control_array[start] = @truncate(item_count);
                     @memset(self.control_array[start+1..start+item_count], 0xFF);
-                    const data_ptr: [*]u8 = @ptrFromInt(start_addr + start * self.item_size);
+                    const data_ptr: [*]u8 = @ptrFromInt(start_addr + (start << self.item_alignment));
                     start += item_count;
                     while ((start < self.control_array.len) and (self.control_array[start] != 0))
                         start += 1;
@@ -107,13 +116,13 @@ pub const SimpleAllocator = struct {
     pub fn free_mem(self: *SimpleAllocator, buf: []u8) bool {
         const buf_address = @intFromPtr(buf.ptr);
         // buffer address is misaligned
-        if ((buf_address & (self.item_size - 1)) != 0)
+        if (buf_address & self.item_lo_mask != 0)
             return false;
         const start = @intFromPtr(self.data_array.ptr);
         // buffer address is out of range
         if ((buf_address < start) or (buf_address >= start + self.data_array.len))
             return false;
-        const idx = (buf_address - start) / self.item_size;
+        const idx = (buf_address - start) >> self.item_alignment;
         const l = self.control_array[idx];
         // control byte (length) cannot be 0 or 0xFF
         if ((l == 0) or (l == 0xFF) or ((idx + l) > self.control_array.len))
