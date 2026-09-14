@@ -14,3 +14,7 @@ pub fn build_allocator() std.mem.Allocator {
     simple_allocator.SimpleAllocator.init(&allocator, &_end, &_heap_end);
     return allocator.allocator();
 }
+
+pub fn get_free_size() usize {
+    return allocator.get_free_size();
+}

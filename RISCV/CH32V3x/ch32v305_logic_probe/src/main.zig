@@ -1,26 +1,11 @@
-const rcc = @import("rcc");
-const gpio = @import("gpio");
-const afio = @import("afio");
-const usart = @import("usart");
-const cpu = @import("cpu");
+const std = @import("std");
 const system_timer = @import("system_timer");
-const pfic = @import("pfic");
 const usart_writer = @import("usart_writer");
 const shell = @import("shell");
 const allocator = @import("allocator");
-const std = @import("std");
-
-const LED_PIN = 0;
-const LED_PIN_MASK: u16 = 1 << LED_PIN;
-const LED_PORT = gpio.gpiod;
-
-const TX_PIN = 6;
-const TX_PIN_MASK: u16 = 1 << TX_PIN;
-const TX_PORT = gpio.gpiob;
-
-const RX_PIN = 7;
-const RX_PIN_MASK: u16 = 1 << RX_PIN;
-const RX_PORT = gpio.gpiob;
+const hal = @import("hal");
+const usart = @import("usart");
+const system_commands = @import("system_commands");
 
 const shell_init = shell.ShellInit{
     .max_commands = 50,
@@ -30,59 +15,39 @@ const shell_init = shell.ShellInit{
     .history_length = 20
 };
 
-const test_command = shell.ShellCommand{
-    .name = "test",
-    .help = "test",
-    .parameter_mask = 1,
-    .handler = test_handler
-};
-
-fn test_handler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.Writer.Error!isize {
-    _ = argc;
-    _ = argv;
-    try writer.print("test command\n", .{});
-    return 0;
-}
-
-export fn USART1_IRQHandler() callconv(.naked) void {
-    if (usart.usart1.statr.rxne) {
-        const data = usart.usart1.datar;
-        usart.usart1.datar = data;
+fn shell_handler(sh: *shell.Shell) !void {
+    if (hal.command != null) {
+        usart.usart1.write('\n');
+        const rc = try sh.execute(hal.command.?);
+        hal.command = null;
+        try usart_writer.usart_writer.writer.print("shell returned {}\n", .{rc});
     }
-    asm volatile("mret");
-}
-
-fn usartWrite(byte: u8) void {
-    usart.usart1.write(byte);
-}
-
-export fn SystemInit() callconv(.c) void {
-    system_timer.delay_init();
-    rcc.rcc.apb2pcenr = rcc.RccCfgrApb2pcEnr{.iopden = true, .iopben = true, .afioen = true, .usart1en = true};
-    afio.afio.pcfr1 = afio.AfioPcfr1{.pd01_rm = true, .usart1_rm = true};
-    LED_PORT.Init(LED_PIN_MASK, gpio.GpioModeOutputSlowSpeed | gpio.GpioCnfOutputPushPull);
-    TX_PORT.Init(TX_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfAlternatePushPull);
-    RX_PORT.bshr = RX_PIN_MASK; // pullup
-    RX_PORT.Init(RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
-    usart.usart1.init(115200, cpu.cpu.current_frequency);
-    pfic.pfic.interrupt_enable(pfic.Interrupt.USART1);
 }
 
 export fn main() callconv(.c) noreturn {
     const a = allocator.build_allocator();
-    usart_writer.usart_writer.writeCharFunc = usartWrite;
 
-    var sh = shell.Shell.init(&shell_init, a, &usart_writer.usart_writer.writer) catch { while (true){} };
+    const sh = shell.Shell.init(&shell_init, a, &usart_writer.usart_writer.writer) catch { while (true){} };
 
-    _ = sh.register_command(&test_command);
+    _ = system_commands.register_system_commands(sh);
 
-    const rc = sh.execute("help") catch { while (true){} };
-    usart_writer.usart_writer.writer.print("shell returned {}\n", .{rc}) catch {};
-
+    var led_status = false;
+    var led_counter: usize = 0;
     while (true) {
-        LED_PORT.bshr = LED_PIN_MASK;
-        system_timer.delayms(1000);
-        LED_PORT.bcr = LED_PIN_MASK;
-        system_timer.delayms(1000);
+        system_timer.delayms(100);
+
+        shell_handler(sh) catch { while (true){} };
+
+        if (led_counter == 9) {
+            led_counter = 0;
+            led_status = !led_status;
+            if (led_status) {
+                hal.led_on();
+            } else {
+                hal.led_off();
+            }
+        } else {
+            led_counter += 1;
+        }
     }
 }

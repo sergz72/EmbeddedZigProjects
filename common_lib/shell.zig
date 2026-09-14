@@ -70,7 +70,7 @@ pub const Shell = struct {
         for (self.commands[0..self.next_command_idx]) |cmd| {
             if (std.mem.eql(u8, cmd.name, self.argv[0])) {
                 if (cmd.parameter_mask & (@as(usize, 1) << @truncate(self.argc - 1)) != 0) {
-                    return try cmd.handler(self.argc, self.argv, self.writer);
+                    return try cmd.handler(self.argc - 1, self.argv[1..], self.writer);
                 } else {
                     _ = try self.writer.writeAll("incorrect number of parameters\n");
                     return -1;

@@ -26,12 +26,6 @@ pub fn build(b: *std.Build) !void {
 
     const optimize = b.standardOptimizeOption(.{});
 
-    const flash = b.addModule("flash", .{
-        .root_source_file = b.path("../lib/flash.zig"),
-        .target = target,
-        .optimize = optimize
-    });
-
     const rcc = b.addModule("rcc", .{
         .root_source_file = b.path("../lib/rcc.zig"),
         .target = target,
@@ -41,11 +35,7 @@ pub fn build(b: *std.Build) !void {
     const cpu = b.addModule("cpu", .{
         .root_source_file = b.path("../lib/cpu.zig"),
         .target = target,
-        .optimize = optimize,
-        .imports = &.{
-            .{ .name = "flash", .module = flash },
-            .{ .name = "rcc", .module = rcc },
-        },
+        .optimize = optimize
     });
 
     const gpio = b.addModule("gpio", .{
@@ -82,19 +72,37 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
-    const simple_allocator = b.addModule("simple_allocator", .{
-        .root_source_file = b.path("../../../common_lib/simple_allocator.zig"),
+    const dac = b.addModule("dac", .{
+        .root_source_file = b.path("../lib/dac.zig"),
         .target = target,
         .optimize = optimize
     });
 
-    const allocator = b.addModule("allocator", .{
-        .root_source_file = b.path("../lib/allocator.zig"),
+    const spi = b.addModule("spi", .{
+        .root_source_file = b.path("../lib/spi.zig"),
         .target = target,
-        .optimize = optimize,
-        .imports = &.{
-            .{ .name = "simple_allocator", .module = simple_allocator },
-        },
+        .optimize = optimize
+    });
+
+    //const simple_allocator = b.addModule("simple_allocator", .{
+    //    .root_source_file = b.path("../../../common_lib/simple_allocator.zig"),
+    //    .target = target,
+    //    .optimize = optimize
+    //});
+
+    // const allocator = b.addModule("allocator", .{
+    //     .root_source_file = b.path("../lib/allocator.zig"),
+    //     .target = target,
+    //     .optimize = optimize,
+    //     .imports = &.{
+    //         .{ .name = "simple_allocator", .module = simple_allocator },
+    //     },
+    // });
+
+    const allocator = b.addModule("allocator", .{
+        .root_source_file = b.path("../lib/fb_allocator.zig"),
+        .target = target,
+        .optimize = optimize
     });
 
     const usart_writer = b.addModule("usart_writer", .{
@@ -104,9 +112,46 @@ pub fn build(b: *std.Build) !void {
     });
 
     const shell = b.addModule("shell", .{
-        .root_source_file = b.path("../../../common_lib/shell/shell.zig"),
+        .root_source_file = b.path("../../../common_lib/shell.zig"),
         .target = target,
         .optimize = optimize
+    });
+
+    const lcd = b.addModule("lcd", .{
+        .root_source_file = b.path("../../../common_lib/display/lcd_ssd1357.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const hal = b.addModule("hal", .{
+        .root_source_file = b.path("src/hal.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "rcc", .module = rcc },
+            .{ .name = "gpio", .module = gpio },
+            .{ .name = "afio", .module = afio },
+            .{ .name = "system_timer", .module = system_timer },
+            .{ .name = "usart", .module = usart },
+            .{ .name = "cpu", .module = cpu },
+            .{ .name = "pfic", .module = pfic },
+            .{ .name = "dac", .module = dac },
+            .{ .name = "spi", .module = spi },
+            .{ .name = "usart_writer", .module = usart_writer }
+        },
+    });
+
+    const system_commands = b.addModule("system_commands", .{
+        .root_source_file = b.path("src/system_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "allocator", .module = allocator },
+            .{ .name = "shell", .module = shell },
+            .{ .name = "dac", .module = dac },
+            .{ .name = "spi", .module = spi },
+            .{ .name = "lcd", .module = lcd },
+        }
     });
 
     const riscv_exe = b.addExecutable(.{
@@ -116,16 +161,13 @@ pub fn build(b: *std.Build) !void {
             .target = target,
             .optimize = optimize,
             .imports = &.{
-                .{ .name = "rcc", .module = rcc },
-                .{ .name = "gpio", .module = gpio },
-                .{ .name = "afio", .module = afio },
                 .{ .name = "system_timer", .module = system_timer },
-                .{ .name = "usart", .module = usart },
-                .{ .name = "cpu", .module = cpu },
-                .{ .name = "pfic", .module = pfic },
                 .{ .name = "usart_writer", .module = usart_writer },
                 .{ .name = "shell", .module = shell },
-                .{ .name = "allocator", .module = allocator }
+                .{ .name = "allocator", .module = allocator },
+                .{ .name = "hal", .module = hal },
+                .{ .name = "usart", .module = usart },
+                .{ .name = "system_commands", .module = system_commands },
             },
         }),
     });
