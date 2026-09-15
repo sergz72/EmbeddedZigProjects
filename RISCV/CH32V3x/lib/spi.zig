@@ -115,6 +115,12 @@ pub const Spi = extern struct {
         }
     }
 
+    pub fn wait_for_transfer_complete(self: *volatile Spi) void {
+        while (self.statr.bsy) {
+            asm volatile ("nop");
+        }
+    }
+
     pub fn send_receive_poll8(self: *volatile Spi, data_in: []const u8, data_out: []u8) void {
         var idx: usize = 0;
         for (data_in) |b| {

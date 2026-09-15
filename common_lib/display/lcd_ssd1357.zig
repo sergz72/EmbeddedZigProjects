@@ -53,10 +53,10 @@ pub const LcdSSD1357 = struct {
         self.reset_set(false);
         system_timer.delayus(5);
         self.reset_set(true);
-        system_timer.delayus(300);
+        system_timer.delayms(300);
     }
 
-    pub fn init(self: *LcdSSD1357, madctl: u8) !void {
+    pub fn init(self: *LcdSSD1357, madctl: u8) void {
         self.reset();
         self.spi_lcd.interface.cs_set(false);
         self.spi_lcd.send_command(SSD1357_CMD_SETMULTIPLEX);
@@ -74,7 +74,7 @@ pub const LcdSSD1357 = struct {
         self.spi_lcd.screen_fill(BLACK_COLOR);
     }
 
-    pub fn set_window(ctx: *anyopaque, x1: u8, x2: u8, y1: u8, y2: u8) void {
+    pub fn set_window(ctx: *anyopaque, x1: u8, y1: u8, x2: u8, y2: u8) void {
         const self: *LcdSSD1357 = @ptrCast(@alignCast(ctx));
 
         self.spi_lcd.interface.cs_set(false);

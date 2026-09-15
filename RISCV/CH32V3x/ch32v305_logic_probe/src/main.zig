@@ -50,7 +50,8 @@ export fn main() callconv(.c) noreturn {
     _ = system_commands.register_system_commands(sh);
 
     lcd_instance.spi_lcd.ctx = &lcd_instance;
-    lcd_instance.init(0) catch { while (true){} };
+    lcd_instance.init(0);
+    lcd_instance.spi_lcd.rect_fill(0, 0, 10, 20, lcd.YELLOW_COLOR);
 
     var led_status = false;
     var led_counter: usize = 0;

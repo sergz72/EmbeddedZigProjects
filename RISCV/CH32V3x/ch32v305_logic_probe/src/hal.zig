@@ -47,7 +47,7 @@ const LCD_DC_PORT = gpio.gpiob;
 
 const LCD_CS_PIN = 10;
 const LCD_CS_PIN_MASK: u16 = 1 << LCD_CS_PIN;
-const LCD_CS_PORT = gpio.gpioa;
+const LCD_CS_PORT = gpio.gpiob;
 
 var command_buffer: [128]u8 = undefined;
 var command_idx: usize = undefined;
@@ -129,6 +129,7 @@ pub inline fn led_off() void {
 
 pub fn lcd_writer(data: []const u8) void {
     spi.spi2.send_poll8(data);
+    spi.spi2.wait_for_transfer_complete();
 }
 
 pub fn lcd_reset_set(state: bool) void {
