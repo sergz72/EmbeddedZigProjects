@@ -35,10 +35,11 @@ var lcd_instance = lcd.LcdSSD1357 {
 };
 
 fn shell_handler(sh: *shell.Shell) !void {
-    if (hal.command != null) {
+    if (hal.command_ready) {
         usart.usart1.write('\n');
-        const rc = try sh.execute(hal.command.?);
-        hal.command = null;
+        const rc = try sh.execute(hal.command[0..hal.command_idx]);
+        hal.command_idx = 0;
+        hal.command_ready = false;
         try usart_writer.usart_writer.writer.print("shell returned {}\n", .{rc});
     }
 }

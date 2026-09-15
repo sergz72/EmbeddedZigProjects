@@ -49,23 +49,22 @@ const LCD_CS_PIN = 10;
 const LCD_CS_PIN_MASK: u16 = 1 << LCD_CS_PIN;
 const LCD_CS_PORT = gpio.gpiob;
 
-var command_buffer: [128]u8 = undefined;
-var command_idx: usize = undefined;
-pub var command: ?[]u8 = undefined;
+pub var command: [128]u8 = undefined;
+pub var command_idx: usize = undefined;
+pub var command_ready: bool = undefined;
 
 export fn USART1_IRQHandler() callconv(.naked) void {
     @setRuntimeSafety(false);
     if (builtin.mode == .debug) asm volatile ("addi sp, sp, -16");
     if (usart.usart1.statr.rxne) {
         const data = usart.usart1.datar;
-        if (command == null) {
+        if (!command_ready) {
             if (data == '\r') {
                 usart.usart1.datar = data;
-                command = command_buffer[0..command_idx];
-                command_idx = 0;
-            } else if (command_idx < command_buffer.len) {
+                command_ready = true;
+            } else if (command_idx < command.len) {
                 usart.usart1.datar = data;
-                command_buffer[command_idx] = data;
+                command[command_idx] = data;
                 command_idx += 1;
             }
         }
@@ -80,7 +79,7 @@ fn usartWrite(byte: u8) void {
 
 inline fn init_usart() void {
     command_idx = 0;
-    command = null;
+    command_ready = false;
     USART_TX_PORT.Init(USART_TX_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfAlternatePushPull);
     USART_RX_PORT.bshr = USART_RX_PIN_MASK; // pullup
     USART_RX_PORT.Init(USART_RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
