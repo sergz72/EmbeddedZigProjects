@@ -6,8 +6,7 @@ const allocator = @import("allocator");
 const hal = @import("hal");
 const usart = @import("usart");
 const system_commands = @import("system_commands");
-const lcd = @import("lcd");
-const font5 = @import("font5");
+const ui = @import("ui");
 
 const shell_init = shell.ShellInit{
     .max_commands = 50,
@@ -15,23 +14,6 @@ const shell_init = shell.ShellInit{
     .max_parameter_length = 50,
     .max_command_length = 100,
     .history_length = 20
-};
-
-const lcd_interface = lcd.LcdSSD1357Interface ;
-
-var lcd_instance = lcd.LcdSSD1357 {
-    .spi_lcd = .{
-        .interface = .{
-            .writer = hal.lcd_writer,
-            .dc_set = hal.lcd_dc_set,
-            .cs_set = hal.lcd_cs_set,
-            .set_window = lcd.LcdSSD1357.set_window
-        },
-        .width = 64,
-        .height = 64,
-        .ctx = undefined
-    },
-    .reset_set = hal.lcd_reset_set
 };
 
 fn shell_handler(sh: *shell.Shell) !void {
@@ -51,10 +33,7 @@ export fn main() callconv(.c) noreturn {
 
     _ = system_commands.register_system_commands(sh);
 
-    lcd_instance.spi_lcd.ctx = &lcd_instance;
-    lcd_instance.init(0);
-    //lcd_instance.spi_lcd.rect_fill(0, 0, 10, 20, lcd.YELLOW_COLOR);
-    lcd_instance.spi_lcd.draw_char(0, 0, 'A', &font5.fiveBySevenFontInfo, lcd.YELLOW_COLOR, lcd.BLACK_COLOR);
+    ui.UI.init(a) catch { while (true){} };
 
     var led_status = false;
     var led_counter: usize = 0;

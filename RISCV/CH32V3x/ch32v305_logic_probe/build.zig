@@ -157,6 +157,12 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const display = b.addModule("display", .{
+        .root_source_file = b.path("../../../common_lib/display/display.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const utils = b.addModule("utils", .{
         .root_source_file = b.path("../../../common_lib/utils.zig"),
         .target = target,
@@ -196,6 +202,18 @@ pub fn build(b: *std.Build) !void {
         }
     });
 
+    const ui = b.addModule("ui", .{
+        .root_source_file = b.path("src/ui.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "lcd", .module = lcd },
+            .{ .name = "font5", .module = font5 },
+            .{ .name = "display", .module = display },
+            .{ .name = "hal", .module = hal },
+        }
+    });
+
     const riscv_exe = b.addExecutable(.{
         .name = "ch32v305_logic_probe.elf",
         .root_module = b.createModule(.{
@@ -209,9 +227,8 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "allocator", .module = allocator },
                 .{ .name = "hal", .module = hal },
                 .{ .name = "usart", .module = usart },
-                .{ .name = "lcd", .module = lcd },
                 .{ .name = "system_commands", .module = system_commands },
-                .{ .name = "font5", .module = font5 },
+                .{ .name = "ui", .module = ui },
             },
         }),
     });
