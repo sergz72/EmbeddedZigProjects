@@ -1,3 +1,5 @@
+const font = @import("font");
+
 pub const SpiLcdInterface = struct {
     writer: *const fn ([]const u8) void,
     dc_set: *const fn (bool) void,
@@ -36,8 +38,34 @@ pub const SpiLcd = struct {
         self.rect_fill(0, 0, self.width, self.height, color);
     }
 
-    //pub fn draw_char(self: *const SpiLcd, x: u8, y: u8, c: u8, font: *FontInfo, text_color: u16, bk_color: u16) void {
-    //}
+    pub fn draw_char(self: *const SpiLcd, x: u8, y: u8, c: u8, f: *const font.FontInfo, text_color: u16, bk_color: u16) void {
+        if (c < f.start_character or c > f.start_character + f.character_count or x >= self.width or y >= self.height)
+            return;
+        const char_bytes = f.get_char_total_bytes();
+        var idx = @as(usize, c - f.start_character) * char_bytes;
+        self.interface.set_window(self.ctx, x, y, x + f.character_width + f.character_spacing - 1, y + f.character_height - 1);
+        for (0..f.character_height) |_| {
+            var cnt: usize = 0;
+            var ch = f.character_bitmaps[idx];
+            idx += 1;
+            for (0..f.character_width) |_| {
+                if ((ch & 0x80) != 0) {
+                    self.write_color(text_color, 1);
+                } else {
+                    self.write_color(bk_color, 1);
+                }
+                ch <<= 1;
+                cnt += 1;
+                if (cnt == 8) {
+                    cnt = 0;
+                    ch = f.character_bitmaps[idx];
+                    idx += 1;
+                }
+            }
+            self.write_color(bk_color, f.character_spacing);
+        }
+        self.interface.cs_set(true);
+    }
 
     pub fn write_color(self: *const SpiLcd, color: u16, count: usize) void {
         const data: [2]u8 = @bitCast(color);

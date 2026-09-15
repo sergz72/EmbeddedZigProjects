@@ -7,6 +7,7 @@ const hal = @import("hal");
 const usart = @import("usart");
 const system_commands = @import("system_commands");
 const lcd = @import("lcd");
+const font5 = @import("font5");
 
 const shell_init = shell.ShellInit{
     .max_commands = 50,
@@ -51,7 +52,8 @@ export fn main() callconv(.c) noreturn {
 
     lcd_instance.spi_lcd.ctx = &lcd_instance;
     lcd_instance.init(0);
-    lcd_instance.spi_lcd.rect_fill(0, 0, 10, 20, lcd.YELLOW_COLOR);
+    //lcd_instance.spi_lcd.rect_fill(0, 0, 10, 20, lcd.YELLOW_COLOR);
+    lcd_instance.spi_lcd.draw_char(0, 0, 'A', &font5.fiveBySevenFontInfo, lcd.YELLOW_COLOR, lcd.BLACK_COLOR);
 
     var led_status = false;
     var led_counter: usize = 0;
