@@ -99,7 +99,6 @@ inline fn init_spi() void {
 inline fn init_lcd() void {
     LCD_CS_PORT.bshr = LCD_CS_PIN_MASK;
     LCD_CS_PORT.Init(LCD_CS_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfOutputPushPull);
-    LCD_RESET_PORT.bshr = LCD_RESET_PIN_MASK;
     LCD_RESET_PORT.Init(LCD_RESET_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfOutputPushPull);
     LCD_DC_PORT.Init(LCD_DC_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfOutputPushPull);
 }
@@ -126,4 +125,32 @@ pub inline fn led_on() void {
 
 pub inline fn led_off() void {
     LED_PORT.bcr = LED_PIN_MASK;
+}
+
+pub fn lcd_writer(data: []const u8) void {
+    spi.spi2.send_poll8(data);
+}
+
+pub fn lcd_reset_set(state: bool) void {
+    if (state) {
+        LCD_RESET_PORT.bshr = LCD_RESET_PIN_MASK;
+    } else {
+        LCD_RESET_PORT.bcr = LCD_RESET_PIN_MASK;
+    }
+}
+
+pub fn lcd_dc_set(state: bool) void {
+    if (state) {
+        LCD_DC_PORT.bshr = LCD_DC_PIN_MASK;
+    } else {
+        LCD_DC_PORT.bcr = LCD_DC_PIN_MASK;
+    }
+}
+
+pub fn lcd_cs_set(state: bool) void {
+    if (state) {
+        LCD_CS_PORT.bshr = LCD_CS_PIN_MASK;
+    } else {
+        LCD_CS_PORT.bcr = LCD_CS_PIN_MASK;
+    }
 }

@@ -1,5 +1,6 @@
 const std = @import("std");
 const system_timer = @import("system_timer");
+const spi_lcd = @import("spi_lcd");
 
 pub const BLACK_COLOR   : u16 = 0;
 pub const BLUE_COLOR    : u16 = 0x1F00;
@@ -42,60 +43,55 @@ const SSD1357_CMD_MASTERCURRENT  : u8 = 0xC7;     // Set master contrast current
 const SSD1357_CMD_SETMULTIPLEX   : u8 = 0xCA;     // Set multiplex ratio
 const SSD1357_CMD_SETCOMMANDLOCK : u8 = 0xFD;
 
-pub const LcdSSD1357Interface = struct {
-    writer: *const fn ([]const u8) void,
-    reset_set: *const fn (bool) void,
-    dc_set: *const fn (bool) void
-};
-
-pub const LcdSSD1357Size = enum(usize) {
-    _64 = 64, _128 = 128
-};
-
 pub const LcdSSD1357 = struct {
-    interface: LcdSSD1357Interface,
-    width: LcdSSD1357Size,
-    height: LcdSSD1357Size,
-    buffer: []u16 = undefined,
+    spi_lcd: spi_lcd.SpiLcd,
+    reset_set: *const fn (bool) void,
 
     pub fn reset(self: *LcdSSD1357) void {
-        self.interface.reset_set(true);
+        self.reset_set(true);
         system_timer.delayus(5);
-        self.interface.reset_set(false);
+        self.reset_set(false);
         system_timer.delayus(5);
-        self.interface.reset_set(true);
+        self.reset_set(true);
         system_timer.delayus(300);
     }
 
-    fn send_command(self: *LcdSSD1357, cmd: u8) void {
-        self.interface.dc_set(false);
-        self.interface.writer((&cmd)[0..1]);
-    }
-
-    fn send_data(self: *LcdSSD1357, data: []u8) void {
-        self.interface.dc_set(true);
-        self.interface.writer(data);
-    }
-
-    pub fn init(self: *LcdSSD1357, allocator: std.mem.Allocator, madctl: u8) !void {
-        self.buffer = try allocator.alloc(u16, @intFromEnum(self.height) * @intFromEnum(self.width));
+    pub fn init(self: *LcdSSD1357, madctl: u8) !void {
         self.reset();
-        self.send_command(SSD1357_CMD_SETMULTIPLEX);
+        self.spi_lcd.interface.cs_set(false);
+        self.spi_lcd.send_command(SSD1357_CMD_SETMULTIPLEX);
         var data: [2]u8 = undefined;
         data[0] = 0x3f;
-        self.send_data(data[0..1]);
-        self.send_command(SSD1357_CMD_DISPLAYOFFSET);
+        self.spi_lcd.send_data(data[0..1]);
+        self.spi_lcd.send_command(SSD1357_CMD_DISPLAYOFFSET);
         data[0] = if (madctl & SSD1357_MADCTL_Y_MIRROR != 0) 0x40 else 0;
-        self.send_data(data[0..1]);
-        self.send_command(SSD1357_CMD_SETREMAP);
+        self.spi_lcd.send_data(data[0..1]);
+        self.spi_lcd.send_command(SSD1357_CMD_SETREMAP);
         data[0] = madctl | 0x60;
         data[1] = 0;
-        self.send_data(&data);
-        self.send_command(SSD1357_CMD_DISPLAYON);
-        self.screen_fill(BLACK_COLOR);
+        self.spi_lcd.send_data(&data);
+        self.spi_lcd.send_command(SSD1357_CMD_DISPLAYON);
+        self.spi_lcd.screen_fill(BLACK_COLOR);
     }
 
-    pub fn screen_fill(self: *LcdSSD1357, color: u16) void {
-        @memset(self.buffer, color);
+    pub fn set_window(ctx: *anyopaque, x1: u8, x2: u8, y1: u8, y2: u8) void {
+        const self: *LcdSSD1357 = @ptrCast(@alignCast(ctx));
+
+        self.spi_lcd.interface.cs_set(false);
+
+        var data: [2]u8 = undefined;
+
+        data[0] = x1 + 0x20;
+        data[1] = x2 + 0x20;
+        self.spi_lcd.send_command(SSD1357_CMD_SETCOLUMN);
+        self.spi_lcd.send_data(&data);
+
+        data[0] = y1;
+        data[1] = y2;
+
+        self.spi_lcd.send_command(SSD1357_CMD_SETROW);
+        self.spi_lcd.send_data(&data);
+
+        self.spi_lcd.send_command(SSD1357_CMD_WRITERAM);
     }
 };

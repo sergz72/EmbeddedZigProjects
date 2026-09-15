@@ -19,26 +19,19 @@ const shell_init = shell.ShellInit{
 const lcd_interface = lcd.LcdSSD1357Interface ;
 
 var lcd_instance = lcd.LcdSSD1357 {
-    .interface = .{
-        .writer = lcd_writer,
-        .reset_set = lcd_reset_set,
-        .dc_set = lcd_dc_set
+    .spi_lcd = .{
+        .interface = .{
+            .writer = hal.lcd_writer,
+            .dc_set = hal.lcd_dc_set,
+            .cs_set = hal.lcd_cs_set,
+            .set_window = lcd.LcdSSD1357.set_window
+        },
+        .width = 64,
+        .height = 64,
+        .ctx = undefined
     },
-    .width = ._64,
-    .height = ._64
+    .reset_set = hal.lcd_reset_set
 };
-
-fn lcd_writer(_: []const u8) void {
-
-}
-
-fn lcd_reset_set(_: bool) void {
-
-}
-
-fn lcd_dc_set(_: bool) void {
-
-}
 
 fn shell_handler(sh: *shell.Shell) !void {
     if (hal.command != null) {
@@ -56,7 +49,8 @@ export fn main() callconv(.c) noreturn {
 
     _ = system_commands.register_system_commands(sh);
 
-    lcd_instance.init(a, 0) catch { while (true){} };
+    lcd_instance.spi_lcd.ctx = &lcd_instance;
+    lcd_instance.init(0) catch { while (true){} };
 
     var led_status = false;
     var led_counter: usize = 0;

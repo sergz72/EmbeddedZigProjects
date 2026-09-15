@@ -123,12 +123,19 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const spi_lcd = b.addModule("spi_lcd", .{
+        .root_source_file = b.path("../../../common_lib/display/spi_lcd.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const lcd = b.addModule("lcd", .{
         .root_source_file = b.path("../../../common_lib/display/lcd_ssd1357.zig"),
         .target = target,
         .optimize = optimize,
         .imports = &.{
-            .{ .name = "system_timer", .module = system_timer }
+            .{ .name = "system_timer", .module = system_timer },
+            .{ .name = "spi_lcd", .module = spi_lcd }
         },
     });
 
