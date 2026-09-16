@@ -26,6 +26,34 @@ fn shell_handler(sh: *shell.Shell) !void {
     }
 }
 
+var led_status: bool = undefined;
+var led_counter: usize = undefined;
+
+fn led_handler() void {
+    if (!hal.timer_interrupt)
+        return;
+    hal.timer_interrupt = false;
+    if (led_counter == 9) {
+        led_counter = 0;
+        led_status = !led_status;
+        if (led_status) {
+            hal.led_on();
+        } else {
+            hal.led_off();
+        }
+        hal.led2_off();
+    } else {
+        led_counter += 1;
+    }
+}
+
+fn exti_handler() void {
+    if (!hal.fpga_interrupt)
+        return;
+    hal.fpga_interrupt = false;
+    hal.led2_on();
+}
+
 export fn main() callconv(.c) noreturn {
     const a = allocator.build_allocator();
 
@@ -37,26 +65,13 @@ export fn main() callconv(.c) noreturn {
 
     hal.start_timer();
 
-    var led_status = false;
-    var led_counter: usize = 0;
+    led_status = false;
+    led_counter = 0;
+
     while (true) {
         asm volatile ("wfi");
-
         shell_handler(sh) catch { while (true){} };
-
-        if (!hal.timer_interrupt)
-            continue;
-        hal.timer_interrupt = false;
-        if (led_counter == 9) {
-            led_counter = 0;
-            led_status = !led_status;
-            if (led_status) {
-                hal.led_on();
-            } else {
-                hal.led_off();
-            }
-        } else {
-            led_counter += 1;
-        }
+        led_handler();
+        exti_handler();
     }
 }

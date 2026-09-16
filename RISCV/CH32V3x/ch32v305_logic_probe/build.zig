@@ -90,6 +90,12 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const exti = b.addModule("exti", .{
+        .root_source_file = b.path("../lib/exti.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     //const simple_allocator = b.addModule("simple_allocator", .{
     //    .root_source_file = b.path("../../../common_lib/simple_allocator.zig"),
     //    .target = target,
@@ -184,6 +190,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "dac", .module = dac },
             .{ .name = "spi", .module = spi },
             .{ .name = "timer", .module = timer },
+            .{ .name = "exti", .module = exti },
             .{ .name = "usart_writer", .module = usart_writer }
         },
     });

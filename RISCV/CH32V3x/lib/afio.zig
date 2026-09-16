@@ -52,10 +52,53 @@ pub const AfioPcfr2 = packed struct(u32) {
     reserved4: u5 = 0
 };
 
+pub const AfioExtiPort = enum(u4) {
+    porta = 0,
+    portb = 1,
+    portc = 2,
+    portd = 3,
+    porte = 4
+};
+
+pub const AfioExtiCr1 = packed struct(u32) {
+    exti0: AfioExtiPort = .porta,
+    exti1: AfioExtiPort = .porta,
+    exti2: AfioExtiPort = .porta,
+    exti3: AfioExtiPort = .porta,
+    reserved: u16 = 0
+};
+
+pub const AfioExtiCr2 = packed struct(u32) {
+    exti4: AfioExtiPort = .porta,
+    exti5: AfioExtiPort = .porta,
+    exti6: AfioExtiPort = .porta,
+    exti7: AfioExtiPort = .porta,
+    reserved: u16 = 0
+};
+
+pub const AfioExtiCr3 = packed struct(u32) {
+    exti8: AfioExtiPort = .porta,
+    exti9: AfioExtiPort = .porta,
+    exti10: AfioExtiPort = .porta,
+    exti11: AfioExtiPort = .porta,
+    reserved: u16 = 0
+};
+
+pub const AfioExtiCr4 = packed struct(u32) {
+    exti12: AfioExtiPort = .porta,
+    exti13: AfioExtiPort = .porta,
+    exti14: AfioExtiPort = .porta,
+    exti15: AfioExtiPort = .porta,
+    reserved: u16 = 0
+};
+
 pub const Afio = extern struct {
     ecr: AfioEcr,
     pcfr1: AfioPcfr1,
-    exticr: [4]u32,
+    exticr1: AfioExtiCr1,
+    exticr2: AfioExtiCr2,
+    exticr3: AfioExtiCr3,
+    exticr4: AfioExtiCr4,
     reserved: u32,
     pcfr2: AfioPcfr2
 };

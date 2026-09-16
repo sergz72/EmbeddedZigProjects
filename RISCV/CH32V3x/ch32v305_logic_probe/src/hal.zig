@@ -9,11 +9,14 @@ const usart_writer = @import("usart_writer");
 const dac = @import("dac");
 const spi = @import("spi");
 const timer = @import("timer");
+const exti = @import("exti");
 const builtin = @import("builtin");
 
+const LED_PORT = gpio.gpiod;
 const LED_PIN = 0;
 const LED_PIN_MASK: u16 = 1 << LED_PIN;
-const LED_PORT = gpio.gpiod;
+const LED2_PIN = 1;
+const LED2_PIN_MASK: u16 = 1 << LED2_PIN;
 
 const USART_TX_PIN = 6;
 const USART_TX_PIN_MASK: u16 = 1 << USART_TX_PIN;
@@ -49,10 +52,15 @@ const LCD_CS_PIN = 10;
 const LCD_CS_PIN_MASK: u16 = 1 << LCD_CS_PIN;
 const LCD_CS_PORT = gpio.gpiob;
 
+const FPGA_INT_PIN = 7;
+const FPGA_INT_PIN_MASK: u16 = 1 << FPGA_INT_PIN;
+const FPGA_INT_PORT = gpio.gpioc;
+
 pub var command: [128]u8 = undefined;
 pub var command_idx: usize = undefined;
 pub var command_ready: bool = undefined;
 pub var timer_interrupt: bool = undefined;
+pub var fpga_interrupt: bool = undefined;
 
 export fn USART1_IRQHandler() callconv(.naked) void {
     @setRuntimeSafety(false);
@@ -80,6 +88,14 @@ export fn TIM6_IRQHandler() callconv(.naked) void {
         // clear interrupt flag
         timer.bctm6.intfr = timer.TimerIntfr{};
     }
+    asm volatile("mret");
+}
+
+export fn EXTI9_5_IRQHandler() callconv(.naked) void {
+    if ((exti.exti.intfr & FPGA_INT_PIN_MASK) != 0) {
+        fpga_interrupt = true;
+    }
+    exti.exti.intfr = 0x1FFFFF; // clear all interrupt flags
     asm volatile("mret");
 }
 
@@ -124,21 +140,38 @@ pub inline fn start_timer() void {
     timer.bctm6.ctlr1 = timer.TimerCtlr1{.cen = true, .apre = true};
 }
 
+pub inline fn init_exti() void {
+    FPGA_INT_PORT.bcr = FPGA_INT_PIN_MASK; // pulldown
+    FPGA_INT_PORT.Init(FPGA_INT_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
+    afio.afio.exticr2.exti7 = .portc;
+    exti.exti.rtenr = FPGA_INT_PIN_MASK;  // rising edge
+    exti.exti.intenr = FPGA_INT_PIN_MASK; // interrupt enable
+    pfic.pfic.interrupt_enable(pfic.Interrupt.EXTI9_5);
+    fpga_interrupt = false;
+}
+
+pub inline fn init_dac() void {
+    DAC_PORT.Init(DAC_PIN_MASK, gpio.GpioModeInput | gpio.GpioCnfInputAnalog);
+    dac.dac.ctlr = dac.DacCtlr{.ch2 = dac.DacCtlrChannel{.en = true}};
+}
+
 export fn SystemInit() callconv(.c) void {
     system_timer.delay_init();
-    rcc.rcc.apb2pcenr = rcc.RccCfgrApb2pcEnr{.iopaen = true, .iopden = true, .iopben = true, .afioen = true, .usart1en = true};
+    rcc.rcc.apb2pcenr = rcc.RccCfgrApb2pcEnr{
+        .iopaen = true, .iopden = true, .iopben = true, .iopcen = true, .afioen = true, .usart1en = true
+    };
     rcc.rcc.apb1pcenr = rcc.RccCfgrApb1pcEnr{.dacen = true, .spi2en = true, .tim6en = true};
     afio.afio.pcfr1 = afio.AfioPcfr1{.pd01_rm = true, .usart1_rm = true};
 
-    LED_PORT.Init(LED_PIN_MASK, gpio.GpioModeOutputSlowSpeed | gpio.GpioCnfOutputPushPull);
+    LED_PORT.Init(LED_PIN_MASK | LED2_PIN_MASK, gpio.GpioModeOutputSlowSpeed | gpio.GpioCnfOutputPushPull);
 
-    DAC_PORT.Init(DAC_PIN_MASK, gpio.GpioModeInput | gpio.GpioCnfInputAnalog);
-    dac.dac.ctlr = dac.DacCtlr{.ch2 = dac.DacCtlrChannel{.en = true}};
+    init_dac();
 
     init_usart();
     init_spi();
     init_lcd();
     init_timer();
+    init_exti();
 }
 
 pub inline fn led_on() void {
@@ -147,6 +180,14 @@ pub inline fn led_on() void {
 
 pub inline fn led_off() void {
     LED_PORT.bcr = LED_PIN_MASK;
+}
+
+pub inline fn led2_on() void {
+    LED_PORT.bshr = LED2_PIN_MASK;
+}
+
+pub inline fn led2_off() void {
+    LED_PORT.bcr = LED2_PIN_MASK;
 }
 
 pub fn lcd_writer(data: []const u8) void {
