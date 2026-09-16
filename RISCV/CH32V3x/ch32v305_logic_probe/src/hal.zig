@@ -8,7 +8,7 @@ const pfic = @import("pfic");
 const usart_writer = @import("usart_writer");
 const dac = @import("dac");
 const spi = @import("spi");
-const dma = @import("dma");
+const timer = @import("timer");
 const builtin = @import("builtin");
 
 const LED_PIN = 0;
@@ -52,6 +52,7 @@ const LCD_CS_PORT = gpio.gpiob;
 pub var command: [128]u8 = undefined;
 pub var command_idx: usize = undefined;
 pub var command_ready: bool = undefined;
+pub var timer_interrupt: bool = undefined;
 
 export fn USART1_IRQHandler() callconv(.naked) void {
     @setRuntimeSafety(false);
@@ -70,6 +71,15 @@ export fn USART1_IRQHandler() callconv(.naked) void {
         }
     }
     if (builtin.mode == .debug) asm volatile ("addi sp, sp, 16");
+    asm volatile("mret");
+}
+
+export fn TIM6_IRQHandler() callconv(.naked) void {
+    if (timer.bctm6.intfr.uif) {
+        timer_interrupt = true;
+        // clear interrupt flag
+        timer.bctm6.intfr = timer.TimerIntfr{};
+    }
     asm volatile("mret");
 }
 
@@ -102,10 +112,22 @@ inline fn init_lcd() void {
     LCD_DC_PORT.Init(LCD_DC_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfOutputPushPull);
 }
 
+inline fn init_timer() void {
+    timer.bctm6.psc = @truncate(cpu.cpu.current_frequency / 10000 - 1);
+    timer.bctm6.atrlr.value16 = 1000 - 1; //0.1 second interval
+    timer.bctm6.dmaintenr = timer.TimerDmaIntEnr{.uie = true};
+    pfic.pfic.interrupt_enable(pfic.Interrupt.TIM6);
+    timer_interrupt = false;
+}
+
+pub inline fn start_timer() void {
+    timer.bctm6.ctlr1 = timer.TimerCtlr1{.cen = true, .apre = true};
+}
+
 export fn SystemInit() callconv(.c) void {
     system_timer.delay_init();
     rcc.rcc.apb2pcenr = rcc.RccCfgrApb2pcEnr{.iopaen = true, .iopden = true, .iopben = true, .afioen = true, .usart1en = true};
-    rcc.rcc.apb1pcenr = rcc.RccCfgrApb1pcEnr{.dacen = true, .spi2en = true};
+    rcc.rcc.apb1pcenr = rcc.RccCfgrApb1pcEnr{.dacen = true, .spi2en = true, .tim6en = true};
     afio.afio.pcfr1 = afio.AfioPcfr1{.pd01_rm = true, .usart1_rm = true};
 
     LED_PORT.Init(LED_PIN_MASK, gpio.GpioModeOutputSlowSpeed | gpio.GpioCnfOutputPushPull);
@@ -116,6 +138,7 @@ export fn SystemInit() callconv(.c) void {
     init_usart();
     init_spi();
     init_lcd();
+    init_timer();
 }
 
 pub inline fn led_on() void {

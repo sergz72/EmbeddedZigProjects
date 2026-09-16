@@ -84,8 +84,8 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
-    const dma = b.addModule("dma", .{
-        .root_source_file = b.path("../lib/dma.zig"),
+    const timer = b.addModule("timer", .{
+        .root_source_file = b.path("../lib/timer.zig"),
         .target = target,
         .optimize = optimize
     });
@@ -183,7 +183,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "pfic", .module = pfic },
             .{ .name = "dac", .module = dac },
             .{ .name = "spi", .module = spi },
-            .{ .name = "dma", .module = dma },
+            .{ .name = "timer", .module = timer },
             .{ .name = "usart_writer", .module = usart_writer }
         },
     });
@@ -236,7 +236,7 @@ pub fn build(b: *std.Build) !void {
     riscv_exe.link_gc_sections = true;
     riscv_exe.link_function_sections = true;
     riscv_exe.link_data_sections = true;
-    //riscv_exe.lto = .full;                     // Whole-program optimization & inlining
+    riscv_exe.lto = .full;                     // Whole-program optimization & inlining
 
     riscv_exe.root_module.addAssemblyFile(b.path("../startup_ch32v30x_D8C.S"));
 

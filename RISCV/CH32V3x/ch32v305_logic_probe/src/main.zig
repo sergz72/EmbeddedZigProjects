@@ -35,13 +35,18 @@ export fn main() callconv(.c) noreturn {
 
     ui.UI.init(a) catch { while (true){} };
 
+    hal.start_timer();
+
     var led_status = false;
     var led_counter: usize = 0;
     while (true) {
-        system_timer.delayms(100);
+        asm volatile ("wfi");
 
         shell_handler(sh) catch { while (true){} };
 
+        if (!hal.timer_interrupt)
+            continue;
+        hal.timer_interrupt = false;
         if (led_counter == 9) {
             led_counter = 0;
             led_status = !led_status;
