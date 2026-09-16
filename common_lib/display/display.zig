@@ -62,6 +62,12 @@ pub const Display = struct {
         self.rect_fill(r.x, r.y, r.width, r.height, color);
     }
 
+    pub fn init_char(self: *Display, column: usize, row: usize, text_color: u16, bk_color: u16) void {
+        var ch = &self.characters[self.width * row + column];
+        ch.text_color = text_color;
+        ch.bk_color = bk_color;
+    }
+
     pub fn set_char(self: *Display, column: usize, row: usize, c: u8) void {
         var ch = &self.characters[self.width * row + column];
         if (ch.c == c)

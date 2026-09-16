@@ -44,6 +44,16 @@ pub const UI = struct {
         disp.init_rectangle(1, 54, 34, 10, 10);
         disp.init_rectangle(2, 54, 44, 10, 10);
         disp.init_rectangle(3, 54, 54, 10, 10);
+        for (0..8) |column| {
+            disp.init_char(column, 0, lcd.RED_COLOR, lcd.BLACK_COLOR);
+            disp.init_char(column, 1, lcd.YELLOW_COLOR, lcd.BLACK_COLOR);
+            disp.init_char(column, 2, lcd.GREEN_COLOR, lcd.BLACK_COLOR);
+            disp.init_char(column, 3, lcd.RED_COLOR, lcd.BLACK_COLOR);
+            disp.init_char(column, 4, lcd.GREEN_COLOR, lcd.BLACK_COLOR);
+            disp.init_char(column, 5, lcd.RED_COLOR, lcd.BLACK_COLOR);
+            disp.init_char(column, 6, lcd.YELLOW_COLOR, lcd.BLACK_COLOR);
+            disp.init_char(column, 7, lcd.GREEN_COLOR, lcd.BLACK_COLOR);
+        }
         for (0..3) |row| {
             for (0..8) |col| {
                 disp.set_char(col, row, '0');
