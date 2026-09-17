@@ -34,8 +34,20 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
-    const flash = b.addModule("flash", .{
-        .root_source_file = b.path("../lib/flash.zig"),
+    const gpt = b.addModule("gpt", .{
+        .root_source_file = b.path("../lib/gpt.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const lpm = b.addModule("lpm", .{
+        .root_source_file = b.path("../lib/lpm.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const nvic = b.addModule("nvic", .{
+        .root_source_file = b.path("../../lib/nvic.zig"),
         .target = target,
         .optimize = optimize
     });
@@ -60,7 +72,9 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "system_timer", .module = system_timer },
                 .{ .name = "cpu", .module = cpu },
                 .{ .name = "gpio", .module = gpio },
-                .{ .name = "flash", .module = flash },
+                .{ .name = "gpt", .module = gpt },
+                .{ .name = "lpm", .module = lpm },
+                .{ .name = "nvic", .module = nvic },
                 .{ .name = "clock", .module = clock }
             },
         }),
