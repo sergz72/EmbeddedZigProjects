@@ -11,7 +11,13 @@ pub fn build(b: *std.Build) !void {
     const optimize = b.standardOptimizeOption(.{});
 
     const cpu = b.addModule("cpu", .{
-        .root_source_file = b.path("../../lib/cpu.zig"),
+        .root_source_file = b.path("../lib/cpu.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const clock = b.addModule("clock", .{
+        .root_source_file = b.path("../lib/clock.zig"),
         .target = target,
         .optimize = optimize
     });
@@ -24,6 +30,12 @@ pub fn build(b: *std.Build) !void {
 
     const icu = b.addModule("icu", .{
         .root_source_file = b.path("../lib/icu.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const flash = b.addModule("flash", .{
+        .root_source_file = b.path("../lib/flash.zig"),
         .target = target,
         .optimize = optimize
     });
@@ -47,7 +59,9 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "icu", .module = icu },
                 .{ .name = "system_timer", .module = system_timer },
                 .{ .name = "cpu", .module = cpu },
-                .{ .name = "gpio", .module = gpio }
+                .{ .name = "gpio", .module = gpio },
+                .{ .name = "flash", .module = flash },
+                .{ .name = "clock", .module = clock }
             },
         }),
     });
@@ -55,7 +69,7 @@ pub fn build(b: *std.Build) !void {
     exe.link_gc_sections = true;
     exe.link_function_sections = true;
     exe.link_data_sections = true;
-    exe.lto = .full;                     // Whole-program optimization & inlining
+    //exe.lto = .full;                     // Whole-program optimization & inlining
 
     exe.root_module.addAssemblyFile(b.path("../startup.S"));
 

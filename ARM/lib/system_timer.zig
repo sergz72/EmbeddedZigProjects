@@ -21,11 +21,19 @@ const Systick = extern struct {
     calib: u32
 };
 
+const SystickInit = struct {
+    clksource: bool,
+    divider: usize
+};
+
 const systick: *volatile Systick = @ptrFromInt(SYSTICK_BASE);
 
-pub fn delay_init(systick_clksource: bool) void {
-    p_us = cpu.cpu.current_frequency / 8000000;
-    systick.csr = SystickCsr{.tickint = true, .clksource = systick_clksource};
+pub const init_div8 = SystickInit{.clksource = false, .divider = 8000000};
+pub const init_div1 = SystickInit{.clksource = true, .divider = 1000000};
+
+pub fn delay_init(init: SystickInit) void {
+    p_us = cpu.cpu.current_frequency / init.divider;
+    systick.csr = SystickCsr{.tickint = true, .clksource = init.clksource};
 }
 
 export fn SysTick_Handler() callconv(.c) void {
