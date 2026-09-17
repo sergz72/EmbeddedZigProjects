@@ -52,6 +52,18 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const agt = b.addModule("agt", .{
+        .root_source_file = b.path("../lib/agt.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const backup = b.addModule("backup", .{
+        .root_source_file = b.path("../lib/backup.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const system_timer = b.addModule("system_timer", .{
         .root_source_file = b.path("../../lib/system_timer.zig"),
         .target = target,
@@ -73,6 +85,8 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "cpu", .module = cpu },
                 .{ .name = "gpio", .module = gpio },
                 .{ .name = "gpt", .module = gpt },
+                .{ .name = "agt", .module = agt },
+                .{ .name = "backup", .module = backup },
                 .{ .name = "lpm", .module = lpm },
                 .{ .name = "nvic", .module = nvic },
                 .{ .name = "clock", .module = clock }
