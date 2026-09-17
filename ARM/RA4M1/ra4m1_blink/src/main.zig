@@ -4,6 +4,7 @@ const gpio = @import("gpio");
 const gpt = @import("gpt");
 const lpm = @import("lpm");
 const nvic = @import("nvic");
+const icu = @import("icu");
 const system_timer = @import("system_timer");
 
 const LED_PIN = 12;
@@ -14,7 +15,7 @@ var timer_interrupt: bool = undefined;
 
 export fn ApplicationInterrupt0Handler() callconv(.c) void {
     timer_interrupt = true;
-    icu.icu.application_interrupt+flag_clear(0);
+    icu.icu.ielsr[0].ir = false;
 }
 
 fn clock_init() void {
@@ -38,7 +39,7 @@ fn clock_init() void {
 fn gpt_init() void {
     timer_interrupt = false;
     gpt.gpt32[0].gtpr = cpu.cpu.pckd_frequency / 10 - 1;
-    icu.icu.register_application_interrupt(0, ELC_EVENT_GPT0_COUNTER_OVERFLOW);
+    icu.icu.ielsr[0] = icu.IcuIelsr{.iels = .GPT0_COUNTER_OVERFLOW};
     nvic.nvic.interrupt_enable(0);
     gpt.gpt32[0].gtcr = gpt.GptCr{.cst = true}; // start timer
 }

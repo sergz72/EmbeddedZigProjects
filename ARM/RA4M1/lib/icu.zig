@@ -1,4 +1,6 @@
-const ElcEvents = enum(u32) {
+const ICU_BASE: usize = 0x40006000;
+
+const ElcEvent = enum(u8) {
     NONE                          = 0x0,   // Link disabled
     ICU_IRQ0                      = 0x001, // External pin interrupt 0
     ICU_IRQ1                      = 0x002, // External pin interrupt 1
@@ -181,3 +183,68 @@ const ElcEvents = enum(u32) {
     SPI1_ERI                      = 0x0B5, // Error
     SPI1_TEI                      = 0x0B6  // Transmission complete event
 };
+
+pub const IcuCr = packed struct(u8) {
+    irqmd: u2 = 0,
+    reserved: u2 = 0,
+    fscksel: u2 = 0,
+    reserved2: u1 = 0,
+    flten: bool = false
+};
+
+pub const IcuIelsr = packed struct(u32) {
+    iels: ElcEvent = .NONE,
+    reserved: u8 = 0,
+    ir: bool = false,
+    reserved2: u7 = 0,
+    dtce: bool = false,
+    reserved3: u7 = 0
+};
+
+pub const IcuDelsr = packed struct(u32) {
+    iels: ElcEvent = .NONE,
+    reserved: u8 = 0,
+    ir: bool = false,
+    reserved2: u15 = 0
+};
+
+pub const IcuSelsr = packed struct(u16) {
+    iels: ElcEvent = .NONE,
+    reserved: u8 = 0
+};
+
+pub const Icu = extern struct {
+    //6000
+    cr: [16]IcuCr,
+    reserved: [240]u8,
+    //6100
+    nmicr: u8,
+    reserved4: [31]u8,
+    //6120
+    nmier: u16,
+    reserved2: [7]u16,
+    //6130
+    nmiclr: u16,
+    reserved3: [7]u16,
+    //6140
+    nmisr: u16,
+    reserved5: [94]u8,
+    //61A0
+    wupen: u32,
+    reserved6: [92]u8,
+    //6200
+    selsr: IcuSelsr,
+    reserved7: [126]u8,
+    //6280
+    delsr: [4]IcuDelsr,
+    reserved8: [112]u8,
+    //6300
+    ielsr: [32]IcuIelsr
+};
+
+pub const icu: *volatile Icu = @ptrFromInt(ICU_BASE);
+
+test "sizeof test" {
+    const std = @import("std");
+    try std.testing.expectEqual(0x380, @sizeOf(Icu));
+}
