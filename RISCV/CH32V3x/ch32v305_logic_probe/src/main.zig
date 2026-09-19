@@ -41,7 +41,6 @@ fn led_handler() void {
         } else {
             hal.led_off();
         }
-        hal.led2_off();
     } else {
         led_counter += 1;
     }
@@ -51,7 +50,7 @@ fn exti_handler() void {
     if (!hal.fpga_interrupt)
         return;
     hal.fpga_interrupt = false;
-    hal.led2_on();
+    //todo
 }
 
 export fn main() callconv(.c) noreturn {
@@ -64,6 +63,7 @@ export fn main() callconv(.c) noreturn {
     ui.UI.init(a) catch { while (true){} };
 
     hal.start_timer();
+    hal.fpga_set_cs();
 
     led_status = false;
     led_counter = 0;
