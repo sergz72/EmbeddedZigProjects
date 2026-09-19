@@ -12,23 +12,21 @@ const timer = @import("timer");
 const exti = @import("exti");
 const builtin = @import("builtin");
 
-const LED_PORT = gpio.gpiod;
-const LED_PIN = 0;
+const LED_PORT = gpio.gpioa;
+const LED_PIN = 5;
 const LED_PIN_MASK: u16 = 1 << LED_PIN;
-const LED2_PIN = 1;
-const LED2_PIN_MASK: u16 = 1 << LED2_PIN;
 
-const USART_TX_PIN = 6;
+const USART_TX_PIN = 10;
 const USART_TX_PIN_MASK: u16 = 1 << USART_TX_PIN;
 const USART_TX_PORT = gpio.gpiob;
 
-const USART_RX_PIN = 7;
+const USART_RX_PIN = 11;
 const USART_RX_PIN_MASK: u16 = 1 << USART_RX_PIN;
 const USART_RX_PORT = gpio.gpiob;
 
-const DAC_PIN = 5;
-const DAC_PIN_MASK: u16 = 1 << DAC_PIN;
-const DAC_PORT = gpio.gpioa;
+//const DAC_PIN = 5;
+//const DAC_PIN_MASK: u16 = 1 << DAC_PIN;
+//const DAC_PORT = gpio.gpioa;
 
 const SPI_PORT = gpio.gpiob;
 const SPI_RX_PIN = 14;
@@ -44,17 +42,21 @@ const LCD_RESET_PIN = 12;
 const LCD_RESET_PIN_MASK: u16 = 1 << LCD_RESET_PIN;
 const LCD_RESET_PORT = gpio.gpiob;
 
-const LCD_DC_PIN = 11;
+const LCD_DC_PIN = 7;
 const LCD_DC_PIN_MASK: u16 = 1 << LCD_DC_PIN;
-const LCD_DC_PORT = gpio.gpiob;
+const LCD_DC_PORT = gpio.gpioc;
 
-const LCD_CS_PIN = 10;
+const LCD_CS_PIN = 6;
 const LCD_CS_PIN_MASK: u16 = 1 << LCD_CS_PIN;
-const LCD_CS_PORT = gpio.gpiob;
+const LCD_CS_PORT = gpio.gpioc;
 
-const FPGA_INT_PIN = 7;
+const FPGA_INT_PIN = 8;
 const FPGA_INT_PIN_MASK: u16 = 1 << FPGA_INT_PIN;
 const FPGA_INT_PORT = gpio.gpioc;
+
+const MCO_PIN = 8;
+const MCO_PIN_MASK: u16 = 1 << MCO_PIN;
+const MCO_PORT = gpio.gpioa;
 
 pub var command: [128]u8 = undefined;
 pub var command_idx: usize = undefined;
@@ -62,24 +64,30 @@ pub var command_ready: bool = undefined;
 pub var timer_interrupt: bool = undefined;
 pub var fpga_interrupt: bool = undefined;
 
-export fn USART1_IRQHandler() callconv(.naked) void {
+fn USART3IRQHandler() callconv(.c) void {
     @setRuntimeSafety(false);
-    if (builtin.mode == .debug) asm volatile ("addi sp, sp, -16");
-    if (usart.usart1.statr.rxne) {
-        const data = usart.usart1.datar;
+    if (usart.usart3.statr.rxne) {
+        const data = usart.usart3.datar;
         if (!command_ready) {
             if (data == '\r') {
-                usart.usart1.datar = data;
+                usart.usart3.datar = data;
                 command_ready = true;
             } else if (command_idx < command.len) {
-                usart.usart1.datar = data;
+                usart.usart3.datar = data;
                 command[command_idx] = data;
                 command_idx += 1;
             }
         }
     }
-    if (builtin.mode == .debug) asm volatile ("addi sp, sp, 16");
-    asm volatile("mret");
+}
+
+export fn USART3_IRQHandler() callconv(.naked) void {
+    asm volatile(
+        \\ call %[handler_fn]
+        \\ mret
+        :
+        : [handler_fn] "i" (&USART3IRQHandler)
+    );
 }
 
 export fn TIM6_IRQHandler() callconv(.naked) void {
@@ -100,7 +108,7 @@ export fn EXTI9_5_IRQHandler() callconv(.naked) void {
 }
 
 fn usartWrite(byte: u8) void {
-    usart.usart1.write(byte);
+    usart.usart3.write(byte);
 }
 
 inline fn init_usart() void {
@@ -109,8 +117,8 @@ inline fn init_usart() void {
     USART_TX_PORT.Init(USART_TX_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfAlternatePushPull);
     USART_RX_PORT.bshr = USART_RX_PIN_MASK; // pullup
     USART_RX_PORT.Init(USART_RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
-    usart.usart1.init(115200, cpu.cpu.current_frequency);
-    pfic.pfic.interrupt_enable(pfic.Interrupt.USART1);
+    usart.usart3.init(115200, cpu.cpu.current_frequency);
+    pfic.pfic.interrupt_enable(pfic.Interrupt.USART3);
     usart_writer.usart_writer.writeCharFunc = usartWrite;
 }
 
@@ -143,29 +151,55 @@ pub inline fn start_timer() void {
 pub inline fn init_exti() void {
     FPGA_INT_PORT.bcr = FPGA_INT_PIN_MASK; // pulldown
     FPGA_INT_PORT.Init(FPGA_INT_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
-    afio.afio.exticr2.exti7 = .portc;
+    afio.afio.exticr3.exti8 = .portc;
     exti.exti.rtenr = FPGA_INT_PIN_MASK;  // rising edge
     exti.exti.intenr = FPGA_INT_PIN_MASK; // interrupt enable
     pfic.pfic.interrupt_enable(pfic.Interrupt.EXTI9_5);
     fpga_interrupt = false;
 }
 
-pub inline fn init_dac() void {
-    DAC_PORT.Init(DAC_PIN_MASK, gpio.GpioModeInput | gpio.GpioCnfInputAnalog);
-    dac.dac.ctlr = dac.DacCtlr{.ch2 = dac.DacCtlrChannel{.en = true}};
+//pub inline fn init_dac() void {
+//    DAC_PORT.Init(DAC_PIN_MASK, gpio.GpioModeInput | gpio.GpioCnfInputAnalog);
+//    dac.dac.ctlr = dac.DacCtlr{.ch2 = dac.DacCtlrChannel{.en = true}};
+//}
+
+pub inline fn init_clkout() void {
+    MCO_PORT.Init(MCO_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfAlternatePushPull);
+    rcc.rcc.cfgr0.mco = .plldiv2;
+}
+
+pub inline fn init_clock() void {
+    rcc.rcc.ctlr.hsebyp = true;
+    rcc.rcc.ctlr.hseon = true;
+    while (!rcc.rcc.ctlr.hserdy) {
+        asm volatile ("nop");
+    }
+    // pll multiplication is 12
+    rcc.rcc.cfgr0 = .{.usbpre = .div3, .pllmul = 10, .pllsrc_hse_or_prediv1 = true, .adcpre = .div8};
+    rcc.rcc.ctlr.pllon = true;
+    while (!rcc.rcc.ctlr.pllrdy) {
+        asm volatile ("nop");
+    }
+    rcc.rcc.cfgr0.sw = .pll;
+    while (rcc.rcc.cfgr0.sws != .pll) {
+        asm volatile ("nop");
+    }
+    cpu.cpu.current_frequency = 144000000;
 }
 
 export fn SystemInit() callconv(.c) void {
+    init_clock();
     system_timer.delay_init();
     rcc.rcc.apb2pcenr = rcc.RccCfgrApb2pcEnr{
-        .iopaen = true, .iopden = true, .iopben = true, .iopcen = true, .afioen = true, .usart1en = true
+        .iopaen = true, .iopben = true, .iopcen = true, .afioen = true
     };
-    rcc.rcc.apb1pcenr = rcc.RccCfgrApb1pcEnr{.dacen = true, .spi2en = true, .tim6en = true};
-    afio.afio.pcfr1 = afio.AfioPcfr1{.pd01_rm = true, .usart1_rm = true};
+    rcc.rcc.apb1pcenr = rcc.RccCfgrApb1pcEnr{.usart3en = true, .spi2en = true, .tim6en = true};
+    //afio.afio.pcfr1 = afio.AfioPcfr1{.usart1_rm = true};
 
-    LED_PORT.Init(LED_PIN_MASK | LED2_PIN_MASK, gpio.GpioModeOutputSlowSpeed | gpio.GpioCnfOutputPushPull);
+    LED_PORT.Init(LED_PIN_MASK, gpio.GpioModeOutputSlowSpeed | gpio.GpioCnfOutputPushPull);
 
-    init_dac();
+//    init_dac();
+    init_clkout();
 
     init_usart();
     init_spi();
@@ -183,11 +217,11 @@ pub inline fn led_off() void {
 }
 
 pub inline fn led2_on() void {
-    LED_PORT.bshr = LED2_PIN_MASK;
+    //LED_PORT.bshr = LED2_PIN_MASK;
 }
 
 pub inline fn led2_off() void {
-    LED_PORT.bcr = LED2_PIN_MASK;
+    //LED_PORT.bcr = LED2_PIN_MASK;
 }
 
 pub fn lcd_writer(data: []const u8) void {
