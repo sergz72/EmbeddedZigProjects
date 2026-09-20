@@ -12,8 +12,8 @@ const timer = @import("timer");
 const exti = @import("exti");
 const builtin = @import("builtin");
 
-const LED_PORT = gpio.gpiob;
-const LED_PIN = 7;
+const LED_PORT = gpio.gpioc;
+const LED_PIN = 8;
 const LED_PIN_MASK: u16 = 1 << LED_PIN;
 
 const USART_TX_PIN = 10;
@@ -50,11 +50,11 @@ const LCD_CS_PIN = 6;
 const LCD_CS_PIN_MASK: u16 = 1 << LCD_CS_PIN;
 const LCD_CS_PORT = gpio.gpioc;
 
-const FPGA_INT_PIN = 8;
+const FPGA_INT_PIN = 6;
 const FPGA_INT_PIN_MASK: u16 = 1 << FPGA_INT_PIN;
-const FPGA_INT_PORT = gpio.gpioc;
+const FPGA_INT_PORT = gpio.gpiob;
 
-const FPGA_CS_PIN = 6;
+const FPGA_CS_PIN = 7;
 const FPGA_CS_PIN_MASK: u16 = 1 << FPGA_CS_PIN;
 const FPGA_CS_PORT = gpio.gpiob;
 
@@ -155,7 +155,7 @@ pub inline fn start_timer() void {
 inline fn init_exti() void {
     FPGA_INT_PORT.bcr = FPGA_INT_PIN_MASK; // pulldown
     FPGA_INT_PORT.Init(FPGA_INT_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
-    afio.afio.exticr3.exti8 = .portc;
+    afio.afio.exticr2.exti6 = .portb;
     exti.exti.rtenr = FPGA_INT_PIN_MASK;  // rising edge
     exti.exti.intenr = FPGA_INT_PIN_MASK; // interrupt enable
     pfic.pfic.interrupt_enable(pfic.Interrupt.EXTI9_5);
