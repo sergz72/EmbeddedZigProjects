@@ -10,6 +10,7 @@ const usart_writer = @import("usart_writer");
 const spi = @import("spi");
 const timer = @import("timer");
 const eth_driver = @import("eth_driver");
+const shell = @import("shell");
 const builtin = @import("builtin");
 
 const LED_BLUE_PORT = gpio.gpiob;
@@ -40,25 +41,12 @@ const SPI_TX_PIN_MASK: u16 = 1 << SPI_TX_PIN;
 const SPI_CLK_PIN = 13;
 const SPI_CLK_PIN_MASK: u16 = 1 << SPI_CLK_PIN;
 
-pub var command: [128]u8 = undefined;
-pub var command_idx: usize = undefined;
-pub var command_ready: bool = undefined;
 pub var timer_interrupt: bool = undefined;
+pub var sh: *shell.Shell = undefined;
 
 fn UART4IRQHandler() callconv(.c) void {
-    @setRuntimeSafety(false);
     if (usart_instance.statr.rxne) {
-        const data = usart_instance.datar;
-        if (!command_ready) {
-            if (data == '\r') {
-                usart_instance.datar = data;
-                command_ready = true;
-            } else if (command_idx < command.len) {
-                usart_instance.datar = data;
-                command[command_idx] = data;
-                command_idx += 1;
-            }
-        }
+        sh.process_char(usart_instance.datar);
     }
 }
 
@@ -80,19 +68,17 @@ export fn TIM6_IRQHandler() callconv(.naked) void {
     asm volatile("mret");
 }
 
-fn usartWrite(byte: u8) void {
+pub fn usart_write(byte: u8) void {
     usart_instance.write(byte);
 }
 
 inline fn init_usart() void {
-    command_idx = 0;
-    command_ready = false;
     USART_TX_PORT.Init(USART_TX_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfAlternatePushPull);
     USART_RX_PORT.bshr = USART_RX_PIN_MASK; // pullup
     USART_RX_PORT.Init(USART_RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
     usart_instance.init(115200, cpu.cpu.current_frequency);
     pfic.pfic.interrupt_enable(interrupts.Interrupt.UART4.to_u8());
-    usart_writer.usart_writer.writeCharFunc = usartWrite;
+    usart_writer.usart_writer.writeCharFunc = usart_write;
 }
 
 inline fn init_spi() void {

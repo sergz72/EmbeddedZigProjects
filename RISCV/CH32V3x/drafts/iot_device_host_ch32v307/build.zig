@@ -161,6 +161,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "spi", .module = spi },
             .{ .name = "timer", .module = timer },
             .{ .name = "eth_driver", .module = eth_driver },
+            .{ .name = "shell", .module = shell },
             .{ .name = "usart_writer", .module = usart_writer }
         },
     });

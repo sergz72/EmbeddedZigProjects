@@ -29,8 +29,13 @@ pub const Shell = struct {
     history_offset: usize,
     history_buffer: []u8,
     next_command_idx: usize,
+    command: [128]u8,
+    command_idx: usize,
+    command_ready: bool,
+    echo_func: *const fn(u8) void,
 
-    pub fn init(init_data: *const ShellInit, allocator: std.mem.Allocator, writer: *std.Io.Writer) !*Shell {
+    pub fn init(init_data: *const ShellInit, allocator: std.mem.Allocator, writer: *std.Io.Writer,
+        echo_func: *const fn(u8) void) !*Shell {
         const commands = try allocator.alloc(*const ShellCommand, init_data.max_commands);
         const argv = try allocator.alloc([]const u8, init_data.max_parameters);
         const history = try allocator.alloc([]u8, init_data.history_length);
@@ -46,9 +51,37 @@ pub const Shell = struct {
             .history_offset = 0,
             .history_size = 0,
             .history_buffer = history_buffer,
-            .argc = 0
+            .argc = 0,
+            .command_idx = 0,
+            .command_ready = false,
+            .echo_func = echo_func,
+            .command = undefined
         };
         return sh;
+    }
+
+    pub fn process_char(self: *Shell, c: u8) void {
+        @setRuntimeSafety(false);
+        if (!self.command_ready) {
+            if (c == '\r') {
+                self.echo_func(c);
+                self.command_ready = true;
+            } else if (self.command_idx < self.command.len) {
+                self.echo_func(c);
+                self.command[self.command_idx] = c;
+                self.command_idx += 1;
+            }
+        }
+    }
+
+    pub fn handler(self: *Shell) !void {
+        if (self.command_ready) {
+            self.echo_func('\n');
+            const rc = try self.execute(self.command[0..self.command_idx]);
+            self.command_idx = 0;
+            self.command_ready = false;
+            try self.writer.print("shell returned {}\n", .{rc});
+        }
     }
 
     pub fn register_command(self: *Shell, command: *const ShellCommand) isize {

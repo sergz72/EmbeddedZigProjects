@@ -16,16 +16,6 @@ const shell_init = shell.ShellInit{
     .history_length = 20
 };
 
-fn shell_handler(sh: *shell.Shell) !void {
-    if (hal.command_ready) {
-        usart.usart3.write('\n');
-        const rc = try sh.execute(hal.command[0..hal.command_idx]);
-        hal.command_idx = 0;
-        hal.command_ready = false;
-        try usart_writer.usart_writer.writer.print("shell returned {}\n", .{rc});
-    }
-}
-
 var led_status: bool = undefined;
 var led_counter: usize = undefined;
 
@@ -56,9 +46,9 @@ fn exti_handler() void {
 export fn main() callconv(.c) noreturn {
     const a = allocator.build_allocator();
 
-    const sh = shell.Shell.init(&shell_init, a, &usart_writer.usart_writer.writer) catch { while (true){} };
+    hal.sh = shell.Shell.init(&shell_init, a, &usart_writer.usart_writer.writer, hal.usart_write) catch { while (true){} };
 
-    _ = system_commands.register_system_commands(sh);
+    _ = system_commands.register_system_commands(hal.sh);
 
     ui.UI.init(a) catch { while (true){} };
 
@@ -70,7 +60,7 @@ export fn main() callconv(.c) noreturn {
 
     while (true) {
         asm volatile ("wfi");
-        shell_handler(sh) catch { while (true){} };
+        hal.sh.handler() catch { while (true){} };
         led_handler();
         exti_handler();
     }
