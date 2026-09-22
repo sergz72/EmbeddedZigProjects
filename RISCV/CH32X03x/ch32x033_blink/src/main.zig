@@ -8,40 +8,42 @@ const pfic = @import("pfic");
 const interrupts = @import("interrupts");
 const usart_writer = @import("usart_writer");
 
-const LED_PIN = 0;
+const LED_PIN = 4;
 const LED_PIN_MASK: u16 = 1 << LED_PIN;
-const LED_PORT = gpio.gpiod;
+const LED_PORT = gpio.gpioa;
 
-const TX_PIN = 6;
+const USART_INSTANCE = usart.usart2;
+
+const TX_PIN = 2;
 const TX_PIN_MASK: u16 = 1 << TX_PIN;
-const TX_PORT = gpio.gpiob;
+const TX_PORT = gpio.gpioa;
 
-const RX_PIN = 7;
+const RX_PIN = 3;
 const RX_PIN_MASK: u16 = 1 << RX_PIN;
-const RX_PORT = gpio.gpiob;
+const RX_PORT = gpio.gpioa;
 
-export fn USART1_IRQHandler() callconv(.naked) void {
-    if (usart.usart1.statr.rxne) {
-        const data = usart.usart1.datar;
-        usart.usart1.datar = data;
+export fn USART2_IRQHandler() callconv(.naked) void {
+    if (USART_INSTANCE.statr.rxne) {
+        const data = USART_INSTANCE.datar;
+        USART_INSTANCE.datar = data;
     }
     asm volatile("mret");
 }
 
 fn usartWrite(byte: u8) void {
-    usart.usart1.write(byte);
+    USART_INSTANCE.write(byte);
 }
 
 export fn SystemInit() callconv(.c) void {
     system_timer.delay_init();
-    rcc.rcc.apb2pcenr = rcc.RccCfgrApb2pcEnr{.iopden = true, .iopben = true, .afioen = true, .usart1en = true};
-    afio.afio.pcfr1 = afio.AfioPcfr1{.pd01_rm = true, .usart1_rm = true};
-    LED_PORT.Init(LED_PIN_MASK, gpio.GpioModeOutputSlowSpeed | gpio.GpioCnfOutputPushPull);
-    TX_PORT.Init(TX_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfAlternatePushPull);
+    rcc.rcc.apb2pcenr = rcc.RccCfgrApb2pcEnr{.iopaen = true, .afioen = true};
+    rcc.rcc.apb1pcenr = rcc.RccCfgrApb1pcEnr{.usart2en = true};
+    LED_PORT.Init(LED_PIN_MASK, gpio.GpioModeOutput | gpio.GpioCnfOutputPushPull);
+    TX_PORT.Init(TX_PIN_MASK, gpio.GpioModeOutput | gpio.GpioCnfAlternatePushPull);
     RX_PORT.bshr = RX_PIN_MASK; // pullup
     RX_PORT.Init(RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
-    usart.usart1.init(115200, cpu.cpu.current_frequency);
-    pfic.pfic.interrupt_enable(interrupts.Interrupt.USART1.to_u8());
+    USART_INSTANCE.init(115200, cpu.cpu.current_frequency);
+    pfic.pfic.interrupt_enable(interrupts.Interrupt.USART2.to_u8());
 }
 
 export fn main() callconv(.c) noreturn {

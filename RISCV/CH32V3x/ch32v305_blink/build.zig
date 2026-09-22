@@ -39,7 +39,7 @@ pub fn build(b: *std.Build) !void {
     });
 
     const cpu = b.addModule("cpu", .{
-        .root_source_file = b.path("../lib/cpu.zig"),
+        .root_source_file = b.path("../../ch32lib/cpu.zig"),
         .target = target,
         .optimize = optimize,
         .imports = &.{
@@ -61,13 +61,19 @@ pub fn build(b: *std.Build) !void {
     });
 
     const pfic = b.addModule("pfic", .{
-        .root_source_file = b.path("../lib/pfic.zig"),
+        .root_source_file = b.path("../../ch32lib/pfic.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const interrupts = b.addModule("interrupts", .{
+        .root_source_file = b.path("../lib/interrupts.zig"),
         .target = target,
         .optimize = optimize
     });
 
     const system_timer = b.addModule("system_timer", .{
-        .root_source_file = b.path("../lib/system_timer.zig"),
+        .root_source_file = b.path("../../ch32lib/system_timer64.zig"),
         .target = target,
         .optimize = optimize,
         .imports = &.{
@@ -102,6 +108,7 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "usart", .module = usart },
                 .{ .name = "cpu", .module = cpu },
                 .{ .name = "pfic", .module = pfic },
+                .{ .name = "interrupts", .module = interrupts },
                 .{ .name = "usart_writer", .module = usart_writer }
             },
         }),

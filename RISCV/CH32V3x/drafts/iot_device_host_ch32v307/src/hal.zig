@@ -5,10 +5,11 @@ const usart = @import("usart");
 const system_timer = @import("system_timer");
 const cpu = @import("cpu");
 const pfic = @import("pfic");
+const interrupts = @import("interrupts");
 const usart_writer = @import("usart_writer");
 const spi = @import("spi");
 const timer = @import("timer");
-const eth = @import("eth");
+const eth_driver = @import("eth_driver");
 const builtin = @import("builtin");
 
 const LED_BLUE_PORT = gpio.gpiob;
@@ -90,7 +91,7 @@ inline fn init_usart() void {
     USART_RX_PORT.bshr = USART_RX_PIN_MASK; // pullup
     USART_RX_PORT.Init(USART_RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
     usart_instance.init(115200, cpu.cpu.current_frequency);
-    pfic.pfic.interrupt_enable(pfic.Interrupt.UART4);
+    pfic.pfic.interrupt_enable(interrupts.Interrupt.UART4.to_u8());
     usart_writer.usart_writer.writeCharFunc = usartWrite;
 }
 
@@ -105,7 +106,7 @@ inline fn init_timer() void {
     timer.bctm6.psc = @truncate(cpu.cpu.current_frequency / 10000 - 1);
     timer.bctm6.atrlr.value16 = 1000 - 1; //0.1 second interval
     timer.bctm6.dmaintenr = timer.TimerDmaIntEnr{.uie = true};
-    pfic.pfic.interrupt_enable(pfic.Interrupt.TIM6);
+    pfic.pfic.interrupt_enable(interrupts.Interrupt.TIM6.to_u8());
     timer_interrupt = false;
 }
 

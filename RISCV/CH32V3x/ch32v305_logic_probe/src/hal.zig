@@ -5,6 +5,7 @@ const usart = @import("usart");
 const system_timer = @import("system_timer");
 const cpu = @import("cpu");
 const pfic = @import("pfic");
+const interrupts = @import("interrupts");
 const usart_writer = @import("usart_writer");
 const dac = @import("dac");
 const spi = @import("spi");
@@ -122,7 +123,7 @@ inline fn init_usart() void {
     USART_RX_PORT.bshr = USART_RX_PIN_MASK; // pullup
     USART_RX_PORT.Init(USART_RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
     usart.usart3.init(115200, cpu.cpu.current_frequency);
-    pfic.pfic.interrupt_enable(pfic.Interrupt.USART3);
+    pfic.pfic.interrupt_enable(interrupts.Interrupt.USART3.to_u8());
     usart_writer.usart_writer.writeCharFunc = usartWrite;
 }
 
@@ -144,7 +145,7 @@ inline fn init_timer() void {
     timer.bctm6.psc = @truncate(cpu.cpu.current_frequency / 10000 - 1);
     timer.bctm6.atrlr.value16 = 1000 - 1; //0.1 second interval
     timer.bctm6.dmaintenr = timer.TimerDmaIntEnr{.uie = true};
-    pfic.pfic.interrupt_enable(pfic.Interrupt.TIM6);
+    pfic.pfic.interrupt_enable(interrupts.Interrupt.TIM6.to_u8());
     timer_interrupt = false;
 }
 
@@ -158,7 +159,7 @@ inline fn init_exti() void {
     afio.afio.exticr2.exti6 = .portb;
     exti.exti.rtenr = FPGA_INT_PIN_MASK;  // rising edge
     exti.exti.intenr = FPGA_INT_PIN_MASK; // interrupt enable
-    pfic.pfic.interrupt_enable(pfic.Interrupt.EXTI9_5);
+    pfic.pfic.interrupt_enable(interrupts.Interrupt.EXTI9_5.to_u8());
     fpga_interrupt = false;
 }
 

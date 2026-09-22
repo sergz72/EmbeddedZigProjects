@@ -4,7 +4,9 @@ pub fn build(b: *std.Build) !void {
     var riscv_features_add = std.Target.Cpu.Feature.Set.empty;
     const riscv_features = std.Target.riscv.Feature;
 
-    riscv_features_add.addFeature(@intFromEnum(riscv_features.e));
+    riscv_features_add.addFeature(@intFromEnum(riscv_features.i));
+    riscv_features_add.addFeature(@intFromEnum(riscv_features.m));
+    riscv_features_add.addFeature(@intFromEnum(riscv_features.a));
     riscv_features_add.addFeature(@intFromEnum(riscv_features.c));     // Compressed Instructions
     riscv_features_add.addFeature(@intFromEnum(riscv_features.zicsr));
     riscv_features_add.addFeature(@intFromEnum(riscv_features.relax));
@@ -24,12 +26,6 @@ pub fn build(b: *std.Build) !void {
 
     const optimize = b.standardOptimizeOption(.{});
 
-    const flash = b.addModule("flash", .{
-        .root_source_file = b.path("../lib/flash.zig"),
-        .target = target,
-        .optimize = optimize
-    });
-
     const rcc = b.addModule("rcc", .{
         .root_source_file = b.path("../lib/rcc.zig"),
         .target = target,
@@ -39,15 +35,23 @@ pub fn build(b: *std.Build) !void {
     const cpu = b.addModule("cpu", .{
         .root_source_file = b.path("../../ch32lib/cpu.zig"),
         .target = target,
-        .optimize = optimize,
-        .imports = &.{
-            .{ .name = "flash", .module = flash },
-            .{ .name = "rcc", .module = rcc },
-        },
+        .optimize = optimize
     });
 
     const gpio = b.addModule("gpio", .{
         .root_source_file = b.path("../lib/gpio.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const afio = b.addModule("afio", .{
+        .root_source_file = b.path("../lib/afio.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const interrupts = b.addModule("interrupts", .{
+        .root_source_file = b.path("../lib/interrupts.zig"),
         .target = target,
         .optimize = optimize
     });
@@ -59,7 +63,7 @@ pub fn build(b: *std.Build) !void {
     });
 
     const system_timer = b.addModule("system_timer", .{
-        .root_source_file = b.path("../../ch32lib/system_timer32.zig"),
+        .root_source_file = b.path("../../ch32lib/system_timer64.zig"),
         .target = target,
         .optimize = optimize,
         .imports = &.{
@@ -68,8 +72,20 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const usart = b.addModule("usart", .{
+        .root_source_file = b.path("../lib/usart.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const usart_writer = b.addModule("usart_writer", .{
+        .root_source_file = b.path("../../../common_lib/usart_writer.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const riscv_exe = b.addExecutable(.{
-        .name = "ch32v003_blink.elf",
+        .name = "ch32x033_blink.elf",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
             .target = target,
@@ -77,7 +93,13 @@ pub fn build(b: *std.Build) !void {
             .imports = &.{
                 .{ .name = "rcc", .module = rcc },
                 .{ .name = "gpio", .module = gpio },
+                .{ .name = "afio", .module = afio },
                 .{ .name = "system_timer", .module = system_timer },
+                .{ .name = "usart", .module = usart },
+                .{ .name = "cpu", .module = cpu },
+                .{ .name = "pfic", .module = pfic },
+                .{ .name = "interrupts", .module = interrupts },
+                .{ .name = "usart_writer", .module = usart_writer }
             },
         }),
     });
@@ -87,7 +109,7 @@ pub fn build(b: *std.Build) !void {
     riscv_exe.link_data_sections = true;
     riscv_exe.lto = .full;                     // Whole-program optimization & inlining
 
-    riscv_exe.root_module.addAssemblyFile(b.path("../startup_ch32v00x.S"));
+    riscv_exe.root_module.addAssemblyFile(b.path("../startup_ch32x035.S"));
 
     riscv_exe.setLinkerScript(b.path("../Link.ld"));
 
