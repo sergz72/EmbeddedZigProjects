@@ -38,19 +38,19 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
-    const gpio = b.addModule("gpio", .{
-        .root_source_file = b.path("../lib/gpio.zig"),
+    const gpio_common = b.addModule("gpio_common", .{
+        .root_source_file = b.path("../../ch32lib/gpio_common.zig"),
         .target = target,
         .optimize = optimize
     });
 
-    const gpio_common = b.addModule("gpio_common", .{
-        .root_source_file = b.path("../../ch32lib/gpio_common.zig"),
+    const gpio = b.addModule("gpio", .{
+        .root_source_file = b.path("../lib/gpio.zig"),
         .target = target,
         .optimize = optimize,
         .imports = &.{
-            .{ .name = "gpio", .module = gpio }
-        },
+            .{ .name = "gpio_common", .module = gpio_common }
+        }
     });
 
     const afio = b.addModule("afio", .{
@@ -197,7 +197,6 @@ pub fn build(b: *std.Build) !void {
         .imports = &.{
             .{ .name = "rcc", .module = rcc },
             .{ .name = "gpio", .module = gpio },
-            .{ .name = "gpio_common", .module = gpio_common },
             .{ .name = "afio", .module = afio },
             .{ .name = "system_timer", .module = system_timer },
             .{ .name = "usart", .module = usart },

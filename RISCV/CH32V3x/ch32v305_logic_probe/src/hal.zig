@@ -1,6 +1,5 @@
 const rcc = @import("rcc");
 const gpio = @import("gpio");
-const gpio_common = @import("gpio_common");
 const afio = @import("afio");
 const usart = @import("usart");
 const system_timer = @import("system_timer");
@@ -106,26 +105,26 @@ pub fn usart_write(byte: u8) void {
 }
 
 inline fn init_usart() void {
-    gpio_common.init(USART_TX_PORT, USART_TX_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfAlternatePushPull);
+    USART_TX_PORT.init(USART_TX_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfAlternatePushPull);
     USART_RX_PORT.bshr = USART_RX_PIN_MASK; // pullup
-    gpio_common.init(USART_RX_PORT, USART_RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
+    USART_RX_PORT.init(USART_RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
     usart.usart3.init(115200, cpu.cpu.current_frequency);
     pfic.pfic.interrupt_enable(interrupts.Interrupt.USART3.to_u8());
     usart_writer.usart_writer.writeCharFunc = usart_write;
 }
 
 inline fn init_spi() void {
-    gpio_common.init(SPI_PORT, SPI_TX_PIN_MASK|SPI_CLK_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfAlternatePushPull);
+    SPI_PORT.init(SPI_TX_PIN_MASK|SPI_CLK_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfAlternatePushPull);
     SPI_PORT.bshr = SPI_RX_PIN_MASK; // pullup
-    gpio_common.init(SPI_PORT, SPI_RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
+    SPI_PORT.init(SPI_RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
     spi.spi2.ctlr1 = spi.SpiCtlr1{.mstr = true, .spe = true, .br = .div8, .ssi = true, .ssm = true};
 }
 
 inline fn init_lcd() void {
     LCD_CS_PORT.bshr = LCD_CS_PIN_MASK;
-    gpio_common.init(LCD_CS_PORT, LCD_CS_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfOutputPushPull);
-    gpio_common.init(LCD_RESET_PORT, LCD_RESET_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfOutputPushPull);
-    gpio_common.init(LCD_DC_PORT, LCD_DC_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfOutputPushPull);
+    LCD_CS_PORT.init(LCD_CS_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfOutputPushPull);
+    LCD_RESET_PORT.init(LCD_RESET_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfOutputPushPull);
+    LCD_DC_PORT.init(LCD_DC_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfOutputPushPull);
 }
 
 inline fn init_timer() void {
@@ -142,7 +141,7 @@ pub inline fn start_timer() void {
 
 inline fn init_exti() void {
     FPGA_INT_PORT.bcr = FPGA_INT_PIN_MASK; // pulldown
-    gpio_common.init(FPGA_INT_PORT, FPGA_INT_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
+    FPGA_INT_PORT.init(FPGA_INT_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
     afio.afio.exticr2.exti6 = .portb;
     exti.exti.rtenr = FPGA_INT_PIN_MASK;  // rising edge
     exti.exti.intenr = FPGA_INT_PIN_MASK; // interrupt enable
@@ -152,7 +151,7 @@ inline fn init_exti() void {
 
 inline fn init_fpga() void {
     init_exti();
-    gpio_common.init(FPGA_CS_PORT, FPGA_CS_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfOutputPushPull);
+    FPGA_CS_PORT.init(FPGA_CS_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfOutputPushPull);
 }
 
 pub inline fn fpga_set_cs() void {
@@ -160,12 +159,12 @@ pub inline fn fpga_set_cs() void {
 }
 
 inline fn init_dac() void {
-    gpio_common.init(DAC_PORT, DAC_PIN_MASK, gpio.GpioModeInput | gpio.GpioCnfInputAnalog);
+    DAC_PORT.init(DAC_PIN_MASK, gpio.GpioModeInput | gpio.GpioCnfInputAnalog);
     dac.dac.ctlr = dac.DacCtlr{.ch2 = dac.DacCtlrChannel{.en = true}};
 }
 
 inline fn init_clkout() void {
-    gpio_common.init(MCO_PORT, MCO_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfAlternatePushPull);
+    MCO_PORT.init(MCO_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfAlternatePushPull);
     rcc.rcc.cfgr0.mco = .plldiv2;
 }
 
@@ -196,7 +195,7 @@ export fn SystemInit() callconv(.c) void {
     };
     rcc.rcc.apb1pcenr = rcc.RccCfgrApb1pcEnr{.dacen = true, .usart3en = true, .spi2en = true, .tim6en = true};
 
-    gpio_common.init(LED_PORT, LED_PIN_MASK, gpio.GpioModeOutputSlowSpeed | gpio.GpioCnfOutputPushPull);
+    LED_PORT.init(LED_PIN_MASK, gpio.GpioModeOutputSlowSpeed | gpio.GpioCnfOutputPushPull);
 
     init_dac();
     init_clkout();

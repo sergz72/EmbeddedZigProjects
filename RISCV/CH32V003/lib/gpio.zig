@@ -1,3 +1,5 @@
+const gpio_common = @import("gpio_common");
+
 const GPIOA_BASE: usize = 0x40010800;
 const GPIOC_BASE: usize = 0x40011000;
 const GPIOD_BASE: usize = 0x40011400;
@@ -22,7 +24,11 @@ pub const Gpio = extern struct {
     outdr: u32,
     bshr: u32,
     bcr: u32,
-    lckr: u32
+    lckr: u32,
+
+    pub fn init(self: *volatile Gpio, pins: u8, mode_and_speed: u32) void {
+        gpio_common.init_reg(@truncate(pins), mode_and_speed, &self.cfglr);
+    }
 };
 
 pub const gpioa: *volatile Gpio = @ptrFromInt(GPIOA_BASE);

@@ -1,6 +1,5 @@
 const rcc = @import("rcc");
 const gpio = @import("gpio");
-const gpio_common = @import("gpio_common");
 const afio = @import("afio");
 const usart = @import("usart");
 const cpu = @import("cpu");
@@ -10,17 +9,17 @@ const interrupts = @import("interrupts");
 const usart_writer = @import("usart_writer");
 
 const LED_PIN = 4;
-const LED_PIN_MASK: u16 = 1 << LED_PIN;
+const LED_PIN_MASK: u24 = 1 << LED_PIN;
 const LED_PORT = gpio.gpioa;
 
 const USART_INSTANCE = usart.usart2;
 
 const TX_PIN = 2;
-const TX_PIN_MASK: u16 = 1 << TX_PIN;
+const TX_PIN_MASK: u24 = 1 << TX_PIN;
 const TX_PORT = gpio.gpioa;
 
 const RX_PIN = 3;
-const RX_PIN_MASK: u16 = 1 << RX_PIN;
+const RX_PIN_MASK: u24 = 1 << RX_PIN;
 const RX_PORT = gpio.gpioa;
 
 export fn USART2_IRQHandler() callconv(.naked) void {
@@ -39,10 +38,10 @@ export fn SystemInit() callconv(.c) void {
     system_timer.delay_init();
     rcc.rcc.apb2pcenr = rcc.RccCfgrApb2pcEnr{.iopaen = true, .afioen = true};
     rcc.rcc.apb1pcenr = rcc.RccCfgrApb1pcEnr{.usart2en = true};
-    gpio_common.init(LED_PORT, LED_PIN_MASK, gpio.GpioModeOutput | gpio.GpioCnfOutputPushPull);
-    gpio_common.init(TX_PORT, TX_PIN_MASK, gpio.GpioModeOutput | gpio.GpioCnfAlternatePushPull);
+    LED_PORT.init(LED_PIN_MASK, gpio.GpioModeOutput | gpio.GpioCnfOutputPushPull);
+    TX_PORT.init(TX_PIN_MASK, gpio.GpioModeOutput | gpio.GpioCnfAlternatePushPull);
     RX_PORT.bshr = RX_PIN_MASK; // pullup
-    gpio_common.init(RX_PORT, RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
+    RX_PORT.init(RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
     USART_INSTANCE.init(115200, cpu.cpu.current_frequency);
     pfic.pfic.interrupt_enable(interrupts.Interrupt.USART2.to_u8());
 }

@@ -1,7 +1,7 @@
 .{
-    .name = .ch32x033_blink,
+    .name = .ch32x033_tests,
     .version = "0.0.0",
-    .fingerprint = 0x36e2fa22c5e0a4a7,
+    .fingerprint = 0x16ba93a194596525,
     .minimum_zig_version = "0.17.0-dev.2056+79a9897cd",
     .paths = .{
         "build.zig",

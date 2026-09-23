@@ -1,6 +1,5 @@
 const rcc = @import("rcc");
 const gpio = @import("gpio");
-const gpio_common = @import("gpio_common");
 const afio = @import("afio");
 const usart = @import("usart");
 const system_timer = @import("system_timer");
@@ -74,18 +73,18 @@ pub fn usart_write(byte: u8) void {
 }
 
 inline fn init_usart() void {
-    gpio_common.init(USART_TX_PORT, USART_TX_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfAlternatePushPull);
+    USART_TX_PORT.init(USART_TX_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfAlternatePushPull);
     USART_RX_PORT.bshr = USART_RX_PIN_MASK; // pullup
-    gpio_common.init(USART_RX_PORT, USART_RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
+    USART_RX_PORT.init(USART_RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
     usart_instance.init(115200, cpu.cpu.current_frequency);
     pfic.pfic.interrupt_enable(interrupts.Interrupt.UART4.to_u8());
     usart_writer.usart_writer.writeCharFunc = usart_write;
 }
 
 inline fn init_spi() void {
-    gpio_common.init(SPI_PORT, SPI_TX_PIN_MASK|SPI_CLK_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfAlternatePushPull);
+    SPI_PORT.init(SPI_TX_PIN_MASK|SPI_CLK_PIN_MASK, gpio.GpioModeOutputFastSpeed | gpio.GpioCnfAlternatePushPull);
     SPI_PORT.bshr = SPI_RX_PIN_MASK; // pullup
-    gpio_common.init(SPI_PORT, SPI_RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
+    SPI_PORT.init(SPI_RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
     spi.spi2.ctlr1 = spi.SpiCtlr1{.mstr = true, .spe = true, .br = .div8, .ssi = true, .ssm = true};
 }
 
@@ -120,8 +119,8 @@ inline fn init_clock() void {
 }
 
 inline fn init_leds() void {
-    gpio_common.init(LED_BLUE_PORT, LED_BLUE_PIN_MASK, gpio.GpioModeOutputSlowSpeed | gpio.GpioCnfOutputPushPull);
-    gpio_common.init(LED_RED_PORT, LED_RED_PIN_MASK, gpio.GpioModeOutputSlowSpeed | gpio.GpioCnfOutputPushPull);
+    LED_BLUE_PORT.init(LED_BLUE_PIN_MASK, gpio.GpioModeOutputSlowSpeed | gpio.GpioCnfOutputPushPull);
+    LED_RED_PORT.init(LED_RED_PIN_MASK, gpio.GpioModeOutputSlowSpeed | gpio.GpioCnfOutputPushPull);
 }
 
 export fn SystemInit() callconv(.c) void {
