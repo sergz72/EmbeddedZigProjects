@@ -23,33 +23,7 @@ pub const Gpio = extern struct {
     outdr: u32,
     bshr: u32,
     bcr: u32,
-    lckr: u32,
-
-    fn init(self: *volatile Gpio, pins: u8, mode_and_speed: u32, index: usize) void {
-        if (pins == 0)
-            return;
-        var pin_mask = pins;
-        var cfgr_mask: u32 = 0x0F;
-        var cfgr = self.cfgr[index];
-        var shift: u5 = 0;
-        while (pin_mask != 0) {
-            if (pin_mask & 1 != 0) {
-                cfgr &= ~cfgr_mask;
-                cfgr |= mode_and_speed << shift;
-            }
-            pin_mask >>= 1;
-            if (pin_mask == 0)
-                break;
-            cfgr_mask <<= 4;
-            shift += 4;
-        }
-        self.cfgr[index] = cfgr;
-    }
-
-    pub fn Init(self: *volatile Gpio, pins: u16, mode_and_speed: u32) void {
-        self.init(@truncate(pins), mode_and_speed, 0);
-        self.init(@truncate(pins >> 8), mode_and_speed, 1);
-    }
+    lckr: u32
 };
 
 pub const gpioa: *volatile Gpio = @ptrFromInt(GPIOA_BASE);

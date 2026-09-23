@@ -1,5 +1,6 @@
 const rcc = @import("rcc");
 const gpio = @import("gpio");
+const gpio_common = @import("gpio_common");
 const afio = @import("afio");
 const usart = @import("usart");
 const cpu = @import("cpu");
@@ -38,10 +39,10 @@ export fn SystemInit() callconv(.c) void {
     system_timer.delay_init();
     rcc.rcc.apb2pcenr = rcc.RccCfgrApb2pcEnr{.iopaen = true, .afioen = true};
     rcc.rcc.apb1pcenr = rcc.RccCfgrApb1pcEnr{.usart2en = true};
-    LED_PORT.Init(LED_PIN_MASK, gpio.GpioModeOutput | gpio.GpioCnfOutputPushPull);
-    TX_PORT.Init(TX_PIN_MASK, gpio.GpioModeOutput | gpio.GpioCnfAlternatePushPull);
+    gpio_common.init(LED_PORT, LED_PIN_MASK, gpio.GpioModeOutput | gpio.GpioCnfOutputPushPull);
+    gpio_common.init(TX_PORT, TX_PIN_MASK, gpio.GpioModeOutput | gpio.GpioCnfAlternatePushPull);
     RX_PORT.bshr = RX_PIN_MASK; // pullup
-    RX_PORT.Init(RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
+    gpio_common.init(RX_PORT, RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
     USART_INSTANCE.init(115200, cpu.cpu.current_frequency);
     pfic.pfic.interrupt_enable(interrupts.Interrupt.USART2.to_u8());
 }

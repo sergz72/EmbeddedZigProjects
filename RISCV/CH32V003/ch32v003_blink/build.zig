@@ -52,6 +52,15 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const gpio_common = b.addModule("gpio_common", .{
+        .root_source_file = b.path("../../ch32lib/gpio_common.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "gpio", .module = gpio },
+        },
+    });
+
     const pfic = b.addModule("pfic", .{
         .root_source_file = b.path("../../ch32lib/pfic.zig"),
         .target = target,
@@ -77,6 +86,7 @@ pub fn build(b: *std.Build) !void {
             .imports = &.{
                 .{ .name = "rcc", .module = rcc },
                 .{ .name = "gpio", .module = gpio },
+                .{ .name = "gpio_common", .module = gpio_common },
                 .{ .name = "system_timer", .module = system_timer },
             },
         }),
