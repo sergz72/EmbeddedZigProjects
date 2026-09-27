@@ -1,4 +1,4 @@
-pub fn init_reg(pins: u8, mode_and_speed: u32, reg: *volatile u32) void {
+pub fn initReg(pins: u8, mode_and_speed: u32, reg: *volatile u32) void {
     if (pins == 0)
         return;
     var pin_mask = pins;

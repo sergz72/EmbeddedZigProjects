@@ -12,7 +12,7 @@ pub const SimpleAllocator = struct {
     item_lo_mask: usize = undefined,
     first_free_index: usize = 0,
 
-    pub fn init_buffer(instance: *SimpleAllocator, buffer: []u8) void {
+    pub fn initBuffer(instance: *SimpleAllocator, buffer: []u8) void {
         instance.item_size = @as(usize, 1) << instance.item_alignment;
         instance.item_lo_mask = instance.item_size - 1;
         const item_hi_mask = ~instance.item_lo_mask;
@@ -48,7 +48,7 @@ pub const SimpleAllocator = struct {
 
         const heap_slice: []u8 = raw_ptr[0..heap_len];
 
-        init_buffer(instance, heap_slice);
+        initBuffer(instance, heap_slice);
     }
 
     pub fn allocator(self: *SimpleAllocator) Allocator {
@@ -63,7 +63,7 @@ pub const SimpleAllocator = struct {
         };
     }
 
-    pub fn get_free_size(self: *const SimpleAllocator) usize {
+    pub fn getFreeSize(self: *const SimpleAllocator) usize {
         var free_size: usize = 0;
         for (0..self.control_array.len) |idx| {
             if (self.control_array[idx] == 0)
@@ -113,7 +113,7 @@ pub const SimpleAllocator = struct {
         return null;
     }
 
-    pub fn free_mem(self: *SimpleAllocator, buf: []u8) bool {
+    pub fn freeMem(self: *SimpleAllocator, buf: []u8) bool {
         const buf_address = @intFromPtr(buf.ptr);
         // buffer address is misaligned
         if (buf_address & self.item_lo_mask != 0)
@@ -151,14 +151,14 @@ test "alloc test" {
     const testing = std.testing;
     const buffer= try testing.allocator.alignedAlloc(u8, std.mem.Alignment.@"16", 29*1024);
     defer testing.allocator.free(buffer);
-    const sa = SimpleAllocator.init_buffer(buffer, 16);
+    const sa = SimpleAllocator.initBuffer(buffer, 16);
     const io = testing.io;
     var io_source: std.Random.IoSource = .{ .io = io };
     const rand = io_source.interface();
-    try allocator_tests(testing.allocator, sa, rand);
+    try allocatorTests(testing.allocator, sa, rand);
 }
 
-fn allocator_tests(allocator: std.mem.Allocator, test_allocator: SimpleAllocator, rand: std.Random) !void {
+fn allocatorTests(allocator: std.mem.Allocator, test_allocator: SimpleAllocator, rand: std.Random) !void {
     var object_list = try std.ArrayList([]u8).initCapacity(allocator, 1024);
     defer object_list.deinit(allocator);
     var total_allocated: usize = 0;

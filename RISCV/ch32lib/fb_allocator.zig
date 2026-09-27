@@ -8,7 +8,7 @@ var allocator = std.heap.FixedBufferAllocator{
     .end_index = 0
 };
 
-pub fn build_allocator() std.mem.Allocator {
+pub fn buildAllocator() std.mem.Allocator {
     const start_addr = @intFromPtr(&_end);
     const end_addr = @intFromPtr(&_heap_end);
 
@@ -20,6 +20,6 @@ pub fn build_allocator() std.mem.Allocator {
     return allocator.allocator();
 }
 
-pub fn get_free_size() usize {
+pub fn getFreeSize() usize {
     return allocator.buffer.len - allocator.end_index;
 }

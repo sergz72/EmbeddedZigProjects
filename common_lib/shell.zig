@@ -60,7 +60,7 @@ pub const Shell = struct {
         return sh;
     }
 
-    pub fn process_char(self: *Shell, c: u8) void {
+    pub fn processChar(self: *Shell, c: u8) void {
         @setRuntimeSafety(false);
         if (!self.command_ready) {
             if (c == '\r') {
@@ -84,7 +84,7 @@ pub const Shell = struct {
         }
     }
 
-    pub fn register_command(self: *Shell, command: *const ShellCommand) isize {
+    pub fn registerCommand(self: *Shell, command: *const ShellCommand) isize {
         if (self.next_command_idx >= self.commands.len)
             return shell_error_too_many_commands;
         self.commands[self.next_command_idx] = command;
@@ -93,11 +93,11 @@ pub const Shell = struct {
     }
 
     pub fn execute(self: *Shell, command: []const u8) !isize {
-        self.build_args(command);
+        self.buildArgs(command);
         if (self.argc == 0)
             return 0;
         if (self.argc == 1 and std.mem.eql(u8, "help", self.argv[0])) {
-            try self.print_help();
+            try self.printHelp();
             return 0;
         }
         for (self.commands[0..self.next_command_idx]) |cmd| {
@@ -114,14 +114,14 @@ pub const Shell = struct {
         return 0;
     }
 
-    fn print_help(self: *Shell) !void {
+    fn printHelp(self: *Shell) !void {
         _ = try self.writer.writeAll("usage:\n");
         for (self.commands[0..self.next_command_idx]) |cmd| {
             try self.writer.print("{s}\n", .{cmd.help});
         }
     }
 
-    fn build_args(self: *Shell, command: []const u8) void {
+    fn buildArgs(self: *Shell, command: []const u8) void {
         self.argc = 0;
         var start: isize = -1;
         for (0..command.len) |idx| {
@@ -142,7 +142,11 @@ pub const Shell = struct {
     }
 };
 
-test "build_args" {
+fn testEcho(ch: u8) void {
+    _ = ch;
+}
+
+test "buildArgs" {
     const shell_init = ShellInit{
         .max_commands = 50,
         .max_parameters = 10,
@@ -153,9 +157,10 @@ test "build_args" {
 
     const testing = std.testing;
     var allocator: std.heap.DebugAllocator(.{}) = .init;
+    var writer = std.Io.File.stdout().writer(testing.io, &.{}).interface;
     var sh = try Shell.init(&shell_init, allocator.allocator(),
-        std.Io.File.stdout().writer(testing.io, &.{}).interface);
-    sh.build_args("test command 123");
+        &writer, testEcho);
+    sh.buildArgs("test command 123");
     try testing.expectEqual(@as(usize, 3), sh.argc);
     try testing.expectEqualStrings("test", sh.argv[0]);
     try testing.expectEqualStrings("command", sh.argv[1]);

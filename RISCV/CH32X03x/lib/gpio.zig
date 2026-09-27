@@ -24,9 +24,9 @@ pub const Gpio = extern struct {
     bsxr: u32,
 
     pub fn init(self: *volatile Gpio, pins: u24, mode_and_speed: u32) void {
-        gpio_common.init_reg(@truncate(pins), mode_and_speed, &self.cfgr[0]);
-        gpio_common.init_reg(@truncate(pins >> 8), mode_and_speed, &self.cfgr[1]);
-        gpio_common.init_reg(@truncate(pins >> 16), mode_and_speed, &self.cfgxr);
+        gpio_common.initReg(@truncate(pins), mode_and_speed, &self.cfgr[0]);
+        gpio_common.initReg(@truncate(pins >> 8), mode_and_speed, &self.cfgr[1]);
+        gpio_common.initReg(@truncate(pins >> 16), mode_and_speed, &self.cfgxr);
     }
 };
 

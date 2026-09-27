@@ -38,7 +38,7 @@ pub const Interrupt = enum(u8) {
     TIM2_BRK = 53,        // TIM2 Break Interrupt                                 
     TIM3 = 54,            // TIM3 global Interrupt                                
 
-    pub fn to_u8(self: Interrupt) u8 {
+    pub fn toU8(self: Interrupt) u8 {
         return @intFromEnum(self);
     }
 };

@@ -78,7 +78,7 @@ pub const Spi = extern struct {
     reserved8: [5]u16,
     hscr: SpiHscr,
 
-    pub fn send_poll8(self: *volatile Spi, data: []const u8) void {
+    pub fn sendPoll8(self: *volatile Spi, data: []const u8) void {
         for (data) |b| {
             while (!self.statr.txe) {
                 asm volatile ("nop");
@@ -87,13 +87,13 @@ pub const Spi = extern struct {
         }
     }
 
-    pub fn wait_for_transfer_complete(self: *volatile Spi) void {
+    pub fn waitForTransferComplete(self: *volatile Spi) void {
         while (self.statr.bsy) {
             asm volatile ("nop");
         }
     }
 
-    pub fn send_receive_poll8(self: *volatile Spi, data_in: []const u8, data_out: []u8) void {
+    pub fn sendReceivePoll8(self: *volatile Spi, data_in: []const u8, data_out: []u8) void {
         var idx: usize = 0;
         for (data_in) |b| {
             while (!self.statr.txe) {

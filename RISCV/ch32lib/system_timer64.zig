@@ -27,10 +27,10 @@ const Systick = extern struct {
 
 const systick: *volatile Systick = @ptrFromInt(SYSTICK_BASE);
 
-pub fn delay_init() void {
+pub fn delayInit() void {
     p_ms = cpu.cpu.current_frequency / 1000;
     p_us = p_ms / 1000;
-    pfic.pfic.interrupt_enable(pfic.Interrupt.SysTick.to_u8());
+    pfic.pfic.interruptEnable(pfic.Interrupt.SysTick.toU8());
 }
 
 export fn SysTick_Handler() callconv(.naked) void {

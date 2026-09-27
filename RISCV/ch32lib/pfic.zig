@@ -9,7 +9,7 @@ pub const Interrupt = enum(u8) {
     SysTick                = 12,      // 12 System timer Interrupt
     Software               = 14,      // 14 software Interrupt
 
-    pub fn to_u8(self: Interrupt) u8 {
+    pub fn toU8(self: Interrupt) u8 {
         return @intFromEnum(self);
     }
 };
@@ -39,12 +39,12 @@ pub const Pfic = extern struct {
     reserved8: [564]u32,
     sctlr: u32,
 
-    pub fn interrupt_enable(self: *volatile Pfic, interrupt: u8) void {
+    pub fn interruptEnable(self: *volatile Pfic, interrupt: u8) void {
         const shift: u5 = @truncate(interrupt);
         self.ienr[interrupt >> 5] = @as(u32, 1) << shift;
     }
 
-    pub fn interrupt_disable(self: *volatile Pfic, interrupt: u8) void {
+    pub fn interruptDisable(self: *volatile Pfic, interrupt: u8) void {
         const shift: u5 = @truncate(interrupt);
         self.irer[interrupt >> 5] = @as(u32, 1) << shift;
     }

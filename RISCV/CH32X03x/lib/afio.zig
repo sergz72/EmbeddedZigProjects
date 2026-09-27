@@ -59,9 +59,16 @@ pub const AfioExtiCr2 = packed struct(u32) {
     reserved: u16 = 0
 };
 
+pub const AfioUsbPu = enum(u2) {
+    disabled = 0,
+    gpio = 1,
+    _10k = 2,
+    _1k5 = 3
+};
+
 pub const AfioCtlr = packed struct(u32) {
-    udm_pue: u2 = 1,
-    udp_pue: u2 = 1,
+    udm_pue: AfioUsbPu = .gpio,
+    udp_pue: AfioUsbPu = .gpio,
     reserved: u2 = 0,
     usb_phy_v33: bool = true,
     usb_ioen: bool = false,
