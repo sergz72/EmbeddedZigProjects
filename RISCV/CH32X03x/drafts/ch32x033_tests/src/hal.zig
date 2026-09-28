@@ -3,11 +3,11 @@ const rcc = @import("rcc");
 const flash = @import("flash");
 const system_timer = @import("system_timer");
 const afio = @import("afio");
-//const usart = @import("usart");
+const usart = @import("usart");
 const cpu = @import("cpu");
 const pfic = @import("pfic");
 const interrupts = @import("interrupts");
-//const usart_writer = @import("usart_writer");
+const usart_writer = @import("usart_writer");
 const shell = @import("shell");
 const timer = @import("timer");
 const spi = @import("spi");
@@ -16,7 +16,7 @@ const LED_PIN = 4;
 const LED_PIN_MASK: u24 = 1 << LED_PIN;
 const LED_PORT = gpio.gpioa;
 
-//const USART_INSTANCE = usart.usart2;
+const USART_INSTANCE = usart.usart2;
 //--------------------------
 const USART_TX_PIN = 2;
 const USART_TX_PIN_MASK: u24 = 1 << USART_TX_PIN;
@@ -26,39 +26,49 @@ const USART_RX_PIN = 3;
 const USART_RX_PIN_MASK: u124 = 1 << USART_RX_PIN;
 const USART_RX_PORT = gpio.gpioa;
 
-const SPI_PORT = gpio.gpiob;
+const SPI_INSTANCE = spi.spi1;
 //--------------------------
-const SPI_RX_PIN = 14;
+const SPI_PORT = gpio.gpioa;
+//--------------------------
+const SPI_RX_PIN = 6;
 const SPI_RX_PIN_MASK: u24 = 1 << SPI_RX_PIN;
 //--------------------------
-const SPI_TX_PIN = 15;
+const SPI_TX_PIN = 7;
 const SPI_TX_PIN_MASK: u24 = 1 << SPI_TX_PIN;
 //--------------------------
-const SPI_CLK_PIN = 13;
+const SPI_CLK_PIN = 5;
 const SPI_CLK_PIN_MASK: u24 = 1 << SPI_CLK_PIN;
 //--------------------------
-const SPI_CS_PORT = gpio.gpiob;
-const SPI_CS_PIN = 13;
-const SPI_CS_PIN_MASK: u24 = 1 << SPI_CS_PIN;
+const SPI_FLASH_CS_PORT = gpio.gpiob;
+const SPI_FLASH_CS_PIN = 7;
+const SPI_FLASH_CS_PIN_MASK: u24 = 1 << SPI_FLASH_CS_PIN;
+//--------------------------
+const SPI_LCD_CS_PORT = gpio.gpioc;
+const SPI_LCD_CS_PIN = 3;
+const SPI_LCD_CS_PIN_MASK: u24 = 1 << SPI_LCD_CS_PIN;
+//--------------------------
+const SPI_LCD_RESET_PORT = gpio.gpioa;
+const SPI_LCD_RESET_PIN = 0;
+const SPI_LCD_RESET_PIN_MASK: u24 = 1 << SPI_LCD_RESET_PIN;
 
 pub var timer_interrupt: bool = undefined;
 pub var sh: *shell.Shell = undefined;
 
-// fn USART2IRQHandler() callconv(.c) void {
-//     if (USART_INSTANCE.statr.rxne) {
-//         sh.processChar(USART_INSTANCE.datar);
-//     }
-//     asm volatile("mret");
-// }
-//
-// export fn USART2_IRQHandler() callconv(.naked) void {
-//     asm volatile(
-//         \\ call %[handler_fn]
-//         \\ mret
-//         :
-//         : [handler_fn] "i" (&USART2IRQHandler)
-//     );
-// }
+fn USART2IRQHandler() callconv(.c) void {
+    @setRuntimeSafety(false);
+    if (USART_INSTANCE.statr.rxne) {
+        sh.processChar(USART_INSTANCE.datar);
+    }
+}
+
+export fn USART2_IRQHandler() callconv(.naked) void {
+    asm volatile(
+        \\ call %[handler_fn]
+        \\ mret
+        :
+        : [handler_fn] "i" (&USART2IRQHandler)
+    );
+}
 
 export fn TIM3_IRQHandler() callconv(.naked) void {
     if (timer.gptm3.intfr.uif) {
@@ -69,18 +79,18 @@ export fn TIM3_IRQHandler() callconv(.naked) void {
     asm volatile("mret");
 }
 
-// pub fn usartWrite(byte: u8) void {
-//     USART_INSTANCE.write(byte);
-// }
+pub fn usartWrite(byte: u8) void {
+    USART_INSTANCE.write(byte);
+}
 
-// fn initUsart() void {
-//     USART_TX_PORT.init(USART_TX_PIN_MASK, gpio.GpioModeOutput | gpio.GpioCnfAlternatePushPull);
-//     USART_RX_PORT.bshr = USART_RX_PIN_MASK; // pullup
-//     USART_RX_PORT.init(USART_RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
-//     USART_INSTANCE.init(115200, cpu.cpu.current_frequency);
-//     pfic.pfic.interruptEnable(interrupts.Interrupt.USART2.toU8());
-//     usart_writer.usart_writer.writeCharFunc = usartWrite;
-// }
+fn initUsart() void {
+    USART_TX_PORT.init(USART_TX_PIN_MASK, gpio.GpioModeOutput | gpio.GpioCnfAlternatePushPull);
+    USART_RX_PORT.bshr = USART_RX_PIN_MASK; // pullup
+    USART_RX_PORT.init(USART_RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
+    USART_INSTANCE.init(115200, cpu.cpu.current_frequency);
+    pfic.pfic.interruptEnable(interrupts.Interrupt.USART2.toU8());
+    usart_writer.usart_writer.writeCharFunc = usartWrite;
+}
 
 inline fn initTimer() void {
     timer.gptm3.psc = @truncate(cpu.cpu.current_frequency / 10000 - 1);
@@ -104,10 +114,16 @@ inline fn initSpi() void {
     SPI_PORT.init(SPI_TX_PIN_MASK|SPI_CLK_PIN_MASK, gpio.GpioModeOutput | gpio.GpioCnfAlternatePushPull);
     SPI_PORT.bshr = SPI_RX_PIN_MASK; // pullup
     SPI_PORT.init(SPI_RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
-    spi.spi1.ctlr1 = spi.SpiCtlr1{.mstr = true, .spe = true, .br = .div8, .ssi = true, .ssm = true};
+    SPI_INSTANCE.ctlr1 = spi.SpiCtlr1{.mstr = true, .spe = true, .br = .div8, .ssi = true, .ssm = true};
+    SPI_FLASH_CS_PORT.bshr = SPI_FLASH_CS_PIN_MASK; // cs is 1
+    SPI_FLASH_CS_PORT.init(SPI_FLASH_CS_PIN_MASK, gpio.GpioModeOutput | gpio.GpioCnfOutputPushPull);
+    SPI_LCD_CS_PORT.bshr = SPI_LCD_CS_PIN_MASK; // cs is 1
+    SPI_LCD_CS_PORT.init(SPI_LCD_CS_PIN_MASK, gpio.GpioModeOutput | gpio.GpioCnfOutputPushPull);
+    //SPI_LCD_RESET_PORT.bshr = SPI_LCD_RESET_PIN_MASK; // cs is 1
+    SPI_LCD_RESET_PORT.init(SPI_LCD_RESET_PIN_MASK, gpio.GpioModeOutput | gpio.GpioCnfOutputPushPull);
 }
 
-inline fn init_i2c() void {
+inline fn initI2c() void {
 }
 
 export fn SystemInit() callconv(.c) void {
@@ -116,16 +132,60 @@ export fn SystemInit() callconv(.c) void {
     rcc.rcc.apb2pcenr = rcc.RccCfgrApb2pcEnr{.iopaen = true, .afioen = true, .spi1en = true};
     rcc.rcc.apb1pcenr = rcc.RccCfgrApb1pcEnr{.usart2en = true, .i2c1en = true, .tim3en = true};
     LED_PORT.init(LED_PIN_MASK, gpio.GpioModeOutput | gpio.GpioCnfOutputPushPull);
-    //initUsart();
+    initUsart();
     initTimer();
-    //initSpi();
-    //initI2c();
+    initSpi();
+    initI2c();
 }
 
-pub fn led_on() void {
+pub fn ledOn() void {
     LED_PORT.bcr = LED_PIN_MASK;
 }
 
-pub fn led_off() void {
+pub fn ledOff() void {
     LED_PORT.bshr = LED_PIN_MASK;
+}
+
+inline fn spiFlashCsClr() void {
+    SPI_FLASH_CS_PORT.bcr = SPI_FLASH_CS_PIN_MASK;
+}
+
+inline fn spiFlashCsSet() void {
+    SPI_FLASH_CS_PORT.bshr = SPI_FLASH_CS_PIN_MASK;
+}
+
+inline fn spiLcdCsClr() void {
+    SPI_LCD_CS_PORT.bcr = SPI_LCD_CS_PIN_MASK;
+}
+
+inline fn spiLcdCsSet() void {
+    SPI_LCD_CS_PORT.bshr = SPI_LCD_CS_PIN_MASK;
+}
+
+inline fn spiLcdResetClr() void {
+    SPI_LCD_RESET_PORT.bcr = SPI_LCD_RESET_PIN_MASK;
+}
+
+inline fn spiLcdResetSet() void {
+    SPI_LCD_RESET_PORT.bshr = SPI_LCD_RESET_PIN_MASK;
+}
+
+pub fn spiFlashTransfer(write_data: []const u8, read_data: ?[]u8) bool {
+    spiFlashCsClr();
+    SPI_INSTANCE.transferPoll8(write_data, read_data);
+    spiFlashCsSet();
+    return true;
+}
+
+pub fn spiFlashSendReceive(write_data: []const u8, read_data: []u8) bool {
+    spiFlashCsClr();
+    SPI_INSTANCE.transferPoll8(write_data, read_data);
+    spiFlashCsSet();
+    return true;
+}
+
+pub fn spiLcdWrite(data: []u8) void {
+    spiLcdCsClr();
+    SPI_INSTANCE.sendPoll8(data);
+    spiLcdCsSet();
 }

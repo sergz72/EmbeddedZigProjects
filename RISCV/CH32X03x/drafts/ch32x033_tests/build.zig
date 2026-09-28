@@ -81,11 +81,11 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
-    // const usart = b.addModule("usart", .{
-    //     .root_source_file = b.path("../lib/usart.zig"),
-    //     .target = target,
-    //     .optimize = optimize
-    // });
+    const usart = b.addModule("usart", .{
+        .root_source_file = b.path("../lib/usart.zig"),
+        .target = target,
+        .optimize = optimize
+    });
 
     const spi = b.addModule("spi", .{
         .root_source_file = b.path("../lib/spi.zig"),
@@ -123,11 +123,17 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
-    // const usart_writer = b.addModule("usart_writer", .{
-    //     .root_source_file = b.path("../../../common_lib/usart_writer.zig"),
-    //     .target = target,
-    //     .optimize = optimize
-    // });
+    const usart_writer = b.addModule("usart_writer", .{
+        .root_source_file = b.path("../../../common_lib/usart_writer.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const spi_memory = b.addModule("spi_memory", .{
+        .root_source_file = b.path("../../../common_lib/memory/spi_memory.zig"),
+        .target = target,
+        .optimize = optimize
+    });
 
     const hal = b.addModule("hal", .{
         .root_source_file = b.path("src/hal.zig"),
@@ -139,19 +145,19 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "flash", .module = flash },
             .{ .name = "afio", .module = afio },
             .{ .name = "system_timer", .module = system_timer },
-//            .{ .name = "usart", .module = usart },
+            .{ .name = "usart", .module = usart },
             .{ .name = "cpu", .module = cpu },
             .{ .name = "pfic", .module = pfic },
             .{ .name = "interrupts", .module = interrupts },
             .{ .name = "timer", .module = timer },
             .{ .name = "spi", .module = spi },
             .{ .name = "shell", .module = shell },
-//            .{ .name = "usart_writer", .module = usart_writer }
+            .{ .name = "usart_writer", .module = usart_writer }
         }
     });
 
     const i2c_memory_commands = b.addModule("i2c_memory_commands", .{
-        .root_source_file = b.path("src/i2c_memory_commands.zig"),
+        .root_source_file = b.path("../../../common_lib/memory/i2c_memory_commands.zig"),
         .target = target,
         .optimize = optimize,
         .imports = &.{
@@ -160,34 +166,34 @@ pub fn build(b: *std.Build) !void {
         }
     });
 
-    const spi_flash_commands = b.addModule("spi_flash_commands", .{
-        .root_source_file = b.path("src/spi_flash_commands.zig"),
+    const spi_memory_commands = b.addModule("spi_memory_commands", .{
+        .root_source_file = b.path("../../../common_lib/memory/spi_memory_commands.zig"),
         .target = target,
         .optimize = optimize,
         .imports = &.{
             .{ .name = "shell", .module = shell },
-            .{ .name = "spi", .module = spi },
+            .{ .name = "spi_memory", .module = spi_memory },
             .{ .name = "utils", .module = utils },
         }
     });
 
-    const usb_cdc = b.addTranslateC(.{
-        .root_source_file = b.path("../lib/usb/c_lib/ch32x035_usbfs_device_export.h"),
-        .target = target,
-        .optimize = optimize,
-        .link_libc = false
-    });
-
-    const usb_cdc_module = usb_cdc.createModule();
-
-    const usb_writer = b.addModule("usb_writer", .{
-        .root_source_file = b.path("../lib/usb/usb_writer.zig"),
-        .target = target,
-        .optimize = optimize,
-        .imports = &.{
-            .{ .name = "usb_cdc", .module = usb_cdc_module },
-        }
-    });
+    // const usb_cdc = b.addTranslateC(.{
+    //     .root_source_file = b.path("../lib/usb/c_lib/ch32x035_usbfs_device_export.h"),
+    //     .target = target,
+    //     .optimize = optimize,
+    //     .link_libc = false
+    // });
+    //
+    // const usb_cdc_module = usb_cdc.createModule();
+    //
+    // const usb_writer = b.addModule("usb_writer", .{
+    //     .root_source_file = b.path("../lib/usb/usb_writer.zig"),
+    //     .target = target,
+    //     .optimize = optimize,
+    //     .imports = &.{
+    //         .{ .name = "usb_cdc", .module = usb_cdc_module },
+    //     }
+    // });
 
     const riscv_exe = b.addExecutable(.{
         .name = "ch32x033_tests.elf",
@@ -198,48 +204,49 @@ pub fn build(b: *std.Build) !void {
             .imports = &.{
                 .{ .name = "hal", .module = hal },
                 .{ .name = "i2c_memory_commands", .module = i2c_memory_commands },
-                .{ .name = "spi_flash_commands", .module = spi_flash_commands },
+                .{ .name = "spi_memory_commands", .module = spi_memory_commands },
                 .{ .name = "shell", .module = shell },
                 .{ .name = "allocator", .module = allocator },
-//                .{ .name = "usart", .module = usart },
-                .{ .name = "usb_cdc", .module = usb_cdc_module },
-//                .{ .name = "usart_writer", .module = usart_writer }
-                .{ .name = "usb_writer", .module = usb_writer }
+                .{ .name = "usart", .module = usart },
+//                .{ .name = "usb_cdc", .module = usb_cdc_module },
+                .{ .name = "usart_writer", .module = usart_writer },
+//                .{ .name = "usb_writer", .module = usb_writer },
+                .{ .name = "spi_memory", .module = spi_memory }
             },
         }),
     });
 
-    const c_files = [_][]const u8{
-        "../lib/usb/c_lib/ch32x035_usbfs_device.c",
-        "../lib/usb/c_lib/usb_cdc.c",
-        "../lib/usb/c_lib/usb_desc.c"
-    };
-
-    for (c_files) |c_file| {
-        const obj_name = b.fmt("{s}.o", .{std.fs.path.basename(c_file)});
-
-        const cc = b.addSystemCommand(&.{
-            "/opt/MRS_Toolchain/Toolchain/RISC-V_Embedded_GCC15/bin/riscv32-wch-elf-gcc",
-            "-c",
-            "-march=rv32imacxw",
-            "-mabi=ilp32",
-            "-msmall-data-limit=8",
-            "-mno-save-restore",
-            "-fmessage-length=0",
-            "-fsigned-char",
-            "-ffunction-sections",
-            "-fdata-sections",
-            "-Wunused",
-            "-Wuninitialized",
-            "-O3",
-            c_file,
-            "-o"
-        });
-
-        const obj_file = cc.addOutputFileArg(obj_name);
-
-        riscv_exe.root_module.addObjectFile(obj_file);
-    }
+    // const c_files = [_][]const u8{
+    //     "../lib/usb/c_lib/ch32x035_usbfs_device.c",
+    //     "../lib/usb/c_lib/usb_cdc.c",
+    //     "../lib/usb/c_lib/usb_desc.c"
+    // };
+    //
+    // for (c_files) |c_file| {
+    //     const obj_name = b.fmt("{s}.o", .{std.fs.path.basename(c_file)});
+    //
+    //     const cc = b.addSystemCommand(&.{
+    //         "/opt/MRS_Toolchain/Toolchain/RISC-V_Embedded_GCC15/bin/riscv32-wch-elf-gcc",
+    //         "-c",
+    //         "-march=rv32imacxw",
+    //         "-mabi=ilp32",
+    //         "-msmall-data-limit=8",
+    //         "-mno-save-restore",
+    //         "-fmessage-length=0",
+    //         "-fsigned-char",
+    //         "-ffunction-sections",
+    //         "-fdata-sections",
+    //         "-Wunused",
+    //         "-Wuninitialized",
+    //         "-O3",
+    //         c_file,
+    //         "-o"
+    //     });
+    //
+    //     const obj_file = cc.addOutputFileArg(obj_name);
+    //
+    //     riscv_exe.root_module.addObjectFile(obj_file);
+    // }
 
     riscv_exe.link_gc_sections = true;
     riscv_exe.link_function_sections = true;

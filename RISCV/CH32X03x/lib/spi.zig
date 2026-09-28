@@ -107,6 +107,25 @@ pub const Spi = extern struct {
             idx += 1;
         }
     }
+
+    pub fn receivePoll8(self: *volatile Spi, data_out: []u8) void {
+        for (0..data_out.len) |idx| {
+            while (!self.statr.txe) {
+                asm volatile ("nop");
+            }
+            self.datar.b = 0;
+            while (!self.statr.rxne) {
+                asm volatile ("nop");
+            }
+            data_out[idx] = self.datar.b;
+        }
+    }
+
+    pub fn transferPoll8(self: *volatile Spi, write_data: []const u8, read_data: ?[]u8) void {
+        self.sendPoll8(write_data);
+        if (read_data != null)
+            self.receivePoll8(read_data.?);
+    }
 };
 
 pub const spi1: *volatile Spi = @ptrFromInt(SPI1_BASE);

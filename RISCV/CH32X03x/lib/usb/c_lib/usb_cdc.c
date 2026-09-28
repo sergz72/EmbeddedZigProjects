@@ -1,6 +1,7 @@
 #include "board.h"
 #include "usb_cdc.h"
 #include "ch32x035_usbfs_device.h"
+#include <stdio.h>
 
 static unsigned char cdc_rx_buffer[CDC_RX_BUF_LEN];
 static unsigned char *cdc_rx_buffer_write_p, *cdc_rx_buffer_read_p;
@@ -45,6 +46,18 @@ unsigned int CDC_Receive(unsigned char *buffer, unsigned int buffer_size)
     l++;
   }
   return l;
+}
+
+int CDC_getch(void)
+{
+  if (cdc_rx_buffer_read_p != cdc_rx_buffer_write_p)
+  {
+    unsigned char c = *cdc_rx_buffer_read_p++;
+    if (cdc_rx_buffer_read_p >= &cdc_rx_buffer[CDC_RX_BUF_LEN])
+      cdc_rx_buffer_read_p = cdc_rx_buffer;
+    return c;
+  }
+  return EOF;
 }
 
 void CDC_Transmit(unsigned char *buffer, unsigned int length)

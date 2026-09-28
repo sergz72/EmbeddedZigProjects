@@ -1,11 +1,12 @@
 const hal = @import("hal");
 const i2c_memory_commands = @import("i2c_memory_commands");
-const spi_flash_commands = @import("spi_flash_commands");
+const spi_memory_commands = @import("spi_memory_commands");
 const allocator = @import("allocator");
 const shell = @import("shell");
-//const usart_writer = @import("usart_writer");
-const usb_cdc = @import("usb_cdc");
-const usb_writer = @import("usb_writer");
+const usart_writer = @import("usart_writer");
+//const usb_cdc = @import("usb_cdc");
+//const usb_writer = @import("usb_writer");
+const spi_memory = @import("spi_memory");
 
 const shell_init = shell.ShellInit{
     .max_commands = 50,
@@ -17,7 +18,9 @@ const shell_init = shell.ShellInit{
 
 var led_status: bool = undefined;
 var led_counter: usize = undefined;
-var cdc_buffer: [1024]u8 = undefined;
+//var cdc_buffer: [1024]u8 = undefined;
+
+const spi_chip_init: spi_memory.SpiMemoryInit = .{.memory_type = .flash, .address_size = ._3bytes, .qspi = false, .spi_transfer = hal.spiFlashTransfer};
 
 fn ledHandler() void {
     if (!hal.timer_interrupt)
@@ -27,9 +30,9 @@ fn ledHandler() void {
         led_counter = 0;
         led_status = !led_status;
         if (led_status) {
-            hal.led_on();
+            hal.ledOn();
         } else {
-            hal.led_off();
+            hal.ledOff();
         }
     } else {
         led_counter += 1;
@@ -37,16 +40,17 @@ fn ledHandler() void {
 }
 
 export fn main() callconv(.c) noreturn {
-    usb_cdc.USBFS_RCC_Init();
-    usb_cdc.USBFS_Device_Init();
+    //@setRuntimeSafety(false);
+    //usb_cdc.USBFS_RCC_Init();
+    //usb_cdc.USBFS_Device_Init();
 
     const a = allocator.buildAllocator();
 
-//    hal.sh = shell.Shell.init(&shell_init, a, &usart_writer.usart_writer.writer, hal.usartWrite) catch { while (true){} };
-    hal.sh = shell.Shell.init(&shell_init, a, &usb_writer.usb_writer, usb_writer.usbWrite) catch { while (true){} };
+    hal.sh = shell.Shell.init(&shell_init, a, &usart_writer.usart_writer.writer, hal.usartWrite) catch { while (true){} };
+//    hal.sh = shell.Shell.init(&shell_init, a, &usb_writer.usb_writer, usb_writer.usbWrite) catch { while (true){} };
 
-    _ = i2c_memory_commands.registerCommands(hal.sh);
-    _ = spi_flash_commands.registerCommands(hal.sh);
+    i2c_memory_commands.registerCommands(hal.sh) catch { while (true){} };
+    spi_memory_commands.registerCommands(hal.sh, &spi_chip_init, hal.spiFlashSendReceive) catch { while (true){} };
 
     hal.startTimer();
 
@@ -55,10 +59,12 @@ export fn main() callconv(.c) noreturn {
 
     while (true) {
         asm volatile ("wfi");
-        const length = usb_cdc.CDC_Receive(&cdc_buffer, cdc_buffer.len);
-        for (0..length) |idx| {
-            hal.sh.processChar(cdc_buffer[idx]);
-        }
+        // while (true) {
+        //     const c = usb_cdc.CDC_getch();
+        //     if (c == -1)
+        //         break;
+        //     hal.sh.processChar(@intCast(c));
+        // }
         hal.sh.handler() catch { while (true){} };
         ledHandler();
     }

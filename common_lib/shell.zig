@@ -1,7 +1,8 @@
 const std = @import("std");
 
-pub const shell_result_ok: isize = 0;
-pub const shell_error_too_many_commands: isize = 1;
+pub const ShellError = error {
+    too_many_commands
+};
 
 pub const ShellCommand = struct {
     name: []const u8,
@@ -84,16 +85,18 @@ pub const Shell = struct {
         }
     }
 
-    pub fn registerCommand(self: *Shell, command: *const ShellCommand) isize {
+    pub fn registerCommand(self: *Shell, command: *const ShellCommand) ShellError!void {
         if (self.next_command_idx >= self.commands.len)
-            return shell_error_too_many_commands;
+            return ShellError.too_many_commands;
         self.commands[self.next_command_idx] = command;
         self.next_command_idx += 1;
-        return shell_result_ok;
     }
 
     pub fn execute(self: *Shell, command: []const u8) !isize {
-        self.buildArgs(command);
+        if (!self.buildArgs(command)) {
+            _ = try self.writer.writeAll("too many parameters\n");
+            return 1;
+        }
         if (self.argc == 0)
             return 0;
         if (self.argc == 1 and std.mem.eql(u8, "help", self.argv[0])) {
@@ -111,7 +114,7 @@ pub const Shell = struct {
             }
         }
         _ = try self.writer.writeAll("unknown command\n");
-        return 0;
+        return 2;
     }
 
     fn printHelp(self: *Shell) !void {
@@ -121,24 +124,31 @@ pub const Shell = struct {
         }
     }
 
-    fn buildArgs(self: *Shell, command: []const u8) void {
+    fn buildArgs(self: *Shell, command: []const u8) bool {
         self.argc = 0;
-        var start: isize = -1;
+        var start_idx: usize = 0;
+        var start: bool = false;
         for (0..command.len) |idx| {
             if (command[idx] <= ' ') {
-                if (start >= 0) {
-                    self.argv[self.argc] = command[@intCast(start)..idx];
+                if (start) {
+                    if (self.argc >= self.init_data.max_parameters)
+                        return false;
+                    self.argv[self.argc] = command[start_idx..idx];
                     self.argc += 1;
-                    start = -1;
+                    start = false;
                 }
-            } else if (start < 0) {
-                start = @intCast(idx);
+            } else if (!start) {
+                start = true;
+                start_idx = idx;
             }
         }
-        if (start >= 0) {
-            self.argv[self.argc] = command[@intCast(start)..command.len];
+        if (start) {
+            if (self.argc >= self.init_data.max_parameters)
+                return false;
+            self.argv[self.argc] = command[start_idx..command.len];
             self.argc += 1;
         }
+        return true;
     }
 };
 

@@ -10,6 +10,7 @@ void USBFS_RCC_Init(void);
 
 unsigned int CDC_Receive(unsigned char *buffer, unsigned int buffer_size);
 void CDC_Transmit(unsigned char *buffer, unsigned int length);
+int CDC_getch(void);
 
 #ifdef __cplusplus
 }

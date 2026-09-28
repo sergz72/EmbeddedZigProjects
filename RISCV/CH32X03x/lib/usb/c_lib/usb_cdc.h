@@ -3,6 +3,7 @@
 
 void CDC_Init(void);
 void CDC_Rx(unsigned int size);
+int CDC_getch(void);
 
 unsigned int CDC_Receive(unsigned char *buffer, unsigned int buffer_size);
 void CDC_Transmit(unsigned char *buffer, unsigned int length);
