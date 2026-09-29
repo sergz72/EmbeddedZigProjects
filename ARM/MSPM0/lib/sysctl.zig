@@ -1,0 +1,102 @@
+const SYSCTL_BASE: usize = 0x400AF000 + 0x1020;
+
+pub const FlashWaitStates = enum(u4) {
+    upto24Mhz = 0,
+    upto48Mhz = 1,
+    upto80Mhz = 2
+};
+
+pub const SysctlMclkCfg = packed struct(u32) {
+    mdiv: u4 = 0,
+    udiv: u2 = 1,
+    reserved: u2 = 0,
+    flashwait: FlashWaitStates = .upto80Mhz,
+    usemftick: bool = false,
+    reserved2: u3 = 0,
+    usemhfclk: bool = false,
+    reserved3: u3 = 0,
+    usemlfclk: bool = false,
+    stopclkstby: bool = false,
+    mclkdeadchk: bool = false,
+    reserved4: u9 = 0
+};
+
+pub const Sysctl = extern struct {
+    iidx: u32,
+    reserved1: u32,
+    imask: u32,
+    reserved2: u32,
+    ris: u32,
+    reserved3: u32,
+    mis: u32,
+    reserved4: u32,
+    iset: u32,
+    reserved5: u32,
+    iclr: u32,
+    reserved6: u32,
+    nmiiidx: u32,
+    reserved7: [3]u32,
+    nmiris: u32,
+    reserved8: [3]u32,
+    nmiiset: u32,
+    reserved9: u32,
+    nmiiclr: u32,
+    reserved10: [33]u32,
+    sysosccfg: u32,
+    mclkcfg: SysctlMclkCfg,
+    hsclken: u32,
+    hsclkcfg: u32,
+    hfclkclkcfg: u32,
+    lfclkcfg: u32,
+    reserved11: [2]u32,
+    syspllcfg0: u32,
+    syspllcfg1: u32,
+    syspllparam0: u32,
+    syspllparam1: u32,
+    reserved12: [2]u32,
+    genclkcfg: u32,
+    genclken: u32,
+    pmodecfg: u32,
+    reserved13: [3]u32,
+    fcc: u32,
+    reserved14: [7]u32,
+    sysosctrimuser: u32,
+    reserved15: u32,
+    sramboundary: u32,
+    reserved16: u32,
+    systemcfg: u32,
+    reserved17: [31]u32,
+    writelock: u32,
+    clkstatus: u32,
+    sysstatus: u32,
+    dederraddr: u32,
+    reserved18: [4]u32,
+    rstcause: u32,
+    reserved19: [55]u32,
+    resetlevel: u32,
+    resetcmd: u32,
+    borthreshold: u32,
+    borclrcmd: u32,
+    sysoscfclctl: u32,
+    lfxtctl: u32,
+    exlfctl: u32,
+    shdniorel: u32,
+    exrstpin: u32,
+    sysstatusclr: u32,
+    swdcfg: u32,
+    fcccmd: u32,
+    reserved20: [20]u32,
+    pmuopamp: u32,
+    reserved21: [31]u32,
+    shutdnstore0: u32,
+    shutdnstore1: u32,
+    shutdnstore2: u32,
+    shutdnstore3: u32,
+};
+
+pub const sysctl: *volatile Sysctl = @ptrFromInt(SYSCTL_BASE);
+
+test "sizeof test" {
+    const std = @import("std");
+    try std.testing.expectEqual(0x1410-0x1020, @sizeOf(Sysctl));
+}

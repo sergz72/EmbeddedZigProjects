@@ -1,0 +1,14 @@
+.{
+    .name = .mspm0g3507_blink,
+    .version = "0.0.1",
+    .fingerprint = 0x34e2461766d597d, // Changing this has security and trust implications.
+    .minimum_zig_version = "0.17.0-dev.2131+d08989840",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        // For example...
+        //"LICENSE",
+        //"README.md",
+    }
+}

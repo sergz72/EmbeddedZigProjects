@@ -16,12 +16,12 @@ pub const Nvic = extern struct {
     reserved7: [56]u32,
     ipr:  [60]u32,
 
-    pub fn interrupt_enable(self: *volatile Nvic, interrupt: u32) void {
+    pub fn interruptEnable(self: *volatile Nvic, interrupt: u32) void {
         const shift: u5 = @truncate(interrupt);
         self.iser[interrupt >> 5] = @as(u32, 1) << shift;
     }
 
-    pub fn interrupt_disable(self: *volatile Nvic, interrupt: u32) void {
+    pub fn interruptDisable(self: *volatile Nvic, interrupt: u32) void {
         const shift: u5 = @truncate(interrupt);
         self.icer[interrupt >> 5] = @as(u32, 1) << shift;
     }

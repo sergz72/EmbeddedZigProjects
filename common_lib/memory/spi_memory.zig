@@ -20,7 +20,6 @@ pub const SpiMemoryEraseCommand = enum {
 pub const SpiMemoryInit = struct {
     memory_type: SpiMemoryType,
     address_size: SpiMemoryAddressSize,
-    qspi: bool,
 
     write_command: u8 = 2,
     read_command: u8 = 3,
@@ -29,10 +28,6 @@ pub const SpiMemoryInit = struct {
     read_id_command: u8 = 0x9F,
     reset_enable_command: u8 = 0x66,
     reset_command: u8 = 0x99,
-    enter_qspi_mode_command: u8 = 0x35,
-    exit_qspi_mode_command: u8 = 0xF5,
-    qspi_fast_read_command: u8 = 0xEB,
-    qspi_write_command: u8 = 0x38,
     sector_erase_command: u8 = 0x20,
     block32_erase_command: u8 = 0x52,
     block64_erase_command: u8 = 0xD8,
@@ -43,16 +38,12 @@ pub const SpiMemoryInit = struct {
 
 pub const SpiMemory = struct {
     memory_init: *const SpiMemoryInit,
-    current_mode_qspi: bool = false,
 
     pub fn init(self: *SpiMemory, chip_init: *const SpiMemoryInit) void {
         self.memory_init = chip_init;
-        self.current_mode_qspi = false;
     }
 
     pub fn readId(self: *const SpiMemory) ?u32 {
-        if (self.current_mode_qspi)
-            return null;
         var data: [5]u8 = .{self.memory_init.read_id_command, 0, 0, 0, 0};
         if (!self.memory_init.spi_transfer(data[0..1], data[0..3]))
             return null;
@@ -64,5 +55,25 @@ pub const SpiMemory = struct {
         if (!self.memory_init.spi_transfer(&.{self.memory_init.reset_enable_command}, null))
             return false;
         return self.memory_init.spi_transfer(&.{self.memory_init.reset_command}, null);
+    }
+
+    pub fn wren(self: *const SpiMemory) bool {
+
+    }
+
+    pub fn write(self: *const SpiMemory, address: u32, data: []u8) bool {
+
+    }
+
+    fn readCommon(self: *const SpiMemory, command: u8, nop_cycles: usize, address: u32, data: []u8) bool {
+
+    }
+
+    pub fn read(self: *const SpiMemory, address: u32, data: []u8) bool {
+
+    }
+
+    pub fn fastRead(self: *const SpiMemory, address: u32, data: []u8) bool {
+
     }
 };

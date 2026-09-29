@@ -10,11 +10,11 @@ var allocator = simple_allocator.SimpleAllocator{
     .item_alignment = 4,
 };
 
-pub fn build_allocator() std.mem.Allocator {
+pub fn buildAllocator() std.mem.Allocator {
     simple_allocator.SimpleAllocator.init(&allocator, &_end, &_heap_end);
     return allocator.allocator();
 }
 
-pub fn get_free_size() usize {
+pub fn getFreeSize() usize {
     return allocator.get_free_size();
 }
