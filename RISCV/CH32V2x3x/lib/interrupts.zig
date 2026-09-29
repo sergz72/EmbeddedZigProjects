@@ -89,7 +89,7 @@ pub const Interrupt = enum(u8) {
     DMA2_Channel10         = 102,     // DMA2 Channel 10 global Interrupt                     
     DMA2_Channel11         = 103,     // DMA2 Channel 11 global Interrupt
 
-    pub fn to_u8(self: Interrupt) u8 {
+    pub fn toU8(self: Interrupt) u8 {
         return @intFromEnum(self);
     }
 };
