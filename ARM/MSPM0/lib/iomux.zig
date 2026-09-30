@@ -37,9 +37,31 @@ pub const Iomux = extern struct {
     pincm: [251]IomuxPinCm,
 
     pub fn initDigitalOutput(self: *volatile Iomux, pin: u8) void {
+        @setRuntimeSafety(false);
         if (pin >= self.pincm.len)
             return;
         self.pincm[pin] = .{.pf = .gpio, .pc = true};
+    }
+
+    pub fn initPeripheralOutputFunction(self: *volatile Iomux, pin: u8, function: IomuxPf) void {
+        @setRuntimeSafety(false);
+        if (pin >= self.pincm.len)
+            return;
+        self.pincm[pin] = .{.pf = function, .pc = true};
+    }
+
+    pub fn initPeripheralFunction(self: *volatile Iomux, pin: u8, function: IomuxPf) void {
+        @setRuntimeSafety(false);
+        if (pin >= self.pincm.len)
+            return;
+        self.pincm[pin] = .{.pf = function, .pc = true};
+    }
+
+    pub fn initPeripheralInputFunction(self: *volatile Iomux, pin: u8, function: IomuxPf) void {
+        @setRuntimeSafety(false);
+        if (pin >= self.pincm.len)
+            return;
+        self.pincm[pin] = .{.pf = function, .pc = true, .inena = true};
     }
 };
 

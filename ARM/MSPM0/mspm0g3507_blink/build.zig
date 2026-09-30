@@ -22,14 +22,44 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
-    const gpio = b.addModule("gpio", .{
-        .root_source_file = b.path("../lib/gpio.zig"),
+    const common = b.addModule("common", .{
+        .root_source_file = b.path("../lib/common.zig"),
         .target = target,
         .optimize = optimize
     });
 
+    const gpio = b.addModule("gpio", .{
+        .root_source_file = b.path("../lib/gpio.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "common", .module = common }
+        },
+    });
+
     const iomux = b.addModule("iomux", .{
         .root_source_file = b.path("../lib/iomux.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const uart = b.addModule("uart", .{
+        .root_source_file = b.path("../lib/uart.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "common", .module = common }
+        },
+    });
+
+    const nvic = b.addModule("nvic", .{
+        .root_source_file = b.path("../../lib/nvic.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const interrupts = b.addModule("interrupts", .{
+        .root_source_file = b.path("../lib/interrupts.zig"),
         .target = target,
         .optimize = optimize
     });
@@ -53,6 +83,10 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "sysctl", .module = sysctl },
                 .{ .name = "gpio", .module = gpio },
                 .{ .name = "iomux", .module = iomux },
+                .{ .name = "uart", .module = uart },
+                .{ .name = "common", .module = common },
+                .{ .name = "nvic", .module = nvic },
+                .{ .name = "interrupts", .module = interrupts },
                 .{ .name = "system_timer", .module = system_timer },
                 .{ .name = "cpu", .module = cpu }
             },

@@ -1,3 +1,5 @@
+const common = @import("common");
+
 const GPIOA_BASE: usize = 0x400A0000 + 0x400;
 const GPIOB_BASE: usize = 0x400A2000 + 0x400;
 
@@ -15,15 +17,9 @@ pub const GpioGenEvent = extern struct {
     iclr: u32,
 };
 
-pub const GpioGprcmPwren = packed struct(u32) {
-    enable: bool = false,
-    reserved: u23 = 0,
-    key: u8 = 0x26
-};
-
 pub const GpioGprcm = extern struct {
-    pwren: GpioGprcmPwren,
-    rstctl: u32,
+    pwren: common.GprcmPwren,
+    rstctl: common.GprcmRstctl,
     reserved0: [3]u32,
     stat: u32,
 };
@@ -101,7 +97,7 @@ pub const Gpio = extern struct {
     sub1cfg: u32,
 
     pub inline fn enablePower(self: *volatile Gpio) void {
-        self.gprcm.pwren = GpioGprcmPwren{.enable = true};
+        self.gprcm.pwren = common.GprcmPwren{.enable = true};
     }
 
     pub inline fn clearPins(self: *volatile Gpio, mask: u32) void {
@@ -118,6 +114,10 @@ pub const Gpio = extern struct {
 
     pub inline fn enableOutput(self: *volatile Gpio, mask: u32) void {
         self.doeset31_0 = mask;
+    }
+
+    pub inline fn reset(self: *volatile Gpio) void {
+        self.gprcm.rstctl = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
     }
 };
 
