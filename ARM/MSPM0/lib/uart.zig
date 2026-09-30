@@ -1,4 +1,5 @@
-const common = @import("common");
+const builtin = @import("builtin");
+const common = @import("common");//if (builtin.is_test) @import("common.zig") else @import("common");
 
 const UART0_BASE: usize = 0x40108000 + 0x800;
 const UART1_BASE: usize = 0x40100000 + 0x800;
@@ -71,22 +72,6 @@ pub const UartGprcm = extern struct {
     stat: u32,
 };
 
-pub const UartClkDivRatio = enum(u3) {
-    div1 = 0,
-    div2 = 1,
-    div3 = 2,
-    div4 = 3,
-    div5 = 4,
-    div6 = 5,
-    div7 = 6,
-    div8 = 7
-};
-
-pub const UartClkDiv = packed struct(u32) {
-    ratio: UartClkDivRatio = .div1,
-    reserved: u29 = 0
-};
-
 pub const UartMode = enum(u3) {
     normal = 0,
     rs485 = 1,
@@ -144,10 +129,23 @@ pub const UartLcrh = packed struct(u32) {
     reserved2: u6 = 0
 };
 
+pub const UartStat = packed struct(u32) {
+    busy: bool,
+    reserved: u1,
+    rxfe: bool,
+    rxff: bool,
+    reserved2: u2,
+    txfe: bool,
+    txff: bool,
+    cts: bool,
+    idle: bool,
+    reserved3: u22
+};
+
 pub const Uart = extern struct {
     gprcm: UartGprcm,
     reserved1: [506]u32,
-    clkdiv: UartClkDiv,
+    clkdiv: common.ClkDiv,
     reserved2: u32,
     clksel: common.Clksel3,
     reserved3: [3]u32,
@@ -164,7 +162,7 @@ pub const Uart = extern struct {
     reserved8: [6]u32,
     ctl0: UartCtl0,
     lcrh: UartLcrh,
-    stat: u32,
+    stat: UartStat,
     ifls: u32,
     ibrd: u32,
     fbrd: u32,
@@ -195,6 +193,13 @@ pub const Uart = extern struct {
 
     pub inline fn reset(self: *volatile Uart) void {
         self.gprcm.rstctl = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
+    }
+
+    pub fn write(self: *volatile Uart, byte: u8) void {
+        while (self.stat.txff) {
+            asm volatile ("nop");
+        }
+        self.txdata = byte;
     }
 };
 

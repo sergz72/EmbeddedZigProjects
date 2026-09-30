@@ -31,9 +31,7 @@
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 *****************************************************************************/
-/* Generate a link error if heap and stack don't fit into RAM */
-_Min_Heap_Size  = 0;      /* required amount of heap  */
-_Min_Stack_Size = 0x80; /* required amount of stack */
+__stack_size = DEFINED(__stack_size) ? __stack_size : 2K;
 
 /* Specify the memory areas */
 MEMORY
@@ -171,21 +169,6 @@ SECTIONS
         . = ALIGN (8);
     } > REGION_NOINIT AT> REGION_NOINIT
 
-    .heap : {
-        __heap_start__ = .;
-        end = __heap_start__;
-        _end = end;
-        __end = end;
-        KEEP (*(.heap))
-        __heap_end__ = .;
-        __HeapLimit = __heap_end__;
-    } > REGION_HEAP AT> REGION_HEAP
-
-    .stack (NOLOAD) : ALIGN(0x8) {
-        _stack = .;
-        KEEP(*(.stack))
-    } > REGION_STACK AT> REGION_STACK
-
     .BCRConfig :
     {
         KEEP(*(.BCRConfig))
@@ -196,6 +179,16 @@ SECTIONS
         KEEP(*(.BSLConfig))
     } > BSL_CONFIG
 
-    __StackTop = ORIGIN(REGION_STACK) + LENGTH(REGION_STACK);
-    PROVIDE(__stack = __StackTop);
+    PROVIDE( _ebss = .);
+    PROVIDE( _end = _ebss);
+    PROVIDE( end = . );
+
+    .stack ORIGIN(SRAM) + LENGTH(SRAM) - __stack_size :
+    {
+        PROVIDE( _heap_end = . );
+        . = ALIGN(4);
+        PROVIDE(_sstack = . );
+        . = . + __stack_size;
+        PROVIDE( __StackTop = .);
+    } >SRAM
 }
