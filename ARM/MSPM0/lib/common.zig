@@ -19,6 +19,13 @@ pub const Clksel3 = packed struct(u32) {
     reserved2: u28 = 0
 };
 
+pub const Clksel2 = packed struct(u32) {
+    reserved: u2 = 0,
+    mfclksel: bool = false,
+    busclksel: bool = false,
+    reserved2: u28 = 0
+};
+
 pub const ClkDivRatio = enum(u3) {
     div1 = 0,
     div2 = 1,

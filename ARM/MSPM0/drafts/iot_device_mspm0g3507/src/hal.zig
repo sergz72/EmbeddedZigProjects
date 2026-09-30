@@ -10,23 +10,25 @@ const interrupts = @import("interrupts");
 const system_timer = @import("system_timer");
 const shell = @import("shell");
 const timer = @import("gptimer");
+const i2c = @import("i2c");
+const spi = @import("spi");
 const usart_writer = @import("usart_writer");
 
 const LED_PIN = 0;
 const LED_PIN_MASK = 1 << LED_PIN;
-const LED_PIN_IOMUX = 0;
+const LED_PIN_IOMUX = 1;
 const LED_PORT = gpio.gpioa;
 
 const UART_INSTANCE = uart.uart0;
 //--------------------------
 const UART_TX_PIN = 10;
-const UART_TX_PIN_MASK: u24 = 1 << UART_TX_PIN;
-const UART_TX_PIN_IOMUX = 20;
+const UART_TX_PIN_MASK = 1 << UART_TX_PIN;
+const UART_TX_PIN_IOMUX = 21;
 const UART_TX_PORT = gpio.gpioa;
 //--------------------------
 const UART_RX_PIN = 11;
-const UART_RX_PIN_MASK: u124 = 1 << UART_RX_PIN;
-const UART_RX_PIN_IOMUX = 21;
+const UART_RX_PIN_MASK = 1 << UART_RX_PIN;
+const UART_RX_PIN_IOMUX = 22;
 const UART_RX_PORT = gpio.gpioa;
 //------------------------------
 const UART_BAUD_RATE = 115200;
@@ -35,13 +37,29 @@ const UART_FBRD = uart.calculateFbrd(UART_BAUD_RATE, 32000000, 16);
 
 const TIMER_INSTANCE = timer.timg0;
 
+const I2C_INSTANCE = i2c.i2c1;
+//--------------------------
+const I2C_SCL_PIN = 4;
+const I2C_SCL_PIN_MASK = 1 << I2C_SCL_PIN;
+const I2C_SCL_PIN_IOMUX = 9;
+const I2C_SCL_PORT = gpio.gpioa;
+//--------------------------
+const I2C_SDA_PIN = 3;
+const I2C_SDA_PIN_MASK = 1 << I2C_SDA_PIN;
+const I2C_SDA_PIN_IOMUX = 8;
+const I2C_SDA_PORT = gpio.gpioa;
+//------------------------------
+const I2C_SPEED = 100000;
+
 inline fn initPower() void {
     LED_PORT.reset();
     UART_INSTANCE.reset();
     TIMER_INSTANCE.reset();
+    I2C_INSTANCE.reset();
     LED_PORT.enablePower();
     UART_INSTANCE.enablePower();
     TIMER_INSTANCE.enablePower();
+    I2C_INSTANCE.enablePower();
     common.powerStartupDelay();
 }
 
@@ -80,6 +98,30 @@ inline fn initTimer() void {
     nvic.nvic.enableInterrupt(interrupts.Interrupt.TIMG0.toU8());
 }
 
+inline fn initI2C() void {
+    // enable pullups, open-drain
+    iomux.iomux.initPeripheralFunction(I2C_SDA_PIN_IOMUX, .{.pf = .function9, .pc = true, .pipu = true, .hiz1 = true});
+    iomux.iomux.initPeripheralFunction(I2C_SCL_PIN_IOMUX, .{.pf = .function9, .pc = true, .pipu = true, .hiz1 = true});
+    I2C_INSTANCE.clksel = common.Clksel2{.busclksel = true};
+    I2C_INSTANCE.clkdiv = common.ClkDiv{.ratio = .div8};
+
+    // DL_I2C_disableAnalogGlitchFilter(I2C_INST);
+    //
+    // /* Configure Controller Mode */
+    // DL_I2C_resetControllerTransfer(I2C_INST);
+    // /* Set frequency to 100000 Hz*/
+    // DL_I2C_setTimerPeriod(I2C_INST, 3);
+    // DL_I2C_setControllerTXFIFOThreshold(I2C_INST, DL_I2C_TX_FIFO_LEVEL_EMPTY);
+    // DL_I2C_setControllerRXFIFOThreshold(I2C_INST, DL_I2C_RX_FIFO_LEVEL_BYTES_1);
+    // DL_I2C_enableControllerClockStretching(I2C_INST);
+    //
+    // /* Enable module */
+    // DL_I2C_enableController(I2C_INST);
+}
+
+inline fn initSPI() void {
+}
+
 export fn SystemInit() callconv(.c) void {
     sysctl.sysctl.mclkcfg.flashwait = .upto48Mhz;
     system_timer.delay_init(system_timer.init_div1);
@@ -87,6 +129,8 @@ export fn SystemInit() callconv(.c) void {
     initGpio();
     initUart();
     initTimer();
+    initI2C();
+    initSPI();
 }
 
 pub inline fn ledToggle() void {

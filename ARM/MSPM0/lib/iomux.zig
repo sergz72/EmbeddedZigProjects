@@ -10,6 +10,7 @@ pub const IomuxPf = enum(u6) {
     function6 = 6,
     function7 = 7,
     function8 = 8,
+    function9 = 9
 };
 
 pub const IomuxPinCm = packed struct(u32) {
@@ -38,30 +39,30 @@ pub const Iomux = extern struct {
 
     pub fn initDigitalOutput(self: *volatile Iomux, pin: u8) void {
         @setRuntimeSafety(false);
-        if (pin >= self.pincm.len)
+        if (pin == 0 or pin >= self.pincm.len)
             return;
-        self.pincm[pin] = .{.pf = .gpio, .pc = true};
+        self.pincm[pin - 1] = .{.pf = .gpio, .pc = true};
     }
 
     pub fn initPeripheralOutputFunction(self: *volatile Iomux, pin: u8, function: IomuxPf) void {
         @setRuntimeSafety(false);
-        if (pin >= self.pincm.len)
+        if (pin == 0 or pin >= self.pincm.len)
             return;
-        self.pincm[pin] = .{.pf = function, .pc = true};
+        self.pincm[pin - 1] = .{.pf = function, .pc = true};
     }
 
-    pub fn initPeripheralFunction(self: *volatile Iomux, pin: u8, function: IomuxPf) void {
+    pub fn initPeripheralFunction(self: *volatile Iomux, pin: u8, function: IomuxPinCm) void {
         @setRuntimeSafety(false);
-        if (pin >= self.pincm.len)
+        if (pin == 0 or pin >= self.pincm.len)
             return;
-        self.pincm[pin] = .{.pf = function, .pc = true};
+        self.pincm[pin - 1] = function;
     }
 
     pub fn initPeripheralInputFunction(self: *volatile Iomux, pin: u8, function: IomuxPf) void {
         @setRuntimeSafety(false);
-        if (pin >= self.pincm.len)
+        if (pin == 0 or pin >= self.pincm.len)
             return;
-        self.pincm[pin] = .{.pf = function, .pc = true, .inena = true};
+        self.pincm[pin - 1] = .{.pf = function, .pc = true, .inena = true};
     }
 };
 

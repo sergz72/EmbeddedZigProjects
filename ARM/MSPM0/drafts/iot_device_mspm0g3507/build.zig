@@ -82,6 +82,60 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const i2c = b.addModule("i2c", .{
+        .root_source_file = b.path("../lib/i2c.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "common", .module = common }
+        },
+    });
+
+    const spi = b.addModule("spi", .{
+        .root_source_file = b.path("../lib/spi.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "common", .module = common }
+        },
+    });
+
+    const mathacl = b.addModule("mathacl", .{
+        .root_source_file = b.path("../lib/mathacl.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "common", .module = common }
+        },
+    });
+
+    const trng = b.addModule("trng", .{
+        .root_source_file = b.path("../lib/trng.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "common", .module = common }
+        },
+    });
+
+    const wwdt = b.addModule("wwdt", .{
+        .root_source_file = b.path("../lib/wwdt.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "common", .module = common }
+        },
+    });
+
+    const aes = b.addModule("aes", .{
+        .root_source_file = b.path("../lib/aes.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "common", .module = common }
+        },
+    });
+
     const allocator = b.addModule("allocator", .{
         .root_source_file = b.path("../lib/fb_allocator.zig"),
         .target = target,
@@ -116,6 +170,12 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "cpu", .module = cpu },
             .{ .name = "shell", .module = shell },
             .{ .name = "gptimer", .module = gptimer },
+            .{ .name = "i2c", .module = i2c },
+            .{ .name = "spi", .module = spi },
+            .{ .name = "mathacl", .module = mathacl },
+            .{ .name = "trng", .module = trng },
+            .{ .name = "wwdt", .module = wwdt },
+            .{ .name = "aes", .module = aes },
             .{ .name = "usart_writer", .module = usart_writer }
         },
     });
