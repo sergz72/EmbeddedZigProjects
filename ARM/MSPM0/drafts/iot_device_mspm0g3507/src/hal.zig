@@ -13,6 +13,8 @@ const timer = @import("gptimer");
 const i2c = @import("i2c");
 const spi = @import("spi");
 const usart_writer = @import("usart_writer");
+const scd4x = @import("scd4x");
+const veml7700 = @import("veml7700");
 
 const LED_PIN = 0;
 const LED_PIN_MASK = 1 << LED_PIN;
@@ -50,6 +52,9 @@ const I2C_SDA_PIN_IOMUX = 8;
 const I2C_SDA_PORT = gpio.gpioa;
 //------------------------------
 const I2C_SPEED = 100000;
+//------------------------------
+const I2C_TIMEOUT = 10000;
+
 
 inline fn initPower() void {
     LED_PORT.reset();
@@ -138,7 +143,7 @@ pub inline fn startTimer() void {
 pub fn i2c_scan(channel: usize, address: u10) u8 {
     if (channel != 0)
         return 'e';
-    I2C_INSTANCE.scan(address, 10000) catch |err| {
+    I2C_INSTANCE.scan(address, I2C_TIMEOUT) catch |err| {
         if (err == i2c.I2cError.Timeout) {
             return 't';
         }
@@ -147,10 +152,21 @@ pub fn i2c_scan(channel: usize, address: u10) u8 {
     return 0;
 }
 
+pub fn scd_read(data: []u8) bool {
+    I2C_INSTANCE.read(scd4x.SCD4X_SENSOR_ADDR, data, I2C_TIMEOUT) catch return false;
+    return true;
+}
+
+pub fn scd_write(data: []const u8) bool {
+    I2C_INSTANCE.write(scd4x.SCD4X_SENSOR_ADDR, data, I2C_TIMEOUT) catch return false;
+    return true;
+}
+
 pub const panic = std.debug.no_panic;
 
 pub var timer_interrupt: bool = undefined;
 pub var sh: *shell.Shell = undefined;
+pub var scd_device: scd4x.SCD4x = .{.i2c_read = scd_read, .i2c_write = scd_write};
 
 export fn UART0_IRQHandler() callconv(.c) void {
     if (UART_INSTANCE.cpu_int.iidx == .receive_interrupt) {

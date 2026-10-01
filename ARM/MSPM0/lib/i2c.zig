@@ -346,7 +346,7 @@ pub const I2c = extern struct {
         return self.master.mfifosr.txfifocnt == 0;
     }
 
-    pub fn fillControllerTXFIFO(self: *volatile I2c, data: []u8) I2cError!void {
+    pub fn fillControllerTXFIFO(self: *volatile I2c, data: []const u8) I2cError!void {
         for (data) |d| {
             if (self.isControllerTXFIFOFull())
                 return I2cError.TxFifoFull;
@@ -373,7 +373,7 @@ pub const I2c = extern struct {
         self.master.mctr.stop = true;
     }
 
-    pub fn write(self: *volatile I2c, address: u10, data: []u8, timeout: usize) I2cError!void {
+    pub fn write(self: *volatile I2c, address: u10, data: []const u8, timeout: usize) I2cError!void {
         if (data.len >= 4096)
             return I2cError.DataIsTooLarge;
         try self.fillControllerTXFIFO(data);
@@ -387,7 +387,7 @@ pub const I2c = extern struct {
         return self.master.mfifosr.rxfifocnt == 0;
     }
 
-    pub fn transfer(self: *volatile I2c, address: u10, wdata: []u8, rdata: []u8, timeout: usize) I2cError!void {
+    pub fn transfer(self: *volatile I2c, address: u10, wdata: []const u8, rdata: []u8, timeout: usize) I2cError!void {
         if (wdata.len >= 4096 or rdata.len >= 4096)
             return I2cError.DataIsTooLarge;
         try self.fillControllerTXFIFO(wdata);

@@ -136,6 +136,21 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const scd4x = b.addModule("scd4x", .{
+        .root_source_file = b.path("../../../common_lib/sensor/scd4x.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "system_timer", .module = system_timer }
+        }
+    });
+
+    const veml7700 = b.addModule("veml7700", .{
+        .root_source_file = b.path("../../../common_lib/sensor/veml7700.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const allocator = b.addModule("allocator", .{
         .root_source_file = b.path("../lib/fb_allocator.zig"),
         .target = target,
@@ -154,6 +169,26 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
         .imports = &.{
             .{ .name = "shell", .module = shell }
+        }
+    });
+
+    const scd4x_commands = b.addModule("scd4x_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/scd4x_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "scd4x", .module = scd4x }
+        }
+    });
+
+    const veml7700_commands = b.addModule("veml7700_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/veml7700_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "veml7700", .module = veml7700 }
         }
     });
 
@@ -185,7 +220,9 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "trng", .module = trng },
             .{ .name = "wwdt", .module = wwdt },
             .{ .name = "aes", .module = aes },
-            .{ .name = "usart_writer", .module = usart_writer }
+            .{ .name = "usart_writer", .module = usart_writer },
+            .{ .name = "scd4x", .module = scd4x },
+            .{ .name = "veml7700", .module = veml7700 }
         },
     });
 
@@ -200,6 +237,8 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "hal", .module = hal },
                 .{ .name = "shell", .module = shell },
                 .{ .name = "i2c_commands", .module = i2c_commands },
+                .{ .name = "scd4x_commands", .module = scd4x_commands },
+                .{ .name = "veml7700_commands", .module = veml7700_commands },
                 .{ .name = "allocator", .module = allocator },
                 .{ .name = "usart_writer", .module = usart_writer }
             },
