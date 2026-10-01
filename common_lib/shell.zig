@@ -1,7 +1,7 @@
 const std = @import("std");
 
 pub const ShellError = error {
-    too_many_commands
+    TooManyCommands
 };
 
 pub const ShellCommand = struct {
@@ -87,7 +87,7 @@ pub const Shell = struct {
 
     pub fn registerCommand(self: *Shell, command: *const ShellCommand) ShellError!void {
         if (self.next_command_idx >= self.commands.len)
-            return ShellError.too_many_commands;
+            return ShellError.TooManyCommands;
         self.commands[self.next_command_idx] = command;
         self.next_command_idx += 1;
     }

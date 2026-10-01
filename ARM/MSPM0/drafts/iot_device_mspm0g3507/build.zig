@@ -148,6 +148,15 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const i2c_commands = b.addModule("i2c_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/i2c_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell }
+        }
+    });
+
     const usart_writer = b.addModule("usart_writer", .{
         .root_source_file = b.path("../../../common_lib/usart_writer.zig"),
         .target = target,
@@ -190,6 +199,7 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "system_timer", .module = system_timer },
                 .{ .name = "hal", .module = hal },
                 .{ .name = "shell", .module = shell },
+                .{ .name = "i2c_commands", .module = i2c_commands },
                 .{ .name = "allocator", .module = allocator },
                 .{ .name = "usart_writer", .module = usart_writer }
             },

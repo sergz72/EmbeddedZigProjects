@@ -2,6 +2,7 @@ const hal = @import("hal");
 const shell = @import("shell");
 const usart_writer = @import("usart_writer");
 const allocator = @import("allocator");
+const i2c_commands = @import("i2c_commands");
 
 const shell_init = shell.ShellInit{
     .max_commands = 50,
@@ -29,6 +30,7 @@ export fn main() callconv(.c) noreturn {
     const a = allocator.buildAllocator();
 
     hal.sh = shell.Shell.init(&shell_init, a, &usart_writer.usart_writer.writer, hal.usartWrite) catch { while (true){} };
+    i2c_commands.registerCommands(hal.sh, hal.i2c_scan) catch { while (true){} };
 
     led_counter = 0;
 

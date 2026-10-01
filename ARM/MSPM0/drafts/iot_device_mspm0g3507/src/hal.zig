@@ -37,7 +37,7 @@ const UART_FBRD = uart.calculateFbrd(UART_BAUD_RATE, 32000000, 16);
 
 const TIMER_INSTANCE = timer.timg0;
 
-const I2C_INSTANCE = i2c.i2c1;
+pub const I2C_INSTANCE = i2c.i2c1;
 //--------------------------
 const I2C_SCL_PIN = 4;
 const I2C_SCL_PIN_MASK = 1 << I2C_SCL_PIN;
@@ -75,7 +75,7 @@ pub fn usartWrite(byte: u8) void {
 
 inline fn initUart() void {
     iomux.iomux.initPeripheralOutputFunction(UART_TX_PIN_IOMUX, .function2);
-    iomux.iomux.initPeripheralInputFunction(UART_RX_PIN_IOMUX, .function2);
+    iomux.iomux.initPeripheralInputFunctionWithPullup(UART_RX_PIN_IOMUX, .function2);
     UART_INSTANCE.clksel = common.Clksel3{.busclksel = true};
     UART_INSTANCE.clkdiv = common.ClkDiv{.ratio = .div1};
     UART_INSTANCE.setBaudRateDivisor(UART_IBRD, UART_FBRD);
@@ -100,23 +100,17 @@ inline fn initTimer() void {
 
 inline fn initI2C() void {
     // enable pullups, open-drain
-    iomux.iomux.initPeripheralFunction(I2C_SDA_PIN_IOMUX, .{.pf = .function9, .pc = true, .pipu = true, .hiz1 = true});
-    iomux.iomux.initPeripheralFunction(I2C_SCL_PIN_IOMUX, .{.pf = .function9, .pc = true, .pipu = true, .hiz1 = true});
+    iomux.iomux.initPeripheralI2CFunction(I2C_SDA_PIN_IOMUX, .function9);
+    iomux.iomux.initPeripheralI2CFunction(I2C_SCL_PIN_IOMUX, .function9);
     I2C_INSTANCE.clksel = common.Clksel2{.busclksel = true};
     I2C_INSTANCE.clkdiv = common.ClkDiv{.ratio = .div8};
-
-    // DL_I2C_disableAnalogGlitchFilter(I2C_INST);
-    //
-    // /* Configure Controller Mode */
-    // DL_I2C_resetControllerTransfer(I2C_INST);
-    // /* Set frequency to 100000 Hz*/
-    // DL_I2C_setTimerPeriod(I2C_INST, 3);
-    // DL_I2C_setControllerTXFIFOThreshold(I2C_INST, DL_I2C_TX_FIFO_LEVEL_EMPTY);
-    // DL_I2C_setControllerRXFIFOThreshold(I2C_INST, DL_I2C_RX_FIFO_LEVEL_BYTES_1);
-    // DL_I2C_enableControllerClockStretching(I2C_INST);
-    //
-    // /* Enable module */
-    // DL_I2C_enableController(I2C_INST);
+    I2C_INSTANCE.disableAnalogGlitchFilter();
+    I2C_INSTANCE.resetControllerTransfer();
+    I2C_INSTANCE.setSpeed(I2C_SPEED, cpu.cpu.current_frequency / 8);
+    I2C_INSTANCE.setControllerTXFIFOThreshold(0);
+    I2C_INSTANCE.setControllerRXFIFOThreshold(1);
+    I2C_INSTANCE.enableControllerClockStretching();
+    I2C_INSTANCE.enableController();
 }
 
 inline fn initSPI() void {
@@ -139,6 +133,18 @@ pub inline fn ledToggle() void {
 
 pub inline fn startTimer() void {
     TIMER_INSTANCE.startCounter();
+}
+
+pub fn i2c_scan(channel: usize, address: u10) u8 {
+    if (channel != 0)
+        return 'e';
+    I2C_INSTANCE.scan(address, 10000) catch |err| {
+        if (err == i2c.I2cError.Timeout) {
+            return 't';
+        }
+        return 'e';
+    };
+    return 0;
 }
 
 pub const panic = std.debug.no_panic;

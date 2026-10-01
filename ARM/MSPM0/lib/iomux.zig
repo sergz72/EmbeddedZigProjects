@@ -64,6 +64,27 @@ pub const Iomux = extern struct {
             return;
         self.pincm[pin - 1] = .{.pf = function, .pc = true, .inena = true};
     }
+
+    pub fn initPeripheralInputFunctionWithPullup(self: *volatile Iomux, pin: u8, function: IomuxPf) void {
+        @setRuntimeSafety(false);
+        if (pin == 0 or pin >= self.pincm.len)
+            return;
+        self.pincm[pin - 1] = .{.pf = function, .pc = true, .inena = true, .pipu = true};
+    }
+
+    pub fn initPeripheralInputFunctionWithPulldown(self: *volatile Iomux, pin: u8, function: IomuxPf) void {
+        @setRuntimeSafety(false);
+        if (pin == 0 or pin >= self.pincm.len)
+            return;
+        self.pincm[pin - 1] = .{.pf = function, .pc = true, .inena = true, .pipd = true};
+    }
+
+    pub fn initPeripheralI2CFunction(self: *volatile Iomux, pin: u8, function: IomuxPf) void {
+        @setRuntimeSafety(false);
+        if (pin == 0 or pin >= self.pincm.len)
+            return;
+        self.pincm[pin - 1] = .{.pf = function, .pc = true, .inena = true, .pipu = true, .hiz1 = true};
+    }
 };
 
 pub const iomux: *volatile Iomux = @ptrFromInt(IOMUX_BASE);
