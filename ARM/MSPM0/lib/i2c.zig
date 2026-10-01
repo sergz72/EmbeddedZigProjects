@@ -346,7 +346,24 @@ pub const I2c = extern struct {
         return self.master.mfifosr.txfifocnt == 0;
     }
 
+    pub fn flushControllerTXFIFO(self: *volatile I2c) void {
+        self.master.mfifoctl.txflush = true;
+        while (self.master.mfifosr.txfifocnt != 8) {
+            asm volatile("nop");
+        }
+        self.master.mfifoctl.txflush = false;
+    }
+
+    pub fn flushControllerRXFIFO(self: *volatile I2c) void {
+        self.master.mfifoctl.rxflush = true;
+        while (self.master.mfifosr.rxfifocnt != 0) {
+            asm volatile("nop");
+        }
+        self.master.mfifoctl.rxflush = false;
+    }
+
     pub fn fillControllerTXFIFO(self: *volatile I2c, data: []const u8) I2cError!void {
+        self.flushControllerTXFIFO();
         for (data) |d| {
             if (self.isControllerTXFIFOFull())
                 return I2cError.TxFifoFull;
@@ -354,9 +371,9 @@ pub const I2c = extern struct {
         }
     }
 
-    pub fn startControllerTransfer(self: *volatile I2c, address: u10, dir_receive: bool, length: u12) void {
+    pub fn startControllerTransfer(self: *volatile I2c, address: u10, dir_receive: bool, length: u12, ack: bool) void {
         self.master.msa = .{.dir_receive = dir_receive, .taddr = address};
-        self.master.mctr = .{.start = true, .stop = true, .burstrun = true, .cblen = length};
+        self.master.mctr = .{.start = true, .stop = true, .burstrun = true, .cblen = length, .ack = ack};
     }
 
     pub fn startControllerTransmitTransferNoStop(self: *volatile I2c, address: u10, length: u12) void {
@@ -366,7 +383,7 @@ pub const I2c = extern struct {
 
     pub fn startControlleRreceiveTransferRepeatedStart(self: *volatile I2c, address: u10, length: u12) void {
         self.master.msa = .{.dir_receive = true, .taddr = address};
-        self.master.mctr = .{.start = true, .stop = true, .burst_run = true, .cblen = length, .ack = true};
+        self.master.mctr = .{.start = true, .stop = true, .burst_run = true, .cblen = length};//, .ack = true};
     }
 
     pub fn enableStopCondition(self: *volatile I2c) void {
@@ -378,7 +395,7 @@ pub const I2c = extern struct {
             return I2cError.DataIsTooLarge;
         try self.fillControllerTXFIFO(data);
         try self.waitIdle(timeout);
-        self.startControllerTransfer(address, false, @truncate(data.len));
+        self.startControllerTransfer(address, false, @truncate(data.len), false);
         try self.waitBusyBus(timeout);
         try self.waitIdleWithStop(timeout);
     }
@@ -391,6 +408,7 @@ pub const I2c = extern struct {
         if (wdata.len >= 4096 or rdata.len >= 4096)
             return I2cError.DataIsTooLarge;
         try self.fillControllerTXFIFO(wdata);
+        self.flushControllerRXFIFO();
         try self.waitIdle(timeout);
         self.startControllerTransmitTransferNoStop(address, @truncate(wdata.len));
         try self.waitBusy(timeout);
@@ -402,6 +420,10 @@ pub const I2c = extern struct {
         for (0..rdata.len) |idx| {
             var t = timeout;
             while (t != 0) {
+                if (self.master.msr.err) {
+                    self.enableStopCondition();
+                    return I2cError.ErrorStatus;
+                }
                 if (!self.isControllerRXFIFOEmpty())
                     break;
                 t -= 1;
@@ -426,7 +448,8 @@ pub const I2c = extern struct {
         if (data.len >= 4096)
             return I2cError.DataIsTooLarge;
         try self.waitIdle(timeout);
-        self.startControllerTransfer(address, true, @truncate(data.len));
+        self.flushControllerRXFIFO();
+        self.startControllerTransfer(address, true, @truncate(data.len), false);
         try self.receive(data, timeout);
     }
 };
