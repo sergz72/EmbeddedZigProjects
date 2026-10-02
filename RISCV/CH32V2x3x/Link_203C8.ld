@@ -156,7 +156,7 @@ SECTIONS
 		PROVIDE( _edata = .);
 	} >RAM AT>FLASH
 
-	.bss :
+	.bss (NOLOAD) :
 	{
 		. = ALIGN(4);
 		PROVIDE( _sbss = .);
@@ -172,7 +172,7 @@ SECTIONS
 	PROVIDE( _end = _ebss);
 	PROVIDE( end = . );
 
-    .stack ORIGIN(RAM) + LENGTH(RAM) - __stack_size :
+    .stack ORIGIN(RAM) + LENGTH(RAM) - __stack_size (NOLOAD) :
     {
         PROVIDE( _heap_end = . );   
         . = ALIGN(4);

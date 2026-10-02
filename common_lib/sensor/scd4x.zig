@@ -7,7 +7,8 @@ pub const SCD4X_SENSOR_ADDR = 0x62;
 pub const SCD4xError = error {
     InvalidCRC,
     I2CErrorWrite,
-    I2CErrorRead
+    I2CErrorReadStatus,
+    I2CErrorReadMeasurement
 };
 
 pub const SCD4xResult = struct {
@@ -72,7 +73,7 @@ pub const SCD4x = struct {
             return SCD4xError.I2CErrorWrite;
         system_timer.delayms(2);
         if (!self.i2c_read(self.raw_data[0..3]))
-            return SCD4xError.I2CErrorRead;
+            return SCD4xError.I2CErrorReadStatus;
         try self.validateRawDataItem(0);
         return std.mem.readInt(u16, self.raw_data[0..2], .big);
     }
@@ -80,7 +81,7 @@ pub const SCD4x = struct {
     pub fn readMeasurement(self: *SCD4x) SCD4xError!SCD4xResult {
         while (true) {
             const status = try self.getStatus();
-            if (status & 0x3FF != 0)
+            if (status & 0x7FF != 0)
                 break;
             system_timer.delayms(1000);
         }
@@ -89,7 +90,7 @@ pub const SCD4x = struct {
             return SCD4xError.I2CErrorWrite;
         system_timer.delayms(2);
         if (!self.i2c_read(&self.raw_data))
-            return SCD4xError.I2CErrorRead;
+            return SCD4xError.I2CErrorReadMeasurement;
         try self.validateRawData();
         return self.computeValues();
     }
