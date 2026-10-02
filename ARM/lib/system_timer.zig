@@ -42,6 +42,7 @@ export fn SysTick_Handler() callconv(.c) void {
 
 fn delay(n: u24) void {
     systick_interrupt = false;
+    systick.cvr = 0;
     systick.rvr = n;
     systick.csr.enable = true;
     while (!systick_interrupt) {

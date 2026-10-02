@@ -5,7 +5,7 @@ pub fn build(b: *std.Build) !void {
         .cpu_arch = .thumb,
         .os_tag = .freestanding,
         .abi = .eabi,
-        .cpu_model = .{ .explicit = &std.Target.arm.cpu.cortex_m4 }
+        .cpu_model = .{ .explicit = &std.Target.arm.cpu.cortex_m23 }
     });
 
     const optimize = b.standardOptimizeOption(.{});
@@ -51,7 +51,7 @@ pub fn build(b: *std.Build) !void {
     });
 
     const exe = b.addExecutable(.{
-        .name = "gd32f303_blink.elf",
+        .name = "gd32e230_blink.elf",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
             .target = target,
@@ -67,14 +67,15 @@ pub fn build(b: *std.Build) !void {
         }),
     });
 
+    exe.entry = .{ .symbol_name = "Reset_Handler" };
     exe.link_gc_sections = true;
     exe.link_function_sections = true;
     exe.link_data_sections = true;
     exe.lto = .full;                     // Whole-program optimization & inlining
 
-    exe.root_module.addAssemblyFile(b.path("../startup_gd32f30x_hd.S"));
+    exe.root_module.addAssemblyFile(b.path("../startup_gd32e23x.S"));
 
-    exe.setLinkerScript(b.path("../gd32f303xC_flash.ld"));
+    exe.setLinkerScript(b.path("../gd32e230x8_flash.ld"));
 
     b.installArtifact(exe);
 
