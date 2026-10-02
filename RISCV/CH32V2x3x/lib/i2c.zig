@@ -155,19 +155,27 @@ pub const I2c = extern struct {
     }
 
     fn checkMasterModeSelect(self: *volatile I2c) bool {
-        return self.star2.busy and self.star2.msl and self.star1.sb;
+        const s1 = self.star1;
+        const s2 = self.star2;
+        return s1.sb and s2.busy and s2.msl;
     }
 
     fn checkMasterTransmitterModeSelected(self: *volatile I2c) bool {
-        return self.star2.busy and self.star2.msl and self.star2.tra and self.star1.addr and self.star1.txe;
+        const s1 = self.star1;
+        const s2 = self.star2;
+        return s1.addr and s1.txe and s2.busy and s2.msl and s2.tra;
     }
 
     fn checkMasterReceiverModeSelected(self: *volatile I2c) bool {
-        return self.star2.busy and self.star2.msl and self.star1.addr;
+        const s1 = self.star1;
+        const s2 = self.star2;
+        return s1.addr and s2.busy and s2.msl;
     }
 
     fn checkMasterByteTransmitted(self: *volatile I2c) bool {
-        return self.star2.busy and self.star2.msl and self.star2.tra and self.star1.btf and self.star1.txe;
+        const s1 = self.star1;
+        const s2 = self.star2;
+        return s1.btf and s1.txe and s2.busy and s2.msl and s2.tra;
     }
 
     fn waitEvent(self: *volatile I2c, event_fn: *const fn(*volatile I2c) bool, timeout: usize) bool {
