@@ -120,7 +120,10 @@ pub fn build(b: *std.Build) !void {
     const veml7700 = b.addModule("veml7700", .{
         .root_source_file = b.path("../../../common_lib/sensor/veml7700.zig"),
         .target = target,
-        .optimize = optimize
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "system_timer", .module = system_timer }
+        }
     });
 
     const allocator = b.addModule("allocator", .{

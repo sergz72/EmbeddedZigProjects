@@ -40,7 +40,7 @@ export fn main() callconv(.c) noreturn {
     hal.sh = shell.Shell.init(&shell_init, a, &usart_writer.usart_writer.writer, hal.usartWrite) catch { while (true){} };
     i2c_commands.registerCommands(hal.sh, hal.i2cScan) catch { while (true){} };
     scd4x_commands.registerCommands(hal.sh, &hal.scd_device) catch { while (true){} };
-    veml7700_commands.registerCommands(hal.sh) catch { while (true){} };
+    veml7700_commands.registerCommands(hal.sh, &hal.veml_device) catch { while (true){} };
 
     led_status = false;
     led_counter = 0;

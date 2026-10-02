@@ -15,7 +15,7 @@ fn getHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.Wr
     _ = argc;
     _ = argv;
     const result = scd_device.get() catch |err| {
-        try writer.print("{s}\n", .{@errorName(err)});
+        try writer.print("{s} {s}\n", .{@errorName(err), scd_device.i2c_error_name});
         return 1;
     };
     try writer.print("CO2: {}\ntemperature: {}\nhumidity: {}\n",

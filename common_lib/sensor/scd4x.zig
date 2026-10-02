@@ -21,6 +21,7 @@ pub const SCD4x = struct {
     i2c_read: *const fn([]u8) bool,
     i2c_write: *const fn([]const u8) bool,
     raw_data: [SCD4x_RAW_DATA_SIZE]u8 = undefined,
+    i2c_error_name: []const u8 = &.{},
 
     fn validateRawDataItem(self: *const SCD4x, offset: usize) SCD4xError!void {
         const hash_val = std.hash.crc.@"CRC-8/NRSC-5".hash(self.raw_data[offset..offset + 2]);
