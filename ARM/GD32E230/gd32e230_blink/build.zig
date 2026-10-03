@@ -10,12 +10,6 @@ pub fn build(b: *std.Build) !void {
 
     const optimize = b.standardOptimizeOption(.{});
 
-    const flash = b.addModule("flash", .{
-        .root_source_file = b.path("../lib/flash.zig"),
-        .target = target,
-        .optimize = optimize
-    });
-
     const rcu = b.addModule("rcu", .{
         .root_source_file = b.path("../lib/rcu.zig"),
         .target = target,
@@ -34,8 +28,26 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const timer = b.addModule("timer", .{
+        .root_source_file = b.path("../lib/timer.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const usart = b.addModule("usart", .{
+        .root_source_file = b.path("../lib/usart.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const nvic = b.addModule("nvic", .{
         .root_source_file = b.path("../../lib/nvic.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const interrupts = b.addModule("interrupts", .{
+        .root_source_file = b.path("../lib/interrupts.zig"),
         .target = target,
         .optimize = optimize
     });
@@ -57,12 +69,14 @@ pub fn build(b: *std.Build) !void {
             .target = target,
             .optimize = optimize,
             .imports = &.{
-                .{ .name = "flash", .module = flash },
+                .{ .name = "timer", .module = timer },
+                .{ .name = "usart", .module = usart },
                 .{ .name = "rcu", .module = rcu },
                 .{ .name = "gpio", .module = gpio },
                 .{ .name = "system_timer", .module = system_timer },
                 .{ .name = "cpu", .module = cpu },
-                .{ .name = "nvic", .module = nvic }
+                .{ .name = "nvic", .module = nvic },
+                .{ .name = "interrupts", .module = interrupts }
             },
         }),
     });

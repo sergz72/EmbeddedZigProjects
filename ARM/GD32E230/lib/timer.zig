@@ -1,10 +1,10 @@
 const TIMER0_BASE: usize = 0x40012C00;
 const TIMER2_BASE: usize = 0x40000400;
-const TIMER13_BASE: usize = 0x40020000;
+const TIMER13_BASE: usize = 0x40002000;
 const TIMER14_BASE: usize = 0x40014000;
 const TIMER15_BASE: usize = 0x40014400;
 const TIMER16_BASE: usize = 0x40014800;
-const TIMER5_BASE: usize = 0x40010000;
+const TIMER5_BASE: usize = 0x40001000;
 
 pub const TimerCtl0 = packed struct(u32) {
     cen: bool = false,

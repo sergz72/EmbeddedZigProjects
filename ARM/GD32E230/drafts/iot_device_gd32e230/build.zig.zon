@@ -1,0 +1,14 @@
+.{
+    .name = .iot_device_gd32e230,
+    .version = "0.0.1",
+    .fingerprint = 0x16c45d18e741792c, // Changing this has security and trust implications.
+    .minimum_zig_version = "0.17.0-dev.2131+d08989840",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        // For example...
+        //"LICENSE",
+        //"README.md",
+    },
+}

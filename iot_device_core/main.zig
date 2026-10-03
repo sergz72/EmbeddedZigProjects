@@ -14,7 +14,6 @@ const shell_init = shell.ShellInit{
     .history_length = 20
 };
 
-var led_status: bool = undefined;
 var led_counter: usize = undefined;
 
 fn ledHandler() void {
@@ -23,12 +22,7 @@ fn ledHandler() void {
     hal.timer_interrupt = false;
     if (led_counter == 9) {
         led_counter = 0;
-        led_status = !led_status;
-        if (led_status) {
-            hal.ledOn();
-        } else {
-            hal.ledOff();
-        }
+        hal.ledToggle();
     } else {
         led_counter += 1;
     }
@@ -42,7 +36,6 @@ export fn main() callconv(.c) noreturn {
     scd4x_commands.registerCommands(hal.sh, &hal.scd_device) catch { while (true){} };
     veml7700_commands.registerCommands(hal.sh, &hal.veml_device) catch { while (true){} };
 
-    led_status = false;
     led_counter = 0;
 
     hal.startTimer();

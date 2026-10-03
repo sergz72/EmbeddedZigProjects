@@ -50,6 +50,7 @@ pub var timer_interrupt: bool = undefined;
 pub var sh: *shell.Shell = undefined;
 pub var scd_device: scd4x.SCD4x = .{.i2c_read = scdRead, .i2c_write = scdWrite};
 pub var veml_device: veml.VEML7700 = .{.i2c_read = vemlRead, .i2c_write = vemlWrite};
+var led_status: bool = undefined;
 
 fn USART1IRQHandler() callconv(.c) void {
     if (USART_INSTANCE.statr.rxne) {
@@ -124,6 +125,7 @@ pub inline fn initSPI() void {
 }
 
 export fn SystemInit() callconv(.c) void {
+    led_status = false;
     initClock();
     system_timer.delayInit();
     rcc.rcc.apb2pcenr = rcc.RccCfgrApb2pcEnr{.iopben = true, .afioen = true, .usart1en = true};
@@ -183,10 +185,11 @@ pub inline fn startTimer() void {
     TIMER_INSTANCE.ctlr1 = timer.TimerCtlr1{.cen = true, .apre = true};
 }
 
-pub fn ledOn() void {
-    LED_PORT.bshr = LED_PIN_MASK;
-}
-
-pub fn ledOff() void {
-    LED_PORT.bcr = LED_PIN_MASK;
+pub fn ledToggle() void {
+    led_status = !led_status;
+    if (led_status) {
+        LED_PORT.bshr = LED_PIN_MASK;
+    } else {
+        LED_PORT.bcr = LED_PIN_MASK;
+    }
 }

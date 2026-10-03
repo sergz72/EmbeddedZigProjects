@@ -25,7 +25,7 @@ pub const GpioPud = enum(u2) {
 pub const GpioInit = struct {
     mode: GpioMode,
     open_drain: bool = false,
-    output_speed: GpioOutputSpeed,
+    output_speed: GpioOutputSpeed = .low,
     pud: GpioPud = .floating,
     alternate: u4 = 0
 };
@@ -91,6 +91,7 @@ pub const Gpio = extern struct {
         self.ospd = ospd;
         self.pud = pud;
         self.ctl = ctl;
+        self.afsel = afsel;
     }
 };
 

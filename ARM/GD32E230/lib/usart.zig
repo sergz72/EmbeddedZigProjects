@@ -169,7 +169,7 @@ pub const Usart = extern struct {
     rfcs: UsartRfcs,
 
     pub fn init(self: *volatile Usart, baud_rate: u32, apbclock: u32) void {
-        self.brr = apbclock / baud_rate;
+        self.baud = apbclock / baud_rate;
         self.ctl0 = UsartCtl0{.ten = true, .ren = true, .uen = true, .rbneie = true};
     }
 

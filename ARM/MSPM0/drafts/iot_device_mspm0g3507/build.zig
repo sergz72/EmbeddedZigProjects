@@ -148,7 +148,10 @@ pub fn build(b: *std.Build) !void {
     const veml7700 = b.addModule("veml7700", .{
         .root_source_file = b.path("../../../common_lib/sensor/veml7700.zig"),
         .target = target,
-        .optimize = optimize
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "system_timer", .module = system_timer }
+        }
     });
 
     const allocator = b.addModule("allocator", .{
@@ -229,7 +232,7 @@ pub fn build(b: *std.Build) !void {
     const exe = b.addExecutable(.{
         .name = "iot_device_mspm0g3507.elf",
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/main.zig"),
+            .root_source_file = b.path("../../../iot_device_core/main.zig"),
             .target = target,
             .optimize = optimize,
             .imports = &.{

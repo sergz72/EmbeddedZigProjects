@@ -1,7 +1,12 @@
 ﻿var lines = File.ReadAllLines(args[0]);
 var start = false;
 var fields = new List<string>();
-var structNames = new HashSet<string>{"uint32_t"};
+var structNames = new Dictionary<string, string>
+{
+    {"uint32_t", "u32"},
+    {"uint16_t", "u16"},
+    {"uint8_t", "u8"}
+};
 
 foreach (var line in lines)
 {
@@ -28,7 +33,7 @@ void BuildZigStruct(string endLine)
 {
     var parts = endLine.Split(' ', ';');
     var structName = parts[1];
-    structNames.Add(structName);
+    structNames.Add(structName, structName);
     Console.WriteLine("pub const {0} = extern struct {{", structName.ToLower());
     foreach (var field in fields)
         BuildZigField(field);
@@ -38,13 +43,13 @@ void BuildZigStruct(string endLine)
 void BuildZigField(string field)
 {
     var parts = field.Split([' ', ';'], StringSplitOptions.RemoveEmptyEntries);
-    var dataTypes = parts.Intersect(structNames).ToList();
+    var dataTypes = parts.Intersect(structNames.Keys).ToList();
     if (dataTypes.Count != 1)
         return;
     var dataTypeIndex = parts.IndexOf(dataTypes[0]);
     if (dataTypeIndex == -1)
         return;
-    var dataType = dataTypes[0].Replace("uint32_t", "u32").ToLower();
+    var dataType = structNames[dataTypes[0]];
     var fieldName = parts[dataTypeIndex + 1].ToLower();
     var parts2 = fieldName.Split('[');
     if (parts2.Length == 1)

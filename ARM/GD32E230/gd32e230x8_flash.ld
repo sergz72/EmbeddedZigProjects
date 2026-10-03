@@ -132,7 +132,7 @@ SECTIONS
 
   /* provide some necessary symbols for uninitialized data */
   . = ALIGN(4);
-  .bss :
+  .bss (NOLOAD):
   {
     . = ALIGN(4);
     /* the symbol '_sbss' will be defined at the bss section start */
@@ -150,7 +150,7 @@ SECTIONS
   PROVIDE( _end = _ebss);
   PROVIDE( end = . );
 
-  .stack ORIGIN(RAM) + LENGTH(RAM) - __stack_size :
+  .stack ORIGIN(RAM) + LENGTH(RAM) - __stack_size (NOLOAD):
   {
       PROVIDE( _heap_end = . );
       . = ALIGN(4);

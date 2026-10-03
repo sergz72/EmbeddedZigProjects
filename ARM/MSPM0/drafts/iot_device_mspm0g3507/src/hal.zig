@@ -14,7 +14,7 @@ const i2c = @import("i2c");
 const spi = @import("spi");
 const usart_writer = @import("usart_writer");
 const scd4x = @import("scd4x");
-const veml7700 = @import("veml7700");
+const veml = @import("veml7700");
 
 const LED_PIN = 0;
 const LED_PIN_MASK = 1 << LED_PIN;
@@ -140,7 +140,7 @@ pub inline fn startTimer() void {
     TIMER_INSTANCE.startCounter();
 }
 
-pub fn i2c_scan(channel: usize, address: u10) u8 {
+pub fn i2cScan(channel: usize, address: u10) u8 {
     if (channel != 0)
         return 'e';
     I2C_INSTANCE.scan(address, I2C_TIMEOUT) catch |err| {
@@ -152,13 +152,37 @@ pub fn i2c_scan(channel: usize, address: u10) u8 {
     return 0;
 }
 
-pub fn scd_read(data: []u8) bool {
-    I2C_INSTANCE.read(scd4x.SCD4X_SENSOR_ADDR, data, I2C_TIMEOUT) catch return false;
+pub fn scdRead(data: []u8) bool {
+    I2C_INSTANCE.read(scd4x.SCD4X_SENSOR_ADDR, data, I2C_TIMEOUT) catch |err| {
+        scd_device.i2c_error_name = @errorName(err);
+        return false;
+    };
     return true;
 }
 
-pub fn scd_write(data: []const u8) bool {
-    I2C_INSTANCE.write(scd4x.SCD4X_SENSOR_ADDR, data, I2C_TIMEOUT) catch return false;
+pub fn scdWrite(data: []const u8) bool {
+    I2C_INSTANCE.write(scd4x.SCD4X_SENSOR_ADDR, data, I2C_TIMEOUT) catch |err| {
+        scd_device.i2c_error_name = @errorName(err);
+        return false;
+    };
+    return true;
+}
+
+pub fn vemlRead(reg: u8) ?u16 {
+    var rdata: [2]u8 = undefined;
+    I2C_INSTANCE.transfer(veml.VEML7700_I2C_ADDRESS, &[_]u8{ reg }, &rdata, I2C_TIMEOUT) catch |err| {
+        veml_device.i2c_error_name = @errorName(err);
+        return null;
+    };
+    return std.mem.readInt(u16, &rdata, .little);
+}
+
+pub fn vemlWrite(reg: u8, data: u16) bool {
+    const wdata: []const u8 = &.{reg, @truncate(data), @truncate(data >> 8)};
+    I2C_INSTANCE.write(veml.VEML7700_I2C_ADDRESS, wdata, I2C_TIMEOUT) catch |err| {
+        veml_device.i2c_error_name = @errorName(err);
+        return false;
+    };
     return true;
 }
 
@@ -166,7 +190,8 @@ pub const panic = std.debug.no_panic;
 
 pub var timer_interrupt: bool = undefined;
 pub var sh: *shell.Shell = undefined;
-pub var scd_device: scd4x.SCD4x = .{.i2c_read = scd_read, .i2c_write = scd_write};
+pub var scd_device: scd4x.SCD4x = .{.i2c_read = scdRead, .i2c_write = scdWrite};
+pub var veml_device: veml.VEML7700 = .{.i2c_read = vemlRead, .i2c_write = vemlWrite};
 
 export fn UART0_IRQHandler() callconv(.c) void {
     if (UART_INSTANCE.cpu_int.iidx == .receive_interrupt) {
@@ -180,3 +205,4 @@ export fn UART0_IRQHandler() callconv(.c) void {
 export fn TIMG0_IRQHandler() callconv(.c) void {
     timer_interrupt = true;
 }
+
