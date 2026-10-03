@@ -1,7 +1,7 @@
 const cpu = @import("cpu");
 
-const I2C1_BASE: usize = 0x40005400;
-const I2C2_BASE: usize = 0x40005800;
+const I2C0_BASE: usize = 0x40005400;
+const I2C1_BASE: usize = 0x40005800;
 
 pub const I2cError = error {
     TimeoutWaitNotBusy,
@@ -284,8 +284,8 @@ pub const I2c = extern struct {
     }
 };
 
+pub const i2c0: *volatile I2c = @ptrFromInt(I2C0_BASE);
 pub const i2c1: *volatile I2c = @ptrFromInt(I2C1_BASE);
-pub const i2c2: *volatile I2c = @ptrFromInt(I2C2_BASE);
 
 test "sizeof test" {
     const std = @import("std");

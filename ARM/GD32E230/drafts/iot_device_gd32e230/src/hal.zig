@@ -22,9 +22,9 @@ const LED_INIT: gpio.GpioInit = .{
     .output_speed = .low
 };
 
-const USART_INSTANCE = usart.usart1;
+const USART_INSTANCE = usart.usart0;
 
-const USART_TX_PIN = 2;
+const USART_TX_PIN = 9;
 const USART_TX_PIN_MASK: u16 = 1 << USART_TX_PIN;
 const USART_TX_PORT = gpio.gpioa;
 const USART_TX_PIN_INIT: gpio.GpioInit = .{
@@ -33,7 +33,7 @@ const USART_TX_PIN_INIT: gpio.GpioInit = .{
     .alternate = 1
 };
 
-const USART_RX_PIN = 3;
+const USART_RX_PIN = 10;
 const USART_RX_PIN_MASK: u16 = 1 << USART_RX_PIN;
 const USART_RX_PORT = gpio.gpioa;
 const USART_RX_PIN_INIT: gpio.GpioInit = .{
@@ -79,7 +79,7 @@ export fn TIMER5_IRQHandler() callconv(.c) void {
     }
 }
 
-export fn USART1_IRQHandler() callconv(.c) void {
+export fn USART0_IRQHandler() callconv(.c) void {
     if (USART_INSTANCE.stat.rbne) {
         sh.processChar(@truncate(USART_INSTANCE.rdata));
     }
@@ -111,8 +111,8 @@ inline fn initTimer() void {
 inline fn initUsart() void {
     USART_TX_PORT.init(USART_TX_PIN_MASK, USART_TX_PIN_INIT);
     USART_RX_PORT.init(USART_RX_PIN_MASK, USART_RX_PIN_INIT);
-    usart.usart1.init(115200, cpu.cpu.current_frequency);
-    nvic.nvic.enableInterrupt(interrupts.Interrupt.USART1.toU8());
+    USART_INSTANCE.init(115200, cpu.cpu.current_frequency);
+    nvic.nvic.enableInterrupt(interrupts.Interrupt.USART0.toU8());
     usart_writer.usart_writer.writeCharFunc = usartWrite;
 }
 
@@ -128,7 +128,8 @@ export fn SystemInit() callconv(.c) void {
     initClock();
     system_timer.delay_init(system_timer.init_div1);
     rcu.rcu.ahben = .{.paen = true, .pben = true, .pcen = true};
-    rcu.rcu.apb1en = .{.usart1en = true, .timer5en = true, .i2c1en = true};
+    rcu.rcu.apb1en = .{.timer5en = true, .i2c1en = true};
+    rcu.rcu.apb2en = .{.usart0en = true};
     LED_PORT.init(LED_PIN_MASK, LED_INIT);
 
     initTimer();
