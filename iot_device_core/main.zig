@@ -7,6 +7,7 @@ const i2c_commands = @import("i2c_commands");
 const spi_commands = @import("spi_commands");
 const scd4x_commands = @import("scd4x_commands");
 const veml7700_commands = @import("veml7700_commands");
+const cc1101_commands = @import("cc1101_commands");
 
 const shell_init = shell.ShellInit{
     .max_commands = 50,
@@ -38,6 +39,7 @@ export fn main() callconv(.c) noreturn {
     spi_commands.registerCommands(hal.sh, hal.spiSendReceive) catch { while (true){} };
     scd4x_commands.registerCommands(hal.sh, &hal_common.scd_device) catch { while (true){} };
     veml7700_commands.registerCommands(hal.sh, &hal_common.veml_device) catch { while (true){} };
+    cc1101_commands.registerCommands(hal.sh) catch { while (true){} };
 
     led_counter = 0;
 

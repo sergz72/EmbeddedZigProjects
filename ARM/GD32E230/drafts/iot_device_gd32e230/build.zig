@@ -95,6 +95,15 @@ pub fn build(b: *std.Build) !void {
         }
     });
 
+    const cc1101 = b.addModule("cc1101", .{
+        .root_source_file = b.path("../../../common_lib/rf/cc1101.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "system_timer", .module = system_timer }
+        }
+    });
+
     const allocator = b.addModule("allocator", .{
         .root_source_file = b.path("../../lib/fb_allocator.zig"),
         .target = target,
@@ -149,6 +158,16 @@ pub fn build(b: *std.Build) !void {
         .imports = &.{
             .{ .name = "shell", .module = shell },
             .{ .name = "veml7700", .module = veml7700 }
+        }
+    });
+
+    const cc1101_commands = b.addModule("cc1101_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/cc1101_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "cc1101", .module = cc1101 }
         }
     });
 
@@ -211,6 +230,7 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "spi_commands", .module = spi_commands },
                 .{ .name = "scd4x_commands", .module = scd4x_commands },
                 .{ .name = "veml7700_commands", .module = veml7700_commands },
+                .{ .name = "cc1101_commands", .module = cc1101_commands },
                 .{ .name = "allocator", .module = allocator },
                 .{ .name = "usart_writer", .module = usart_writer }
             },
