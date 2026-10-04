@@ -1,7 +1,7 @@
 const std = @import("std");
 const shell = @import("shell");
 
-var i2c_scan: *const fn(usize, u10) u8 = undefined;
+var i2c_scan: *const fn(usize, u10) [2]u8 = undefined;
 
 const scan_command = shell.ShellCommand{
     .name = "i2c_scan",
@@ -25,17 +25,17 @@ fn scanHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.W
             try writer.print("\n{x:2}:", .{address});
         }
         const result = i2c_scan(channel, @truncate(address));
-        if (result == 0) {
+        if (result[0] == 0) {
             try writer.print(" {x:2}", .{address});
         } else {
-            _ = try writer.print(" {c}-", .{result});
+            _ = try writer.print(" {s}", .{&result});
         }
     }
 
     return 0;
 }
 
-pub fn registerCommands(sh: *shell.Shell, scan: *const fn(usize, u10) u8) shell.ShellError!void {
+pub fn registerCommands(sh: *shell.Shell, scan: *const fn(usize, u10) [2]u8) shell.ShellError!void {
     i2c_scan = scan;
     try sh.registerCommand(&scan_command);
 }

@@ -107,12 +107,28 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const utils = b.addModule("utils", .{
+        .root_source_file = b.path("../../../common_lib/utils.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const i2c_commands = b.addModule("i2c_commands", .{
         .root_source_file = b.path("../../../common_lib/shell_commands/i2c_commands.zig"),
         .target = target,
         .optimize = optimize,
         .imports = &.{
             .{ .name = "shell", .module = shell }
+        }
+    });
+
+    const spi_commands = b.addModule("spi_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/spi_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "utils", .module = utils }
         }
     });
 
@@ -142,6 +158,12 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const hal_constants = b.addModule("hal_constants", .{
+        .root_source_file = b.path("../../../iot_device_core/hal_constants.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const hal = b.addModule("hal", .{
         .root_source_file = b.path("src/hal.zig"),
         .target = target,
@@ -159,9 +181,19 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "timer", .module = timer },
             .{ .name = "i2c", .module = i2c },
             .{ .name = "spi", .module = spi },
+            .{ .name = "hal_constants", .module = hal_constants }
+        },
+    });
+
+    const hal_common = b.addModule("hal_common", .{
+        .root_source_file = b.path("../../../iot_device_core/hal_common.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "hal", .module = hal },
             .{ .name = "scd4x", .module = scd4x },
             .{ .name = "veml7700", .module = veml7700 }
-        },
+        }
     });
 
     const exe = b.addExecutable(.{
@@ -173,8 +205,10 @@ pub fn build(b: *std.Build) !void {
             .imports = &.{
                 .{ .name = "system_timer", .module = system_timer },
                 .{ .name = "hal", .module = hal },
+                .{ .name = "hal_common", .module = hal_common },
                 .{ .name = "shell", .module = shell },
                 .{ .name = "i2c_commands", .module = i2c_commands },
+                .{ .name = "spi_commands", .module = spi_commands },
                 .{ .name = "scd4x_commands", .module = scd4x_commands },
                 .{ .name = "veml7700_commands", .module = veml7700_commands },
                 .{ .name = "allocator", .module = allocator },
