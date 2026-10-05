@@ -1,0 +1,14 @@
+.{
+    .name = .peripheral_tests,
+    .version = "0.0.1",
+    .fingerprint = 0x9e084141ca7cabad, // Changing this has security and trust implications.
+    .minimum_zig_version = "0.17.0-dev.2338+b46a7f3a2",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        // For example...
+        //"LICENSE",
+        //"README.md",
+    },
+}
