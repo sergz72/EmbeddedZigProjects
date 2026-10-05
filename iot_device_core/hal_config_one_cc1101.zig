@@ -1,0 +1,1 @@
+pub const NUMBER_OF_CC1101_DEVICES = 1;

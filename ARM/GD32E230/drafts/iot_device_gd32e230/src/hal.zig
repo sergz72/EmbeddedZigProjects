@@ -92,6 +92,23 @@ const SPI_CS_PIN_INIT: gpio.GpioInit = .{
     .output_speed = .high
 };
 
+pub const CC1101_TIMEOUT = 10000;
+//--------------------------
+const GDO0_PORT = gpio.gpioa;
+const GDO0_PIN = 0;
+const GDO0_PIN_MASK: u24 = 1 << GDO0_PIN;
+const GDO0_PIN_INIT: gpio.GpioInit = .{
+    .mode = .input,
+    .pud = .pulldown
+};
+const GDO2_PORT = gpio.gpioa;
+const GDO2_PIN = 1;
+const GDO2_PIN_MASK: u24 = 1 << GDO2_PIN;
+const GDO2_PIN_INIT: gpio.GpioInit = .{
+    .mode = .input,
+    .pud = .pullup
+};
+
 pub var timer_interrupt: bool = undefined;
 pub var sh: *shell.Shell = undefined;
 
@@ -153,6 +170,11 @@ inline fn initSPI() void {
     SPI_CS_PORT.init(SPI_CS_PIN_MASK, SPI_CS_PIN_INIT);
 }
 
+inline fn initCC1101() void {
+    GDO0_PORT.init(GDO0_PIN_MASK, GDO0_PIN_INIT);
+    GDO2_PORT.init(GDO2_PIN_MASK, GDO2_PIN_INIT);
+}
+
 export fn SystemInit() callconv(.c) void {
     initClock();
     system_timer.delay_init(system_timer.init_div1);
@@ -165,6 +187,7 @@ export fn SystemInit() callconv(.c) void {
     initUsart();
     initI2C();
     initSPI();
+    initCC1101();
 }
 
 pub inline fn startTimer() void {
@@ -191,18 +214,42 @@ pub inline fn i2cTransfer(address: u10, wdata: []const u8, rdata: []u8) i2c.I2cE
     return I2C_INSTANCE.transfer(address, wdata, rdata, I2C_TIMEOUT);
 }
 
-inline fn spiCsClr() void {
-    SPI_CS_PORT.bc = SPI_CS_PIN_MASK;
-}
-
-inline fn spiCsSet() void {
-    SPI_CS_PORT.bop = SPI_CS_PIN_MASK;
+pub fn spi1CsSet(state: bool) void {
+    if (state) {
+        SPI_CS_PORT.bop = SPI_CS_PIN_MASK;
+    } else {
+        SPI_CS_PORT.bc = SPI_CS_PIN_MASK;
+    }
 }
 
 pub fn spiSendReceive(channel: usize, wdata: []const u8, rdata: []u8) bool {
     _ = channel;
-    spiCsClr();
+    spi1CsSet(false);
     SPI_INSTANCE.sendReceivePoll8(wdata, rdata);
-    spiCsSet();
+    spi1CsSet(true);
     return true;
+}
+
+pub fn spi1Write(data: []const u8) bool {
+    SPI_INSTANCE.sendPoll8(data);
+    return false;
+}
+
+pub fn spi1ReadWrite(data: []u8) bool {
+    SPI_INSTANCE.sendReceivePoll8(data, data);
+    return true;
+}
+
+pub fn spi1Transfer(wdata: []const u8, rdata: []u8) bool {
+    _ = wdata;
+    _ = rdata;
+    return false;
+}
+
+pub fn getGdo01() bool {
+    return GDO0_PORT.istat & GDO0_PIN_MASK != 0;
+}
+
+pub fn getGdo21() bool {
+    return GDO2_PORT.istat & GDO2_PIN_MASK != 0;
 }

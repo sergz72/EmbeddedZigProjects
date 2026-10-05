@@ -39,7 +39,7 @@ export fn main() callconv(.c) noreturn {
     spi_commands.registerCommands(hal.sh, hal.spiSendReceive) catch { while (true){} };
     scd4x_commands.registerCommands(hal.sh, &hal_common.scd_device) catch { while (true){} };
     veml7700_commands.registerCommands(hal.sh, &hal_common.veml_device) catch { while (true){} };
-    cc1101_commands.registerCommands(hal.sh) catch { while (true){} };
+    cc1101_commands.registerCommands(hal.sh, &hal_common.cc1101_devices) catch { while (true){} };
 
     led_counter = 0;
 

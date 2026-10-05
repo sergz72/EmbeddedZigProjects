@@ -167,7 +167,8 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
         .imports = &.{
             .{ .name = "shell", .module = shell },
-            .{ .name = "cc1101", .module = cc1101 }
+            .{ .name = "cc1101", .module = cc1101 },
+            .{ .name = "utils", .module = utils }
         }
     });
 
@@ -204,6 +205,15 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const config = b.addModule("config", .{
+        .root_source_file = b.path("../../../iot_device_core/hal_config_one_cc1101.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "cc1101", .module = cc1101 }
+        }
+    });
+
     const hal_common = b.addModule("hal_common", .{
         .root_source_file = b.path("../../../iot_device_core/hal_common.zig"),
         .target = target,
@@ -211,7 +221,9 @@ pub fn build(b: *std.Build) !void {
         .imports = &.{
             .{ .name = "hal", .module = hal },
             .{ .name = "scd4x", .module = scd4x },
-            .{ .name = "veml7700", .module = veml7700 }
+            .{ .name = "veml7700", .module = veml7700 },
+            .{ .name = "cc1101", .module = cc1101 },
+            .{ .name = "config", .module = config }
         }
     });
 

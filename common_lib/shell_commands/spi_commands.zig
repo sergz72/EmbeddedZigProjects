@@ -23,7 +23,7 @@ fn trfrHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.W
         return 1;
     };
 
-    if (argv[1].len & 1 != 0 or argv[0].len / 2 > spi_trfr_buffer.len) {
+    if (argv[1].len & 1 != 0 or argv[1].len / 2 > spi_trfr_buffer.len) {
         _ = try writer.write("invalid data length\n");
         return 1;
     }

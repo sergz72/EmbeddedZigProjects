@@ -10,7 +10,7 @@ pub const CC1101TxPower315 = enum(u8) {
     _7   = 0xcb,
     _10  = 0xc2,
 
-    inline fn toU8(self: CC1101TxPower315) u8 {
+    pub inline fn toU8(self: CC1101TxPower315) u8 {
         return @intFromEnum(self);
     }
 };
@@ -25,7 +25,7 @@ pub const CC1101TxPower433 = enum(u8) {
     _7   = 0xc8,
     _10  = 0xc0,
 
-    inline fn toU8(self: CC1101TxPower433) u8 {
+    pub inline fn toU8(self: CC1101TxPower433) u8 {
         return @intFromEnum(self);
     }
 };
@@ -42,7 +42,7 @@ pub const CC1101TxPower868 = enum(u8) {
     _10  = 0xc5,
     _12  = 0xc0,
 
-    inline fn toU8(self: CC1101TxPower868) u8 {
+    pub inline fn toU8(self: CC1101TxPower868) u8 {
         return @intFromEnum(self);
     }
 };
@@ -59,7 +59,7 @@ pub const CC1101TxPower915 = enum(u8) {
     _10  = 0xc3,
     _12  = 0xc0,
 
-    inline fn toU8(self: CC1101TxPower915) u8 {
+    pub inline fn toU8(self: CC1101TxPower915) u8 {
         return @intFromEnum(self);
     }
 };
@@ -103,7 +103,7 @@ const BaudRateAndModeParameters = struct {
     test0: u8
 };
 
-const baudRateAndModeParameters: [3]BaudRateAndModeParameters = {
+const baudRateAndModeParameters: [3]BaudRateAndModeParameters = .{
     //GFSK 600
     .{
         .adc_retention = 0x40,
@@ -181,12 +181,12 @@ const baudRateAndModeParameters: [3]BaudRateAndModeParameters = {
     }
 };
 
-pub const CC1101Mode = enum {
+pub const CC1101Mode = enum(usize) {
     gfsk600 = 0,
     gfsk1200 = 1,
     lacrosse_tx29it = 3,
 
-    inline fn toU8(self: CC1101Mode) u8 {
+    inline fn toU8(self: CC1101Mode) usize {
         return @intFromEnum(self);
     }
 };
@@ -206,7 +206,7 @@ pub const CC1101PktCtrl1 = packed struct(u8) {
     pqt: u3 = 0,
 
     inline fn toU8(self: CC1101PktCtrl1) u8 {
-        return @bitCast(self);
+        return @backingInt(self);
     }
 };
 
@@ -226,12 +226,13 @@ pub const CC1101PktFormat = enum(u2) {
 pub const CC1101PktCtrl0 = packed struct(u8) {
     length_config: CC1101LengthConfig = .variable_length,
     crc_en: bool = true,
+    reserved: u1 = 0,
     pkt_format: CC1101PktFormat = .normal_mode,
     white_data: bool = true,
-    reserved: u1 = 0,
+    reserved2: u1 = 0,
 
     inline fn toU8(self: CC1101PktCtrl0) u8 {
-        return @bitCast(self);
+        return @backingInt(self);
     }
 };
 
@@ -253,7 +254,7 @@ pub const CC1101MdmCfg2 = packed struct(u8) {
     dem_dcfilt_off: bool = false,
 
     inline fn toU8(self: CC1101MdmCfg2) u8 {
-        return @bitCast(self);
+        return @backingInt(self);
     }
 };
 
@@ -275,7 +276,7 @@ pub const CC1101MdmCfg1 = packed struct(u8) {
     fec_en: bool = false,
 
     inline fn toU8(self: CC1101MdmCfg1) u8 {
-        return @bitCast(self);
+        return @backingInt(self);
     }
 };
 
@@ -286,7 +287,7 @@ pub const CC1101Mcsm2 = packed struct(u8) {
     reserved: u3 = 0,
 
     inline fn toU8(self: CC1101Mcsm2) u8 {
-        return @bitCast(self);
+        return @backingInt(self);
     }
 };
 
@@ -305,12 +306,13 @@ pub const CC1101CcaMode = enum(u2) {
 };
 
 pub const CC1101Mcsm1 = packed struct(u8) {
-    txoff_mode: CC1101OffMode,
-    rxoff_mode: CC1101OffMode,
-    cca_mode: CC1101CcaMode,
+    txoff_mode: CC1101OffMode = .idle,
+    rxoff_mode: CC1101OffMode = .idle,
+    cca_mode: CC1101CcaMode = .rssi_below_threshold_unless_currently_receiving_packet,
+    reserved: u2 = 0,
 
     inline fn toU8(self: CC1101Mcsm1) u8 {
-        return @bitCast(self);
+        return @backingInt(self);
     }
 };
 
@@ -336,7 +338,7 @@ pub const CC1101Mcsm0 = packed struct(u8) {
     reserved: u2 = 0,
 
     inline fn toU8(self: CC1101Mcsm0) u8 {
-        return @bitCast(self);
+        return @backingInt(self);
     }
 };
 
@@ -406,8 +408,8 @@ const CC1101_RX_FIFO_FULL_OR_END_OF_THE_PACKET = 1;
 const FOSC = 26000;
 
 pub const CC1101Error = error {
-    Timeout, SpiError, InvalidFrequency, InvalidTxPower, InvalidPacketLength, InvalidDeviceId,
-    InvalidDeviceVersion
+    Timeout, SpiError, InvalidFrequency, InvalidTxPower, InvalidPacketLength, InvalidPartNum,
+    InvalidDeviceVersion, RxBufferTooSmall
 };
 
 pub const CC1101State = enum(u3) {
@@ -435,7 +437,7 @@ pub const CC1101 = struct {
     spi_cs_set: *const fn(bool) void,
     get_gdo0: *const fn() bool,
     get_gdo2: *const fn() bool,
-    rxbuffer: []u8,
+    rx_buffer: []u8,
 
     pub fn init(self: *const CC1101, cfg: *const CC1101Cfg) CC1101Error!void {
         const p = baudRateAndModeParameters[cfg.mode.toU8()];
@@ -483,18 +485,18 @@ pub const CC1101 = struct {
         }, &.{});
 
         try self.write(&.{
-            CC1101Registers.agcctrl2,
+            CC1101Registers.agcctrl2.toU8(),
             p.agcctrl2,
             p.agcctrl1
         }, &.{});
 
         try self.write(&.{
-            CC1101Registers.worctrl,
+            CC1101Registers.worctrl.toU8(),
             p.worctrl
         }, &.{});
 
         try self.write(&.{
-            CC1101Registers.fscal3,
+            CC1101Registers.fscal3.toU8(),
             p.fscal3,
             p.fscal2,
             p.fscal1,
@@ -502,7 +504,7 @@ pub const CC1101 = struct {
         }, &.{});
 
         try self.write(&.{
-            CC1101Registers.test2,
+            CC1101Registers.test2.toU8(),
             p.test2,
             p.test1,
             p.test0
@@ -513,29 +515,29 @@ pub const CC1101 = struct {
 
     pub fn setTxPower(self: *const CC1101, tx_power: u8) CC1101Error!void {
         try self.write(&.{
-            CC1101Registers.patable,
-            power.toU8()
+            CC1101Registers.patable.toU8(),
+            tx_power
         }, &.{});
     }
 
     pub fn check(self: *const CC1101) CC1101Error!void {
         var data: [2]u8 = undefined;
-        data[0] = CC1101Registers.partnum;
+        data[0] = CC1101Registers.partnum.toU8();
         try self.read_write(&data);
         if (data[1] != 0)
             return CC1101Error.InvalidPartNum;
-        data[0] = CC1101Registers.version;
+        data[0] = CC1101Registers.version.toU8();
         try self.read_write(&data);
         if (data[1] != 0x14)
             return CC1101Error.InvalidDeviceVersion;
     }
 
     pub fn powerOn(self: *const CC1101) void {
-        self.spi_cs_set(device_num, false);
-        self.spi_cs_set(device_num, true);
-        self.spi_cs_set(device_num, false);
+        self.spi_cs_set(false);
+        self.spi_cs_set(true);
+        self.spi_cs_set(false);
         system_timer.delayus(50);
-        self.spi_cs_set(device_num, true);
+        self.spi_cs_set(true);
         system_timer.delayus(50);
     }
 
@@ -585,132 +587,123 @@ pub const CC1101 = struct {
 
     pub fn receive(self: *const CC1101) CC1101Error![]u8 {
         if (!self.get_gdo0())
-            return 0; // no data received
+            return &.{}; // no data received
+
+        errdefer { _ = self.strobe(CC1101_STROBE_SIDLE) catch {};}
+
         var data: [2]u8 = undefined;
         data[0] = CC1101Registers.rxbytes.toU8();
-        self.read_write(data) catch |err| {
+        self.read_write(&data) catch |err| {
             _ = self.strobe(CC1101_STROBE_SFRX) catch {};
-            _ = self.strobe(CC1101_STROBE_SIDLE) catch {};
             return err;
         };
-        const sz = data[1];
+        var sz = data[1];
+        if (sz >= self.rx_buffer.len)
+            return CC1101Error.RxBufferTooSmall;
+        sz += 1;
         data[0] = CC1101Registers.fifo.toU8() | CC1101_READ;
-        self.spi_transfer(data[0..1], self.rxbuffer) catch |err| {
-            _ = self.strobe(CC1101_STROBE_SIDLE) catch {};
-            return err;
-        };
-        return self.rxbuffer[2..sz+1];
+        try self.transfer(data[0..1], self.rx_buffer[0..sz]);
+        return self.rx_buffer[2..sz];
     }
 
     pub fn transmit(self: *const CC1101, address: u8, data: []u8) CC1101Error!void {
         _ = try self.strobe(CC1101_STROBE_SFTX);
-        self.write(&.{CC1101Registers.fifo, address}, data) catch |err| {
-            _ = self.strobe(CC1101_STROBE_SIDLE) catch {};
-            return err;
-        };
-        _ = try self.strobe(CC1101_STROBE_STX) catch |err| {
-            _ = self.strobe(CC1101_STROBE_SIDLE) catch {};
-            return err;
-        };
+        errdefer { _ = self.strobe(CC1101_STROBE_SIDLE) catch {};}
+        try self.write(&.{CC1101Registers.fifo.toU8(), address}, data);
+        _ = try self.strobe(CC1101_STROBE_STX);
     }
 
     fn write(self: *const CC1101, data1: []const u8, data2: []const u8) CC1101Error!void {
         self.spi_cs_set(false);
+        defer self.spi_cs_set(true);
 
         var t = self.timeout;
         while (t != 0) {
             if (!self.get_gdo2())
                 break;
+            t -= 1;
         }
         if (t == 0) {
-            self.spi_cs_set(true);
             return CC1101Error.Timeout;
         }
 
-        var d0: [1]u8 = data1[0];
+        var d0: [1]u8 = .{data1[0]};
         if (data1.len + data2.len > 2) {
-            d0 |= CC1101_BURST;
+            d0[0] |= CC1101_BURST;
             if (!self.spi_write(&d0)) {
-                self.spi_cs_set(true);
                 return CC1101Error.SpiError;
             }
             if (!self.spi_write(data1[1..])) {
-                self.spi_cs_set(true);
                 return CC1101Error.SpiError;
             }
         } else {
             if (!self.spi_write(data1)) {
-                self.spi_cs_set(true);
                 return CC1101Error.SpiError;
             }
         }
 
         if (data2.len != 0 and !self.spi_write(data2)) {
-            self.spi_cs_set(true);
             return CC1101Error.SpiError;
         }
-
-        self.spi_cs_set(true);
     }
 
     fn transfer(self: *const CC1101, wdata: []const u8, rdata: []u8) CC1101Error!void {
         self.spi_cs_set(false);
+        defer self.spi_cs_set(true);
 
         var t = self.timeout;
         while (t != 0) {
             if (!self.get_gdo2())
                 break;
+            t -= 1;
         }
         if (t == 0) {
-            self.spi_cs_set(true);
             return CC1101Error.Timeout;
         }
 
-        var d0: [1]u8 = wdata[0];
+        var d0: [1]u8 = .{wdata[0]};
         if (wdata.len + rdata.len > 2) {
-            d0 |= CC1101_BURST;
+            d0[0] |= CC1101_BURST;
             if (!self.spi_write(&d0)) {
-                self.spi_cs_set(true);
                 return CC1101Error.SpiError;
             }
             if (!self.spi_transfer(wdata[1..], rdata)) {
-                self.spi_cs_set(true);
                 return CC1101Error.SpiError;
             }
         } else {
             if (!self.spi_transfer(wdata, rdata)) {
-                self.spi_cs_set(true);
                 return CC1101Error.SpiError;
             }
         }
-
-        self.spi_cs_set(true);
     }
 
     fn read_write(self: *const CC1101, data: []u8) CC1101Error!void {
         self.spi_cs_set(false);
+        defer self.spi_cs_set(true);
 
         var t = self.timeout;
         while (t != 0) {
             if (!self.get_gdo2())
                 break;
+            t -= 1;
         }
         if (t == 0) {
-            self.spi_cs_set(true);
             return CC1101Error.Timeout;
         }
 
         if (!self.spi_read_write(data)) {
-            self.spi_cs_set(true);
             return CC1101Error.SpiError;
         }
-
-        self.spi_cs_set(true);
     }
 
     fn strobe(self: *const CC1101, command: u8) CC1101Error!CC1101Status {
         var data: [1]u8 = .{command};
-        try self.read_write(data);
+        try self.read_write(&data);
         return @bitCast(data[0]);
     }
+};
+
+pub const CC1101Device = struct {
+    device: CC1101,
+    cfg: CC1101Cfg
 };
