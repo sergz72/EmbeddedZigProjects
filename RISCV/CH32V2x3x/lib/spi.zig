@@ -112,6 +112,10 @@ pub const Spi = extern struct {
                 asm volatile ("nop");
             }
             self.datar.b = b;
+            while (!self.statr.rxne) {
+                asm volatile ("nop");
+            }
+            _ = self.datar.b;
         }
     }
 

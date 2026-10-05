@@ -85,7 +85,7 @@ const SPI_CLK_PIN = 5;
 const SPI_CLK_PIN_MASK: u24 = 1 << SPI_CLK_PIN;
 //--------------------------
 const SPI_CS_PORT = gpio.gpioa;
-const SPI_CS_PIN = 4;
+const SPI_CS_PIN = 1;
 const SPI_CS_PIN_MASK: u24 = 1 << SPI_CS_PIN;
 const SPI_CS_PIN_INIT: gpio.GpioInit = .{
     .mode = .output,
@@ -102,7 +102,7 @@ const GDO0_PIN_INIT: gpio.GpioInit = .{
     .pud = .pulldown
 };
 const GDO2_PORT = gpio.gpioa;
-const GDO2_PIN = 1;
+const GDO2_PIN = 2;
 const GDO2_PIN_MASK: u24 = 1 << GDO2_PIN;
 const GDO2_PIN_INIT: gpio.GpioInit = .{
     .mode = .input,
@@ -232,7 +232,7 @@ pub fn spiSendReceive(channel: usize, wdata: []const u8, rdata: []u8) bool {
 
 pub fn spi1Write(data: []const u8) bool {
     SPI_INSTANCE.sendPoll8(data);
-    return false;
+    return true;
 }
 
 pub fn spi1ReadWrite(data: []u8) bool {
@@ -241,9 +241,8 @@ pub fn spi1ReadWrite(data: []u8) bool {
 }
 
 pub fn spi1Transfer(wdata: []const u8, rdata: []u8) bool {
-    _ = wdata;
-    _ = rdata;
-    return false;
+    SPI_INSTANCE.transferPoll8(wdata, rdata);
+    return true;
 }
 
 pub fn getGdo01() bool {

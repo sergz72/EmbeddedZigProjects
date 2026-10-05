@@ -114,6 +114,10 @@ pub const Spi = extern struct {
                 asm volatile ("nop");
             }
             self.data.b = b;
+            while (!self.stat.rbne) {
+                asm volatile ("nop");
+            }
+            _ = self.data.b;
         }
     }
 
@@ -143,7 +147,7 @@ pub const Spi = extern struct {
             while (!self.stat.tbe) {
                 asm volatile ("nop");
             }
-            self.datar.b = 0;
+            self.data.b = 0;
             while (!self.stat.rbne) {
                 asm volatile ("nop");
             }
