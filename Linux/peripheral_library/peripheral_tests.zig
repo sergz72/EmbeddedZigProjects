@@ -104,14 +104,12 @@ fn processArguments(args: []const [:0]const u8, io: std.Io, allocator: std.mem.A
             continue;
         }
         if (std.mem.startsWith(u8, arg, "--")) {
-            std.debug.print("Processing switch: {s}\n", .{arg});
             const switch_fn = switches.get(arg);
             if (switch_fn == null) {
                 return ArgumentsError.InvalidSwitch;
             }
             switch_fn.?();
         } else {
-            std.debug.print("Processing parameter: {s}\n", .{arg});
             return ArgumentsError.UnknownParameter;
         }
     }
