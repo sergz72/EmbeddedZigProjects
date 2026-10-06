@@ -1,5 +1,7 @@
 pub const std = @import("std");
 pub const gpio = @import("gpio");
+pub const spi = @import("spi");
+pub const i2c = @import("i2c");
 
 const ArgumentsError = error{
     CommandExpected,
@@ -140,8 +142,10 @@ fn i2cScan(io: std.Io, allocator: std.mem.Allocator) !void {
 }
 
 fn testSpi(io: std.Io, allocator: std.mem.Allocator) !void {
-    _ = io;
-    _ = allocator;
+    var spi_master = spi.SPIMaster{.bits_per_word = 8, .speed_hz = 1000000};
+    try spi_master.init(io, allocator, bus_number, device_number);
+    defer spi_master.close(io);
+    try spi_master.testTransfer();
 }
 
 fn testCC1101(io: std.Io, allocator: std.mem.Allocator) !void {

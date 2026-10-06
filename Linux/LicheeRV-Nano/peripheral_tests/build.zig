@@ -22,6 +22,18 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize
     });
 
+    const spi = b.addModule("spi", .{
+        .root_source_file = b.path("../../peripheral_library/spi.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const i2c = b.addModule("i2c", .{
+        .root_source_file = b.path("../../peripheral_library/i2c.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const exe = b.addExecutable(.{
         .name = "peripheral_tests",
         .root_module = b.createModule(.{
@@ -29,7 +41,9 @@ pub fn build(b: *std.Build) void {
             .target = target,
             .optimize = optimize,
             .imports = &.{
-                .{ .name = "gpio", .module = gpio }
+                .{ .name = "gpio", .module = gpio },
+                .{ .name = "spi", .module = spi },
+                .{ .name = "i2c", .module = i2c }
             },
         }),
     });
