@@ -182,7 +182,9 @@ pub const GPIO = struct {
             std.debug.print("{}, linux error {}\n", .{err, self.linux_errno});
             return;
         };
-        std.debug.print("chip info: name={s} label={s} lines={}\n", .{info.name, info.label, info.lines});
+        std.debug.print("chip info: name={s} label={s} lines={}\n", .{
+            std.mem.sliceTo(&info.name, 0), std.mem.sliceTo(&info.label, 0), info.lines
+        });
     }
 
     pub fn printLineInfo(self: *GPIO, offset: u32) void {
@@ -191,7 +193,7 @@ pub const GPIO = struct {
             std.debug.print("{}, linux error {}\n", .{err, self.linux_errno});
         };
         std.debug.print("line info: name={s} consumer={s} number of attributes={}\n",
-                    .{info.name, info.consumer, info.num_attrs});
+                    .{std.mem.sliceTo(&info.name, 0), std.mem.sliceTo(&info.consumer, 0), info.num_attrs});
     }
 
     fn lineRequest(self: *GPIO, request: *GpioLineRequest) GpioError!void {

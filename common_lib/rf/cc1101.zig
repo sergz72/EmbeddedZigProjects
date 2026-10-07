@@ -172,9 +172,9 @@ pub const CC1101PktCtrl1 = packed struct(u8) {
 };
 
 pub const CC1101LengthConfig = enum(u2) {
-    fixed_length = 0,
-    variable_length = 1,
-    infinite_length = 2
+    fixed = 0,
+    variable = 1,
+    infinite = 2
 };
 
 pub const CC1101PktFormat = enum(u2) {
@@ -199,13 +199,13 @@ pub const CC1101PktCtrl0 = packed struct(u8) {
 
 pub const CC1101SyncMode = enum(u3) {
     no_sync = 0,
-    sync1516 = 1,
-    sync1616 = 2,
-    sync3032 = 3,
+    _1516 = 1,
+    _1616 = 2,
+    _3032 = 3,
     no_sync_carrier_sense = 4,
-    sync1516_carrier_sense = 5,
-    sync1616_carrier_sense = 6,
-    sync3032_carrier_sense = 7
+    _1516_carrier_sense = 5,
+    _1616_carrier_sense = 6,
+    _3032_carrier_sense = 7
 };
 
 pub const CC1101MdmCfg2 = packed struct(u8) {
@@ -286,9 +286,9 @@ pub const CC1101PoTimeout = enum(u2) {
 
 pub const CC1101FsAutocal = enum(u2) {
     never = 0,
-    from_idle_torx_or_tx_or_fstxon = 1,
-    from_rx_tx_to_idle = 2,
-    from_rx_tx_to_idle_every_4_time = 3
+    from_idle = 1,
+    to_idle = 2,
+    to_idle_every_4_time = 3
 };
 
 pub const CC1101Mcsm0 = packed struct(u8) {

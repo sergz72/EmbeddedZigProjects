@@ -268,12 +268,17 @@ fn buildDeviceConfiguration(io: std.Io, allocator: std.mem.Allocator, config_fil
     const dir = std.Io.Dir.cwd();
     const data = try dir.readFileAlloc(io, config_file_name, allocator, .limited(10000));
     defer allocator.free(data);
+    return buildDeviceConfigurationFromSlice(allocator, data);
+}
+
+fn buildDeviceConfigurationFromSlice(allocator: std.mem.Allocator, data: []const u8) CC1101DeviceError!CC1101DeviceConfig {
     return std.json.parseFromSliceLeaky(CC1101DeviceConfig, allocator, data, .{}) catch {
         return InternalError.JsonParseError;
     };
 }
 
 test "build device configuration" {
-    const config = try buildDeviceConfiguration(std.io, std.heap.page_allocator, "../cc1101Config.json");
+    const data = @embedFile("test_data/cc1101Config.json");
+    const config = try buildDeviceConfigurationFromSlice(std.testing.allocator, data);
     _ = config;
 }
