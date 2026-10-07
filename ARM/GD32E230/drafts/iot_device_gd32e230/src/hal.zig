@@ -214,41 +214,48 @@ pub inline fn i2cTransfer(address: u10, wdata: []const u8, rdata: []u8) i2c.I2cE
     return I2C_INSTANCE.transfer(address, wdata, rdata, I2C_TIMEOUT);
 }
 
-pub fn spi1CsSet(state: bool) void {
+pub fn spi1CsSet(context: *anyopaque, state: bool) bool {
+    _ = context;
     if (state) {
         SPI_CS_PORT.bop = SPI_CS_PIN_MASK;
     } else {
         SPI_CS_PORT.bc = SPI_CS_PIN_MASK;
     }
+    return true;
 }
 
 pub fn spiSendReceive(channel: usize, wdata: []const u8, rdata: []u8) bool {
     _ = channel;
-    spi1CsSet(false);
+    _ = spi1CsSet(@ptrFromInt(1), false);
     SPI_INSTANCE.sendReceivePoll8(wdata, rdata);
-    spi1CsSet(true);
+    _ = spi1CsSet(@ptrFromInt(1), true);
     return true;
 }
 
-pub fn spi1Write(data: []const u8) bool {
+pub fn spi1Write(context: *anyopaque, data: []const u8) bool {
+    _ = context;
     SPI_INSTANCE.sendPoll8(data);
     return true;
 }
 
-pub fn spi1ReadWrite(data: []u8) bool {
+pub fn spi1ReadWrite(context: *anyopaque, data: []u8) bool {
+    _ = context;
     SPI_INSTANCE.sendReceivePoll8(data, data);
     return true;
 }
 
-pub fn spi1Transfer(wdata: []const u8, rdata: []u8) bool {
+pub fn spi1Transfer(context: *anyopaque, wdata: []const u8, rdata: []u8) bool {
+    _ = context;
     SPI_INSTANCE.transferPoll8(wdata, rdata);
     return true;
 }
 
-pub fn getGdo01() bool {
+pub fn getGdo01(context: *anyopaque) ?bool {
+    _ = context;
     return GDO0_PORT.istat & GDO0_PIN_MASK != 0;
 }
 
-pub fn getGdo21() bool {
+pub fn getGdo21(context: *anyopaque) ?bool {
+    _ = context;
     return GDO2_PORT.istat & GDO2_PIN_MASK != 0;
 }

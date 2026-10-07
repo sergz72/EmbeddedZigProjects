@@ -402,7 +402,7 @@ pub const CC1101Init = struct {
 pub const CC1101 = struct {
     context: *anyopaque,
     init_data: *const CC1101Init,
-    rx_buffer: [64]u8,
+    rx_buffer: [64]u8 = undefined,
     band: u2 = undefined,
 
     pub fn init(self: *CC1101, cfg: *const CC1101Cfg) CC1101Error!void {
@@ -546,7 +546,7 @@ pub const CC1101 = struct {
         _ = try self.strobe(CC1101_STROBE_SXOFF);
     }
 
-    pub fn receive(self: *const CC1101) CC1101Error![]u8 {
+    pub fn receive(self: *CC1101) CC1101Error![]u8 {
         const level = self.init_data.get_gdo0(self.context) orelse return CC1101Error.GpioError;
         if (!level)
             return &.{}; // no data received
@@ -669,11 +669,6 @@ pub const CC1101 = struct {
         try self.read_write(&data);
         return @bitCast(data[0]);
     }
-};
-
-pub const CC1101WithConfig = struct {
-    device: CC1101,
-    cfg: CC1101Cfg
 };
 
 fn getBand(freq: u64) CC1101Error!u2 {
