@@ -47,7 +47,7 @@ const ValidationResult = struct {
 };
 
 pub const InternalError = error {
-    JsonParseError
+    JsonParseError, InvalidTestName, InvalidNumberOfParameters, InvalidData, InvalidAddress
 };
 
 pub const CC1101DeviceError = cc1101.CC1101Error || std.Io.Dir.ReadFileAllocError || InternalError || spi.SPIError ||
@@ -62,6 +62,14 @@ const init_data: cc1101.CC1101init = .{
     .get_gdo0 = CC1101Device.getGdo0,
     .get_gdo2 = CC1101Device.getGdo2
 };
+
+const TestFn = *const fn (self: *CC1101Device, it: *std.mem.SplitIterator(u8, .scalar),
+                                io: std.Io, allocator: std.mem.Allocator) CC1101DeviceError!void;
+
+const test_options = std.StaticStringMap(TestFn).initComptime(.{
+    .{ "receive", CC1101Device.testReceive },
+    .{ "transmit", CC1101Device.testTransmit }
+});
 
 pub const CC1101Device = struct {
     bus:      spi.SPIMaster = undefined,
@@ -155,6 +163,53 @@ pub const CC1101Device = struct {
             .tx_power = config.tx_power
         };
         try self.device.validateAndInit(&device_cfg);
+    }
+
+    pub fn runTests(self: *CC1101Device, io: std.Io, allocator: std.mem.Allocator, parameters: []const u8) CC1101DeviceError!void {
+        var it = std.mem.splitScalar(u8, parameters, ',');
+        const test_name = it.next();
+        if (test_name == null) {
+            return InternalError.InvalidTestName;
+        }
+        const test_fn = test_options.get(test_name.?) orelse return InternalError.InvalidTestName;
+        try test_fn(self, &it, io, allocator);
+    }
+
+    fn testReceive(self: *CC1101Device, it: *std.mem.SplitIterator(u8, .scalar), io: std.Io,
+                    allocator: std.mem.Allocator) CC1101DeviceError!void {
+        _ = allocator;
+        if (it.next() != null) {
+            return InternalError.InvalidNumberOfParameters;
+        }
+        const one_second = std.Io.Duration.fromSeconds(1);
+        for (0..30) |_| {
+            const data = try self.device.receive();
+            if (data.len == 0) {
+                try std.Io.sleep(io, one_second, .awake);
+                continue;
+            }
+            std.debug.print("{x}", .{data});
+            break;
+        }
+    }
+
+    fn testTransmit(self: *CC1101Device, it: *std.mem.SplitIterator(u8, .scalar), io: std.Io,
+                    allocator: std.mem.Allocator) CC1101DeviceError!void {
+        _ = io;
+        const address_string = it.next() orelse return InternalError.InvalidNumberOfParameters;
+        const address = std.fmt.parseInt(u8, address_string, 10) catch {
+            return InternalError.InvalidAddress;
+        };
+        const data = it.next() orelse return InternalError.InvalidNumberOfParameters;
+        if (it.next() != null) {
+            return InternalError.InvalidNumberOfParameters;
+        }
+        const buffer = try allocator.alloc(u8, data.len / 2 + 1);
+        defer allocator.free(buffer);
+        const bytes = std.fmt.hexToBytes(buffer, data) catch {
+            return InternalError.InvalidData;
+        };
+        try self.device.transmit(address, bytes);
     }
 
     fn spiWrite(context: *anyopaque, data: []const u8) bool {

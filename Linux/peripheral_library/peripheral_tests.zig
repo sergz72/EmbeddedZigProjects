@@ -11,7 +11,7 @@ const ArgumentsError = error{
     ConfigFileNameExpected,
     I2CBusNumberExpected,
     SpiBusNumberExpected,
-    GpioParametersExpected,
+    ParametersExpected,
     UnknownParameter
 };
 
@@ -37,6 +37,7 @@ const switches = std.StaticStringMap(SwitchFn).initComptime(.{
 fn testCC1101Switch() void {
     command = Command.TestCC1101;
     config_file_name_expected = true;
+    parameters_expected = true;
 }
 
 fn i2cScanSwitch() void {
@@ -51,15 +52,15 @@ fn testSpiSwitch() void {
 
 fn testGpioSwitch() void {
     command = Command.GPIOTest;
-    gpio_parameters_expected = true;
+    parameters_expected = true;
 }
 
 var config_file_name: []const u8 = &.{};
-var gpio_parameters: []const u8 = &.{};
+var parameters: []const u8 = &.{};
 var config_file_name_expected = false;
 var i2c_bus_number_expected = false;
 var spi_bus_number_expected = false;
-var gpio_parameters_expected = false;
+var parameters_expected = false;
 var bus_number: usize = 0;
 var device_number: usize = 0;
 var command = Command.None;
@@ -84,9 +85,9 @@ fn processArguments(args: []const [:0]const u8, io: std.Io, allocator: std.mem.A
             config_file_name_expected = false;
             continue;
         }
-        if (gpio_parameters_expected) {
-            gpio_parameters = arg;
-            gpio_parameters_expected = false;
+        if (parameters_expected) {
+            parameters = arg;
+            parameters_expected = false;
             continue;
         }
         if (i2c_bus_number_expected) {
@@ -118,8 +119,8 @@ fn processArguments(args: []const [:0]const u8, io: std.Io, allocator: std.mem.A
     if (spi_bus_number_expected) {
         return ArgumentsError.SpiBusNumberExpected;
     }
-    if (gpio_parameters_expected) {
-        return ArgumentsError.GpioParametersExpected;
+    if (parameters_expected) {
+        return ArgumentsError.ParametersExpected;
     }
     switch (command) {
         .I2CScan => try i2cScan(io, allocator),
@@ -145,10 +146,11 @@ fn testSpi(io: std.Io, allocator: std.mem.Allocator) !void {
 fn testCC1101(io: std.Io, allocator: std.mem.Allocator) !void {
     var device: cc1101_device.CC1101Device = undefined;
     try device.init(io, allocator, config_file_name);
+    try device.runTests(io, allocator, parameters);
 }
 
 fn testGpio(io: std.Io, allocator: std.mem.Allocator) !void {
-    gpio.GPIO.testGpio(io, allocator, gpio_parameters) catch |err| {
+    gpio.GPIO.testGpio(io, allocator, parameters) catch |err| {
         std.debug.print("GPIO test failed: {}\n", .{err});
     };
 }

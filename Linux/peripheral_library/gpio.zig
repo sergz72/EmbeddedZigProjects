@@ -203,11 +203,8 @@ pub const GPIO = struct {
     }
 
     fn get_offset(it: *std.mem.SplitIterator(u8, .scalar)) GpioError!u32 {
-        const part3 = it.next();
-        if (part3 == null) {
-            return GpioError.InvalidNumberOfGpioParameters;
-        }
-        return std.fmt.parseInt(u32, part3.?, 10) catch {
+        const part3 = it.next() orelse return GpioError.InvalidNumberOfGpioParameters;
+        return std.fmt.parseInt(u32, part3, 10) catch {
             return GpioError.InvalidOffset;
         };
     }
@@ -239,20 +236,15 @@ pub const GPIO = struct {
     }
 
     fn setLineOut(self: *GPIO, offset: u32, it: *std.mem.SplitIterator(u8, .scalar), io: std.Io) GpioError!void {
-        const part5 = it.next();
-        if (part5 == null) {
-            return GpioError.InvalidNumberOfGpioParameters;
-        }
-        if ((part5.?.len != 1) or (part5.?[0] != '0' and part5.?[0] != '1')) {
+        const part5 = it.next() orelse return GpioError.InvalidNumberOfGpioParameters;
+        if ((part5.len != 1) or (part5[0] != '0' and part5[0] != '1')) {
             return GpioError.InvalidLevel;
         }
-        const level = part5.?[0] != '0';
+        const level = part5[0] != '0';
         var flags: u64 = 0;
         while (true) {
-            const part = it.next();
-            if (part == null)
-                break;
-            const f = line_out_options.get(part.?) orelse return GpioError.InvalidFlag;
+            const part = it.next() orelse break;
+            const f = line_out_options.get(part) orelse return GpioError.InvalidFlag;
             flags |= f;
         }
         if (flags & (GPIO_V2_LINE_FLAG_BIAS_PULL_DOWN|GPIO_V2_LINE_FLAG_BIAS_PULL_UP) == 0) {
@@ -305,27 +297,21 @@ pub const GPIO = struct {
 
     pub fn testGpio(io: std.Io, allocator: std.mem.Allocator, parameters: []const u8) GpioError!void {
         var it = std.mem.splitScalar(u8, parameters, ',');
-        const part1 = it.next();
-        const part2 = it.next();
-        if (part1 == null or part2 == null) {
-            return GpioError.InvalidNumberOfGpioParameters;
-        }
-        const chip_id = std.fmt.parseInt(usize, part1.?, 10) catch {return GpioError.InvalidChipId;};
+        const part1 = it.next() orelse return GpioError.InvalidNumberOfGpioParameters;
+        const part2 = it.next() orelse return GpioError.InvalidNumberOfGpioParameters;
+        const chip_id = std.fmt.parseInt(usize, part1, 10) catch {return GpioError.InvalidChipId;};
         var gpio = GPIO{};
         try gpio.init(io, allocator, chip_id);
         defer gpio.close(io);
-        if (std.mem.eql(u8, part2.?, "chipinfo")) {
+        if (std.mem.eql(u8, part2, "chipinfo")) {
             gpio.printChipInfo();
-        } else if (std.mem.eql(u8, part2.?, "lineinfo")) {
+        } else if (std.mem.eql(u8, part2, "lineinfo")) {
             const offset = try get_offset(&it);
             gpio.printLineInfo(offset);
-        } else if (std.mem.eql(u8, part2.?, "lineset")) {
+        } else if (std.mem.eql(u8, part2, "lineset")) {
             const offset = try get_offset(&it);
-            const part4 = it.next();
-            if (part4 == null) {
-                return GpioError.InvalidNumberOfGpioParameters;
-            }
-            const line_fn = line_set_options.get(part4.?) orelse return GpioError.InvalidLineSetOption;
+            const part4 = it.next() orelse return GpioError.InvalidNumberOfGpioParameters;
+            const line_fn = line_set_options.get(part4) orelse return GpioError.InvalidLineSetOption;
             try line_fn(&gpio, offset, &it, io);
         } else {
             return GpioError.InvalidGpioParameter;
