@@ -1,66 +1,27 @@
 const system_timer = @import("system_timer");
 
-pub const CC1101TxPower315 = enum(u8) {
-    m30 = 0x12,
-    m20 = 0x0d,
-    m15 = 0x1c,
-    m10 = 0x34,
-    _0   = 0x51,
-    _5   = 0x85,
-    _7   = 0xcb,
-    _10  = 0xc2,
-
-    pub inline fn toU8(self: CC1101TxPower315) u8 {
-        return @intFromEnum(self);
-    }
+const tx_power_map: [4][10]u8 = .{
+    //-30   -20   -15   -10   -6    0     5     7     10    12
+    .{0x12, 0x0d, 0x1c, 0x34, 0x34, 0x51, 0x85, 0xcb, 0xc2, 0xc2}, //315 MHz
+    .{0x12, 0x0e, 0x1d, 0x34, 0x34, 0x60, 0x84, 0xc8, 0xc0, 0xc0}, //433 MHz
+    .{0x03, 0x17, 0x1d, 0x26, 0x37, 0x50, 0x86, 0xcd, 0xc5, 0xc0}, //868 MHz
+    .{0x03, 0x0e, 0x1e, 0x27, 0x38, 0x8e, 0x84, 0xcc, 0xc3, 0xc0} //915 MHz
 };
 
-pub const CC1101TxPower433 = enum(u8) {
-    m30 = 0x12,
-    m20 = 0x0e,
-    m15 = 0x1d,
-    m10 = 0x34,
-    _0   = 0x60,
-    _5   = 0x84,
-    _7   = 0xc8,
-    _10  = 0xc0,
+pub const CC1101TxPower = enum(u8) {
+    m30 = 0,
+    m20 = 1,
+    m15 = 2,
+    m10 = 3,
+    m6 = 4,
+    _0 = 5,
+    _5 = 6,
+    _7 = 7,
+    _10 = 8,
+    _12 = 9,
 
-    pub inline fn toU8(self: CC1101TxPower433) u8 {
-        return @intFromEnum(self);
-    }
-};
-
-pub const CC1101TxPower868 = enum(u8) {
-    m30 = 0x03,
-    m20 = 0x17,
-    m15 = 0x1d,
-    m10 = 0x26,
-    m6  = 0x37,
-    _0   = 0x50,
-    _5   = 0x86,
-    _7   = 0xcd,
-    _10  = 0xc5,
-    _12  = 0xc0,
-
-    pub inline fn toU8(self: CC1101TxPower868) u8 {
-        return @intFromEnum(self);
-    }
-};
-
-pub const CC1101TxPower915 = enum(u8) {
-    m30 = 0x03,
-    m20 = 0x0e,
-    m15 = 0x1e,
-    m10 = 0x27,
-    m6  = 0x38,
-    _0   = 0x8e,
-    _5   = 0x84,
-    _7   = 0xcc,
-    _10  = 0xc3,
-    _12  = 0xc0,
-
-    pub inline fn toU8(self: CC1101TxPower915) u8 {
-        return @intFromEnum(self);
+    pub fn toU8(self: CC1101TxPower, band: u2) u8 {
+        return tx_power_map[band][@intFromEnum(self)];
     }
 };
 
@@ -344,7 +305,6 @@ pub const CC1101Mcsm0 = packed struct(u8) {
 
 pub const CC1101Cfg = struct {
     mode: CC1101Mode,
-    crc_enabled: bool = true,
     freq: u64,
     packet_length: u8,
     pktctrl1: CC1101PktCtrl1 = .{
@@ -375,7 +335,7 @@ pub const CC1101Cfg = struct {
         .pin_ctrl_en = false,
         .xosc_force_on = false
     },
-    tx_power: u8
+    tx_power: CC1101TxPower
 };
 
 const CC1101Registers = enum(u8) {
@@ -408,8 +368,8 @@ const CC1101_RX_FIFO_FULL_OR_END_OF_THE_PACKET = 1;
 const FOSC = 26000;
 
 pub const CC1101Error = error {
-    Timeout, SpiError, InvalidFrequency, InvalidTxPower, InvalidPacketLength, InvalidPartNum,
-    InvalidDeviceVersion, RxBufferTooSmall
+    Timeout, SpiError, InvalidFrequency, InvalidPacketLength, InvalidPartNum,
+    InvalidDeviceVersion, RxBufferTooSmall, GpioError
 };
 
 pub const CC1101State = enum(u3) {
@@ -429,21 +389,29 @@ pub const CC1101Status = packed struct(u8) {
     chip_rdy: bool
 };
 
-pub const CC1101 = struct {
+pub const CC1101Init = struct {
     timeout: usize,
-    spi_write: *const fn([]const u8) bool,
-    spi_read_write: *const fn([]u8) bool,
-    spi_transfer: *const fn([]const u8, []u8) bool,
-    spi_cs_set: *const fn(bool) void,
-    get_gdo0: *const fn() bool,
-    get_gdo2: *const fn() bool,
-    rx_buffer: []u8,
+    spi_write: *const fn(*anyopaque, []const u8) bool,
+    spi_read_write: *const fn(*anyopaque, []u8) bool,
+    spi_transfer: *const fn(*anyopaque, []const u8, []u8) bool,
+    spi_cs_set: *const fn(*anyopaque, bool) bool,
+    get_gdo0: *const fn(*anyopaque) ?bool,
+    get_gdo2: *const fn(*anyopaque) ?bool
+};
 
-    pub fn init(self: *const CC1101, cfg: *const CC1101Cfg) CC1101Error!void {
+pub const CC1101 = struct {
+    context: *anyopaque,
+    init_data: *const CC1101Init,
+    rx_buffer: [64]u8,
+    band: u2 = undefined,
+
+    pub fn init(self: *CC1101, cfg: *const CC1101Cfg) CC1101Error!void {
+        self.band = try getBand(cfg.freq);
+
         const p = baudRateAndModeParameters[cfg.mode.toU8()];
         try self.write(&.{
             CC1101Registers.iocfg0.toU8(),
-            if (cfg.crc_enabled) CC1101_PACKET_RECEIVED else CC1101_RX_FIFO_FULL_OR_END_OF_THE_PACKET,
+            if (cfg.pktctrl0.crc_en) CC1101_PACKET_RECEIVED else CC1101_RX_FIFO_FULL_OR_END_OF_THE_PACKET,
             0x40 | p.fifo_thr,
             p.synch,
             p.syncl
@@ -513,10 +481,10 @@ pub const CC1101 = struct {
         try self.setTxPower(cfg.tx_power);
     }
 
-    pub fn setTxPower(self: *const CC1101, tx_power: u8) CC1101Error!void {
+    pub fn setTxPower(self: *const CC1101, tx_power: CC1101TxPower) CC1101Error!void {
         try self.write(&.{
             CC1101Registers.patable.toU8(),
-            tx_power
+            tx_power.toU8(self.band)
         }, &.{});
     }
 
@@ -532,13 +500,18 @@ pub const CC1101 = struct {
             return CC1101Error.InvalidDeviceVersion;
     }
 
-    pub fn powerOn(self: *const CC1101) void {
-        self.spi_cs_set(false);
-        self.spi_cs_set(true);
-        self.spi_cs_set(false);
+    pub fn powerOn(self: *const CC1101) bool {
+        if (!self.init_data.spi_cs_set(self.context, false))
+            return false;
+        if (!self.init_data.spi_cs_set(self.context, true))
+            return false;
+        if (!self.init_data.spi_cs_set(self.context, false))
+            return false;
         system_timer.delayus(50);
-        self.spi_cs_set(true);
+        if (!self.init_data.spi_cs_set(self.context, true))
+            return false;
         system_timer.delayus(50);
+        return true;
     }
 
     pub fn calculateRssi(rssi_in: u8) i16 {
@@ -548,19 +521,7 @@ pub const CC1101 = struct {
         return rssi / 2 - 74;
     }
 
-    fn validateFrequency(frequency: u64) bool {
-        return (frequency >= 430000 and frequency <= 439999) or (frequency >= 863000 and frequency <= 869999);
-    }
-
-    fn validateTxPower(tx_power: u8) bool {
-        return tx_power <= CC1101TxPower433._10.toU8() and tx_power >= CC1101TxPower868.m30.toU8();
-    }
-
-    pub fn validateAndInit(self: *const CC1101, cfg: *const CC1101Cfg) CC1101Error!void {
-        if (!validateFrequency(cfg.freq))
-            return CC1101Error.InvalidFrequency;
-        if (!validateTxPower(cfg.tx_power))
-            return CC1101Error.InvalidTxPower;
+    pub fn validateAndInit(self: *CC1101, cfg: *const CC1101Cfg) CC1101Error!void {
         if (cfg.packet_length == 0)
             return CC1101Error.InvalidPacketLength;
         _ = try self.strobe(CC1101_STROBE_SRES);
@@ -586,7 +547,8 @@ pub const CC1101 = struct {
     }
 
     pub fn receive(self: *const CC1101) CC1101Error![]u8 {
-        if (!self.get_gdo0())
+        const level = self.init_data.get_gdo0(self.context) orelse return CC1101Error.GpioError;
+        if (!level)
             return &.{}; // no data received
 
         errdefer { _ = self.strobe(CC1101_STROBE_SIDLE) catch {};}
@@ -614,12 +576,14 @@ pub const CC1101 = struct {
     }
 
     fn write(self: *const CC1101, data1: []const u8, data2: []const u8) CC1101Error!void {
-        self.spi_cs_set(false);
-        defer self.spi_cs_set(true);
+        if (!self.init_data.spi_cs_set(self.context, false))
+            return CC1101Error.GpioError;
+        defer {_ = self.init_data.spi_cs_set(self.context, true);}
 
-        var t = self.timeout;
+        var t = self.init_data.timeout;
         while (t != 0) {
-            if (!self.get_gdo2())
+            const level = self.init_data.get_gdo2(self.context) orelse return CC1101Error.GpioError;
+            if (!level)
                 break;
             t -= 1;
         }
@@ -630,30 +594,32 @@ pub const CC1101 = struct {
         var d0: [1]u8 = .{data1[0]};
         if (data1.len + data2.len > 2) {
             d0[0] |= CC1101_BURST;
-            if (!self.spi_write(&d0)) {
+            if (!self.init_data.spi_write(self.context, &d0)) {
                 return CC1101Error.SpiError;
             }
-            if (!self.spi_write(data1[1..])) {
+            if (!self.init_data.spi_write(self.context, data1[1..])) {
                 return CC1101Error.SpiError;
             }
         } else {
-            if (!self.spi_write(data1)) {
+            if (!self.init_data.spi_write(self.context, data1)) {
                 return CC1101Error.SpiError;
             }
         }
 
-        if (data2.len != 0 and !self.spi_write(data2)) {
+        if (data2.len != 0 and !self.init_data.spi_write(self.context, data2)) {
             return CC1101Error.SpiError;
         }
     }
 
     fn transfer(self: *const CC1101, wdata: []const u8, rdata: []u8) CC1101Error!void {
-        self.spi_cs_set(false);
-        defer self.spi_cs_set(true);
+        if (!self.init_data.spi_cs_set(self.context, false))
+            return CC1101Error.GpioError;
+        defer {_ = self.init_data.spi_cs_set(self.context, true);}
 
-        var t = self.timeout;
+        var t = self.init_data.timeout;
         while (t != 0) {
-            if (!self.get_gdo2())
+            const level = self.init_data.get_gdo2(self.context) orelse return CC1101Error.GpioError;
+            if (!level)
                 break;
             t -= 1;
         }
@@ -664,26 +630,28 @@ pub const CC1101 = struct {
         var d0: [1]u8 = .{wdata[0]};
         if (wdata.len + rdata.len > 2) {
             d0[0] |= CC1101_BURST;
-            if (!self.spi_write(&d0)) {
+            if (!self.init_data.spi_write(self.context, &d0)) {
                 return CC1101Error.SpiError;
             }
-            if (!self.spi_transfer(wdata[1..], rdata)) {
+            if (!self.init_data.spi_transfer(self.context, wdata[1..], rdata)) {
                 return CC1101Error.SpiError;
             }
         } else {
-            if (!self.spi_transfer(wdata, rdata)) {
+            if (!self.init_data.spi_transfer(self.context, wdata, rdata)) {
                 return CC1101Error.SpiError;
             }
         }
     }
 
     fn read_write(self: *const CC1101, data: []u8) CC1101Error!void {
-        self.spi_cs_set(false);
-        defer self.spi_cs_set(true);
+        if (!self.init_data.spi_cs_set(self.context, false))
+            return CC1101Error.GpioError;
+        defer {_ = self.init_data.spi_cs_set(self.context, true);}
 
-        var t = self.timeout;
+        var t = self.init_data.timeout;
         while (t != 0) {
-            if (!self.get_gdo2())
+            const level = self.init_data.get_gdo2(self.context) orelse return CC1101Error.GpioError;
+            if (!level)
                 break;
             t -= 1;
         }
@@ -691,7 +659,7 @@ pub const CC1101 = struct {
             return CC1101Error.Timeout;
         }
 
-        if (!self.spi_read_write(data)) {
+        if (!self.init_data.spi_read_write(self.context, data)) {
             return CC1101Error.SpiError;
         }
     }
@@ -703,7 +671,19 @@ pub const CC1101 = struct {
     }
 };
 
-pub const CC1101Device = struct {
+pub const CC1101WithConfig = struct {
     device: CC1101,
     cfg: CC1101Cfg
 };
+
+fn getBand(freq: u64) CC1101Error!u2 {
+    if (freq >= 300000 and freq < 348000)
+        return 0;
+    if (freq >= 387000 and freq < 464000)
+        return 1;
+    if (freq >= 779000 and freq < 900000)
+        return 2;
+    if (freq >= 900000 and freq < 928000)
+        return 3;
+    return CC1101Error.InvalidFrequency;
+}

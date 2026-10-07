@@ -2,6 +2,7 @@ pub const std = @import("std");
 pub const gpio = @import("gpio");
 pub const spi = @import("spi");
 pub const i2c = @import("i2c");
+pub const cc1101_device = @import("cc1101_device");
 
 const ArgumentsError = error{
     CommandExpected,
@@ -105,15 +106,8 @@ fn processArguments(args: []const [:0]const u8, io: std.Io, allocator: std.mem.A
             spi_bus_number_expected = false;
             continue;
         }
-        if (std.mem.startsWith(u8, arg, "--")) {
-            const switch_fn = switches.get(arg);
-            if (switch_fn == null) {
-                return ArgumentsError.InvalidSwitch;
-            }
-            switch_fn.?();
-        } else {
-            return ArgumentsError.UnknownParameter;
-        }
+        const switch_fn = switches.get(arg) orelse return ArgumentsError.InvalidSwitch;
+        switch_fn();
     }
     if (config_file_name_expected or (command == Command.TestCC1101 and config_file_name.len == 0)) {
         return ArgumentsError.ConfigFileNameExpected;
@@ -149,8 +143,8 @@ fn testSpi(io: std.Io, allocator: std.mem.Allocator) !void {
 }
 
 fn testCC1101(io: std.Io, allocator: std.mem.Allocator) !void {
-    _ = io;
-    _ = allocator;
+    var device: cc1101_device.CC1101Device = undefined;
+    try device.init(io, allocator, config_file_name);
 }
 
 fn testGpio(io: std.Io, allocator: std.mem.Allocator) !void {

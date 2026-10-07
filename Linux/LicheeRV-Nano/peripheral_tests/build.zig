@@ -34,6 +34,23 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize
     });
 
+    const cc1101 = b.addModule("cc1101", .{
+        .root_source_file = b.path("../../../common_lib/rf/cc1101.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const cc1101_device = b.addModule("cc1101_device", .{
+        .root_source_file = b.path("../../peripheral_library/cc1101_device.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "gpio", .module = gpio },
+            .{ .name = "spi", .module = spi },
+            .{ .name = "cc1101", .module = cc1101 }
+        },
+    });
+
     const exe = b.addExecutable(.{
         .name = "peripheral_tests",
         .root_module = b.createModule(.{
@@ -43,7 +60,8 @@ pub fn build(b: *std.Build) void {
             .imports = &.{
                 .{ .name = "gpio", .module = gpio },
                 .{ .name = "spi", .module = spi },
-                .{ .name = "i2c", .module = i2c }
+                .{ .name = "i2c", .module = i2c },
+                .{ .name = "cc1101_device", .module = cc1101_device }
             },
         }),
     });

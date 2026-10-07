@@ -252,11 +252,8 @@ pub const GPIO = struct {
             const part = it.next();
             if (part == null)
                 break;
-            const f = line_out_options.get(part.?);
-            if (f == null) {
-                return GpioError.InvalidFlag;
-            }
-            flags |= f.?;
+            const f = line_out_options.get(part.?) orelse return GpioError.InvalidFlag;
+            flags |= f;
         }
         if (flags & (GPIO_V2_LINE_FLAG_BIAS_PULL_DOWN|GPIO_V2_LINE_FLAG_BIAS_PULL_UP) == 0) {
             flags |= GPIO_V2_LINE_FLAG_BIAS_DISABLED;
@@ -328,11 +325,8 @@ pub const GPIO = struct {
             if (part4 == null) {
                 return GpioError.InvalidNumberOfGpioParameters;
             }
-            const line_fn = line_set_options.get(part4.?);
-            if (line_fn == null) {
-                return GpioError.InvalidLineSetOption;
-            }
-            try line_fn.?(&gpio, offset, &it, io);
+            const line_fn = line_set_options.get(part4.?) orelse return GpioError.InvalidLineSetOption;
+            try line_fn(&gpio, offset, &it, io);
         } else {
             return GpioError.InvalidGpioParameter;
         }
