@@ -68,11 +68,12 @@ const TestFn = *const fn (self: *CC1101Device, it: *std.mem.SplitIterator(u8, .s
 
 const test_options = std.StaticStringMap(TestFn).initComptime(.{
     .{ "receive", CC1101Device.testReceive },
-    .{ "transmit", CC1101Device.testTransmit }
+    .{ "transmit", CC1101Device.testTransmit },
+    .{ "txrx", CC1101Device.testTransmitReceive }
 });
 
 pub const CC1101Device = struct {
-    bus:      spi.SPIMaster = undefined,
+    bus:      spi.SPIMaster = .{.speed_hz = 1000000, .bits_per_word = 8},
     gd0_port: gpio.GPIO = undefined,
     gd0_pin:  gpio.GPIOPin = undefined,
     gd2_port: ?gpio.GPIO = null,
@@ -82,27 +83,30 @@ pub const CC1101Device = struct {
     device:   cc1101.CC1101 = undefined,
     transfer_tx_buffer: [128]u8 = undefined,
     transfer_rx_buffer: [128]u8 = undefined,
+    spi_error_name: []const u8 = &.{},
+    spi_error_location: []const u8 = &.{},
 
-    pub fn close(self: *CC1101Device) void {
-        self.bus.close();
-        self.gd0_pin.close();
-        self.gd2_pin.close();
-        self.cs_pin.close();
-        self.gd0_port.close();
+    pub fn close(self: *CC1101Device, io: std.Io) void {
+        self.bus.close(io);
+        self.gd0_pin.close(io);
+        self.gd2_pin.close(io);
+        self.cs_pin.close(io);
+        self.gd0_port.close(io);
         if (self.gd2_port) |port| {
-            port.close();
+            port.close(io);
         }
         if (self.cs_port) |port| {
-            port.close();
+            port.close(io);
         }
     }
 
     pub fn init(self: *CC1101Device, io: std.Io, allocator: std.mem.Allocator, config_file_name: []const u8) CC1101DeviceError!void {
         const config = try buildDeviceConfiguration(io, allocator, config_file_name);
+        //std.debug.print("bus number {} device number {}\n", .{config.spi_bus_number, config.spi_device_number});
         try self.bus.init(io, allocator, config.spi_bus_number, config.spi_device_number);
 
         try self.gd0_port.init(io, allocator, config.gd0_gpio_chip_number);
-        self.gd0_pin = try self.gd0_port.setLineInput(config.gd0_gpio_pin, gpio.GPIO_V2_LINE_FLAG_BIAS_PULL_UP);
+        self.gd0_pin = try self.gd0_port.setLineInput(config.gd0_gpio_pin, gpio.GPIO_V2_LINE_FLAG_BIAS_PULL_DOWN);
 
         if (config.gd0_gpio_chip_number != config.gd2_gpio_chip_number) {
             self.gd2_port = .{};
@@ -179,12 +183,8 @@ pub const CC1101Device = struct {
         try test_fn(self, &it, io, allocator);
     }
 
-    fn testReceive(self: *CC1101Device, it: *std.mem.SplitIterator(u8, .scalar), io: std.Io,
-                    allocator: std.mem.Allocator) CC1101DeviceError!void {
-        _ = allocator;
-        if (it.next() != null) {
-            return InternalError.InvalidNumberOfParameters;
-        }
+    fn testReceiveInternal(self: *CC1101Device, io: std.Io) CC1101DeviceError!void {
+        try self.device.receiveStart();
         const one_second = std.Io.Duration.fromSeconds(1);
         for (0..30) |_| {
             const data = try self.device.receive();
@@ -193,13 +193,22 @@ pub const CC1101Device = struct {
                 continue;
             }
             std.debug.print("{x}", .{data});
-            break;
+            return;
         }
+        try self.device.receiveStop();
     }
 
-    fn testTransmit(self: *CC1101Device, it: *std.mem.SplitIterator(u8, .scalar), io: std.Io,
+    fn testReceive(self: *CC1101Device, it: *std.mem.SplitIterator(u8, .scalar), io: std.Io,
                     allocator: std.mem.Allocator) CC1101DeviceError!void {
-        _ = io;
+        _ = allocator;
+        if (it.next() != null) {
+            return InternalError.InvalidNumberOfParameters;
+        }
+        try self.testReceiveInternal(io);
+    }
+
+    fn testTransmitInternal(self: *CC1101Device, it: *std.mem.SplitIterator(u8, .scalar),
+        allocator: std.mem.Allocator) CC1101DeviceError!void {
         const address_string = it.next() orelse return InternalError.InvalidNumberOfParameters;
         const address = std.fmt.parseInt(u8, address_string, 10) catch {
             return InternalError.InvalidAddress;
@@ -216,28 +225,58 @@ pub const CC1101Device = struct {
         try self.device.transmit(address, bytes);
     }
 
+    fn testTransmit(self: *CC1101Device, it: *std.mem.SplitIterator(u8, .scalar), io: std.Io,
+                    allocator: std.mem.Allocator) CC1101DeviceError!void {
+        _ = io;
+        try self.testTransmitInternal(it, allocator);
+    }
+
+    fn testTransmitReceive(self: *CC1101Device, it: *std.mem.SplitIterator(u8, .scalar), io: std.Io,
+        allocator: std.mem.Allocator) CC1101DeviceError!void {
+        try self.testTransmitInternal(it, allocator);
+        try self.testReceiveInternal(io);
+    }
+
     fn spiWrite(context: *anyopaque, data: []const u8) bool {
         const self: *CC1101Device = @ptrCast(@alignCast(context));
-        self.bus.write(data) catch {
+        self.bus.write(data) catch |err| {
+            self.spi_error_location = "spiWrite";
+            self.spi_error_name = @errorName(err);
             return false;
         };
         return true;
     }
 
+    pub fn getLinuxErrno(self: *const CC1101Device) std.os.linux.E {
+        return self.bus.linux_errno;
+    }
+
     fn spiReadWrite(context: *anyopaque, data: []u8) bool {
         const self: *CC1101Device = @ptrCast(@alignCast(context));
-        self.bus.transfer(data, data) catch {
+        @memcpy(self.transfer_tx_buffer[0..data.len], data);
+        //std.debug.print("spiReadWrite {x}\n", .{data});
+        self.bus.transfer(self.transfer_tx_buffer[0..data.len], self.transfer_rx_buffer[0..data.len]) catch |err| {
+            self.spi_error_location = "spiReadWrite";
+            self.spi_error_name = @errorName(err);
             return false;
         };
+        @memcpy(data, self.transfer_rx_buffer[0..data.len]);
         return true;
     }
 
     fn spiTransfer(context: *anyopaque, wdata: []const u8, rdata: []u8) bool {
         const self: *CC1101Device = @ptrCast(@alignCast(context));
+        const total_len = wdata.len + rdata.len;
+        if (total_len > self.transfer_rx_buffer.len) {
+            self.spi_error_location = "spiTransfer";
+            self.spi_error_name = "Transfer buffer too small";
+            return false;
+        }
         @memset(&self.transfer_tx_buffer, 0);
         @memcpy(self.transfer_tx_buffer[0..wdata.len], wdata);
-        const total_len = wdata.len + rdata.len;
-        self.bus.transfer(self.transfer_tx_buffer[0..total_len], self.transfer_rx_buffer[0..total_len]) catch  {
+        self.bus.transfer(self.transfer_tx_buffer[0..total_len], self.transfer_rx_buffer[0..total_len]) catch |err| {
+            self.spi_error_location = "spiTransfer";
+            self.spi_error_name = @errorName(err);
             return false;
         };
         @memcpy(rdata, self.transfer_rx_buffer[wdata.len..]);

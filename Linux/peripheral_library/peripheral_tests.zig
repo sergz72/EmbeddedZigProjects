@@ -123,33 +123,49 @@ fn processArguments(args: []const [:0]const u8, io: std.Io, allocator: std.mem.A
         return ArgumentsError.ParametersExpected;
     }
     switch (command) {
-        .I2CScan => try i2cScan(io, allocator),
-        .SPITest => try testSpi(io, allocator),
-        .GPIOTest => try testGpio(io, allocator),
-        .TestCC1101 => try testCC1101(io, allocator),
+        .I2CScan => i2cScan(io, allocator),
+        .SPITest => testSpi(io, allocator),
+        .GPIOTest => testGpio(io, allocator),
+        .TestCC1101 => testCC1101(io, allocator),
         else => return ArgumentsError.CommandExpected
     }
 }
 
-fn i2cScan(io: std.Io, allocator: std.mem.Allocator) !void {
+fn i2cScan(io: std.Io, allocator: std.mem.Allocator) void {
     _ = io;
     _ = allocator;
 }
 
-fn testSpi(io: std.Io, allocator: std.mem.Allocator) !void {
+fn testSpi(io: std.Io, allocator: std.mem.Allocator) void {
     var spi_master = spi.SPIMaster{.bits_per_word = 8, .speed_hz = 1000000};
-    try spi_master.init(io, allocator, bus_number, device_number);
+    spi_master.init(io, allocator, bus_number, device_number) catch |err| {
+        std.debug.print("SPI init failed: {}\n", .{err});
+        return;
+    };
     defer spi_master.close(io);
-    try spi_master.testTransfer();
+    spi_master.testTransfer() catch |err| {
+        std.debug.print("SPI transfer failed: {}\n", .{err});
+        return;
+    };
 }
 
-fn testCC1101(io: std.Io, allocator: std.mem.Allocator) !void {
-    var device: cc1101_device.CC1101Device = undefined;
-    try device.init(io, allocator, config_file_name);
-    try device.runTests(io, allocator, parameters);
+fn testCC1101(io: std.Io, allocator: std.mem.Allocator) void {
+    var device: cc1101_device.CC1101Device = .{};
+    device.init(io, allocator, config_file_name) catch |err| {
+        std.debug.print("CC1101 init failed: {} error_name={s} error_location={s} linux_errno={}\n", .{
+            err, device.spi_error_name, device.spi_error_location, device.getLinuxErrno()
+        });
+        return;
+    };
+    defer device.close(io);
+    device.runTests(io, allocator, parameters) catch |err| {
+        std.debug.print("CC1101 runTests failed: {} error_name={s} error_location={s} linux_errno={}\n", .{
+            err, device.spi_error_name, device.spi_error_location, device.getLinuxErrno()
+        });
+    };
 }
 
-fn testGpio(io: std.Io, allocator: std.mem.Allocator) !void {
+fn testGpio(io: std.Io, allocator: std.mem.Allocator) void {
     gpio.GPIO.testGpio(io, allocator, parameters) catch |err| {
         std.debug.print("GPIO test failed: {}\n", .{err});
     };
