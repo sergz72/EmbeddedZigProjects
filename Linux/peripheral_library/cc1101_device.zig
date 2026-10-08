@@ -53,7 +53,7 @@ pub const InternalError = error {
 pub const CC1101DeviceError = cc1101.CC1101Error || std.Io.Dir.ReadFileAllocError || InternalError || spi.SPIError ||
             gpio.GpioError;
 
-const init_data: cc1101.CC1101init = .{
+const init_data: cc1101.CC1101Init = .{
     .timeout = 1000000,
     .spi_write = CC1101Device.spiWrite,
     .spi_read_write = CC1101Device.spiReadWrite,
@@ -80,6 +80,8 @@ pub const CC1101Device = struct {
     cs_port:  ?gpio.GPIO = null,
     cs_pin:   gpio.GPIOPin = undefined,
     device:   cc1101.CC1101 = undefined,
+    transfer_tx_buffer: [128]u8 = undefined,
+    transfer_rx_buffer: [128]u8 = undefined,
 
     pub fn close(self: *CC1101Device) void {
         self.bus.close();
@@ -162,6 +164,8 @@ pub const CC1101Device = struct {
             },
             .tx_power = config.tx_power
         };
+        self.device.context = @ptrCast(self);
+        self.device.init_data = &init_data;
         try self.device.validateAndInit(&device_cfg);
     }
 
@@ -214,8 +218,7 @@ pub const CC1101Device = struct {
 
     fn spiWrite(context: *anyopaque, data: []const u8) bool {
         const self: *CC1101Device = @ptrCast(@alignCast(context));
-        var rdata: [data.len]u8 = undefined;
-        try self.bus.transfer(data, &rdata) catch {
+        self.bus.write(data) catch {
             return false;
         };
         return true;
@@ -223,7 +226,7 @@ pub const CC1101Device = struct {
 
     fn spiReadWrite(context: *anyopaque, data: []u8) bool {
         const self: *CC1101Device = @ptrCast(@alignCast(context));
-        try self.bus.transfer(data, data) catch {
+        self.bus.transfer(data, data) catch {
             return false;
         };
         return true;
@@ -231,13 +234,13 @@ pub const CC1101Device = struct {
 
     fn spiTransfer(context: *anyopaque, wdata: []const u8, rdata: []u8) bool {
         const self: *CC1101Device = @ptrCast(@alignCast(context));
-        var wd = std.mem.zeroes([wdata.len+rdata.len]u8);
-        @memcpy(wd[0..wdata.len], wdata);
-        var rd: [wdata.len+rdata.len]u8 = undefined;
-        try self.bus.transfer(wd, &rd) catch  {
+        @memset(&self.transfer_tx_buffer, 0);
+        @memcpy(self.transfer_tx_buffer[0..wdata.len], wdata);
+        const total_len = wdata.len + rdata.len;
+        self.bus.transfer(self.transfer_tx_buffer[0..total_len], self.transfer_rx_buffer[0..total_len]) catch  {
             return false;
         };
-        @memcpy(rdata, rd[wdata.len..]);
+        @memcpy(rdata, self.transfer_rx_buffer[wdata.len..]);
         return true;
     }
 

@@ -185,7 +185,7 @@ pub const CC1101PktFormat = enum(u2) {
 };
 
 pub const CC1101PktCtrl0 = packed struct(u8) {
-    length_config: CC1101LengthConfig = .variable_length,
+    length_config: CC1101LengthConfig = .variable,
     crc_en: bool = true,
     reserved: u1 = 0,
     pkt_format: CC1101PktFormat = .normal_mode,
@@ -209,7 +209,7 @@ pub const CC1101SyncMode = enum(u3) {
 };
 
 pub const CC1101MdmCfg2 = packed struct(u8) {
-    sync_mode: CC1101SyncMode = .sync1616,
+    sync_mode: CC1101SyncMode = ._1616,
     manchester_en: bool = false,
     mod_format: u3 = 0,
     dem_dcfilt_off: bool = false,
@@ -312,7 +312,7 @@ pub const CC1101Cfg = struct {
         .crc_autoflush = true, .pqt = 0
     },
     pktctrl0: CC1101PktCtrl0 = .{
-        .crc_en = true, .white_data = true, .length_config = .variable_length,
+        .crc_en = true, .white_data = true, .length_config = .variable,
         .pkt_format = .normal_mode
     },
     address: u8,
@@ -320,7 +320,7 @@ pub const CC1101Cfg = struct {
     freqoffset: u8 = 0,
     dem_dcfilt_off: bool = false,
     manchester_en: bool = false,
-    sync_mode: CC1101SyncMode = .sync3032,
+    sync_mode: CC1101SyncMode = ._3032,
     fec_en: bool = false,
     num_preamble: CC1101NumPreamble = ._4,
     mcsm2: CC1101Mcsm2 = .{
@@ -330,7 +330,7 @@ pub const CC1101Cfg = struct {
     },
     mcsm1: CC1101Mcsm1,
     mcsm0: CC1101Mcsm0 = .{
-        .fs_autocal = .from_idle_torx_or_tx_or_fstxon,
+        .fs_autocal = .from_idle,
         .po_timeout = ._155us,
         .pin_ctrl_en = false,
         .xosc_force_on = false

@@ -93,6 +93,27 @@ pub const SPIMaster = struct {
         }
     }
 
+    pub fn write(self: *SPIMaster, wdata: []const u8) SPIError!void {
+        var trfr: SpiIocTransfer = .{
+            .tx_buf           = @intFromPtr(&wdata[0]),
+            .rx_buf           = 0,
+            .length           = @truncate(wdata.len),
+            .speed_hz         = self.speed_hz,
+            .delay_usecs      = 0,
+            .bits_per_word    = self.bits_per_word,
+            .tx_nbits         = 0,
+            .rx_nbits         = 0,
+            .word_delay_usecs = 0,
+            .cs_change        = 0,
+            .pad              = 0,
+        };
+        const rc = linux.ioctl(self.file.handle, spi_ioc_transfer, @intFromPtr(&trfr));
+        self.linux_errno = linux.errno(rc);
+        if (self.linux_errno != .SUCCESS) {
+            return SPIError.IoctlFailed;
+        }
+    }
+
     pub fn testTransfer(self: *SPIMaster) SPIError!void {
         const wdata: [3]u8 = .{ 0x55, 0xAA, 0xA5 };
         var rdata: [3]u8 = undefined;
