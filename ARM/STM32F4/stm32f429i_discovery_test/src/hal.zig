@@ -30,6 +30,7 @@ inline fn initTimer() void {
 
 export fn SystemInit() callconv(.c) void {
     board.init();
+    board.initSdram();
     initTimer();
 }
 

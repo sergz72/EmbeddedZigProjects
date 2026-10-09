@@ -67,10 +67,19 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const sdram = b.addModule("sdram", .{
+        .root_source_file = b.path("../../../common_lib/memory/sdram.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const fmc = b.addModule("fmc", .{
         .root_source_file = b.path("../lib/fmc.zig"),
         .target = target,
-        .optimize = optimize
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "sdram", .module = sdram }
+        },
     });
 
     const ltdc = b.addModule("ltdc", .{
@@ -109,6 +118,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "flash", .module = flash },
             .{ .name = "usart", .module = usart },
             .{ .name = "fmc", .module = fmc },
+            .{ .name = "sdram", .module = sdram },
             .{ .name = "ltdc", .module = ltdc },
             .{ .name = "interrupts", .module = interrupts },
             .{ .name = "usart_writer", .module = usart_writer },

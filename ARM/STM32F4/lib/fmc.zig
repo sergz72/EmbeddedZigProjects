@@ -1,4 +1,14 @@
+const sdram = @import("sdram");
+const system_timer = @import("system_timer");
+
 const FMC_BASE: usize = 0xA0000000;
+
+pub const FMC_BANK1: usize = 0x60000000;
+pub const FMC_BANK2: usize = 0x70000000;
+pub const FMC_BANK3: usize = 0x80000000;
+pub const FMC_BANK4: usize = 0x90000000;
+pub const SDRAM_BANK1: usize = 0xC0000000;
+pub const SDRAM_BANK2: usize = 0xD0000000;
 
 pub const FmcBcr = packed struct(u32) {
     mbken: bool = false,
@@ -112,35 +122,51 @@ pub const FmcBwtr = extern struct {
     reserved: u32
 };
 
+pub const FmcSdclk = enum(u2) {
+    disabled = 0,
+    two_hclk_periods = 2,
+    three_hclk_periods = 3
+};
+
 pub const FmcSdcr = packed struct(u32) {
-    nc: u2 = 0,
-    nr: u2 = 0,
-    mwid: u2 = 3,
-    nb: bool = false,
-    cas: u2 = 1,
-    wp: bool = false,
-    sdclk: u2 = 1,
+    nc: sdram.SdramNc = ._8,
+    nr: sdram.SdramNr = ._11,
+    mwid: sdram.SdramMw = ._16,
+    nb: bool = true,
+    cas: sdram.SdramCasLatency = ._1,
+    wp: bool = true,
+    sdclk: FmcSdclk = .disabled,
     rburst: bool = false,
-    rpipe: u2 = 0,
+    rpipe: sdram.SdramPipe = ._0,
     reserved: u17 = 0
 };
 
 pub const FmcSdtr = packed struct(u32) {
-    tmrd: u4 = 0x0F,
-    txsr: u4 = 0x0F,
-    tras: u4 = 0x0F,
-    trc: u4 = 0x0F,
-    twr: u4 = 0x0F,
-    trp: u4 = 0x0F,
-    trcd: u4 = 0x0F,
+    tmrd: sdram.SdramDelay = ._16,
+    txsr: sdram.SdramDelay = ._16,
+    tras: sdram.SdramDelay = ._16,
+    trc: sdram.SdramDelay = ._16,
+    twr: sdram.SdramDelay = ._16,
+    trp: sdram.SdramDelay = ._16,
+    trcd: sdram.SdramDelay = ._16,
     reserved: u4 = 0
 };
 
+pub const FmcSdcmrMode = enum(u3) {
+    normal_mode = 0,
+    clock_configuration_enable = 1,
+    all_bank_precharge = 2,
+    auto_refresh = 3,
+    load_mode_register = 4,
+    self_refresh = 5,
+    power_down = 6
+};
+
 pub const FmcSdcmr = packed struct(u32) {
-    mode: u3 = 0,
+    mode: FmcSdcmrMode = .normal_mode,
     ctb2: bool = false,
     ctb1: bool = false,
-    nrfs: u4 = 0,
+    nrfs: sdram.SdramDelay = ._1,
     mrd: u13 = 0,
     reserved: u10 = 0
 };
@@ -152,12 +178,29 @@ pub const FmcSdrtr = packed struct(u32) {
     reserved: u17 = 0
 };
 
+pub const FsmcSdsrMode = enum(u2) {
+    normal = 0,
+    self_refresh = 1,
+    power_down = 2,
+    _
+};
+
 pub const FmcSdsr = packed struct(u32) {
     re: bool,
-    modes1: u2,
-    modes2: u2,
+    modes1: FsmcSdsrMode,
+    modes2: FsmcSdsrMode,
     busy: bool,
     reserved: u26
+};
+
+pub const SDRAMBank = enum(u1) {
+    bank1 = 0,
+    bank2 = 1
+};
+
+pub const FmcSdramInit = struct {
+    bank: SDRAMBank,
+    sdclk: FmcSdclk,
 };
 
 pub const Fmc = extern struct {
@@ -172,13 +215,47 @@ pub const Fmc = extern struct {
     bwtr: [4]FmcBwtr,
     reserved3: [7]u32,
     //0x140
-    sdcr1: FmcSdcr,
-    sdcr2: FmcSdcr,
-    sdtr1: FmcSdtr,
-    sdtr2: FmcSdtr,
+    sdcr: [2]FmcSdcr,
+    sdtr: [2]FmcSdtr,
     sdcmr: FmcSdcmr,
     sdrtr: FmcSdrtr,
-    sdsr: FmcSdsr
+    sdsr: FmcSdsr,
+
+    pub fn initSdram(self: *volatile Fmc, init: FmcSdramInit, settings: sdram.Sdram) void {
+        const bank: usize = @intFromEnum(init.bank);
+        const sdcr: FmcSdcr = .{
+            .nc = settings.nc,
+            .nr = settings.nr,
+            .mwid = settings.mw,
+            .nb = settings.four_banks,
+            .cas = settings.cas_latency,
+            .wp = false,
+            .sdclk = .disabled,
+            .rburst = settings.burst_read,
+            .rpipe = settings.read_pipe,
+        };
+        const sdtr: FmcSdtr = .{
+            .tmrd = settings.load_mode_register_to_active,
+            .txsr = settings.exit_self_refresh_delay,
+            .tras = settings.self_refresh_time,
+            .trc = settings.row_cycle_delay,
+            .twr = settings.recovery_delay,
+            .trp = settings.row_precharge_delay,
+            .trcd = settings.row_to_column_delay
+        };
+        if (init.bank == .bank2) {
+            self.sdcr[0] = sdcr;
+            self.sdtr[0] = sdtr;
+        }
+        self.sdcr[bank] = sdcr;
+        self.sdtr[bank] = sdtr;
+        self.sdramInitSequence();
+    }
+
+    fn sdramInitSequence(self: *volatile Fmc) void {
+        _ = self;
+        //todo
+    }
 };
 
 pub const fmc: *volatile Fmc = @ptrFromInt(FMC_BASE);
