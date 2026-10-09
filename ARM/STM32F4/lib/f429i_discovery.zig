@@ -4,6 +4,8 @@ const rcc = @import("rcc");
 const cpu = @import("cpu");
 const nvic = @import("nvic");
 const flash = @import("flash");
+const usart = @import("usart");
+const interrupts = @import("interrupts");
 
 const LED_GREEN_PIN = 13;
 const LED_GREEN_PIN_MASK: u16 = 1 << LED_GREEN_PIN;
@@ -18,6 +20,17 @@ const LED_RED_PORT = gpio.gpiog;
 const BUTTON_PIN = 0;
 const BUTTON_PIN_MASK: u16 = 1 << BUTTON_PIN;
 const BUTTON_PORT = gpio.gpioa;
+
+const USART_PORT = gpio.gpioa;
+pub const USART_INSTANCE = usart.usart1;
+//--------------------------------
+const USART_TX_PIN = 9;
+const USART_TX_PIN_MASK: u16 = 1 << USART_TX_PIN;
+//--------------------------------
+const USART_RX_PIN = 10;
+const USART_RX_PIN_MASK: u16 = 1 << USART_RX_PIN;
+
+var usart_callback: *const fn(u8) void = undefined;
 
 pub inline fn ledGreenOn() void {
     LED_GREEN_PORT.bsrr = @as(u32, LED_GREEN_PIN_MASK);
@@ -104,8 +117,33 @@ pub fn initUsb() void {
     //todo
 }
 
-pub fn initUart(baud: usize) void {
-    _ = baud;
+export fn USART1_IRQHandler() callconv(.c) void {
+    const sr = USART_INSTANCE.sr;
+    if (sr.ore) {
+        _ = USART_INSTANCE.dr;
+        return;
+    }
+    if (sr.rxne) {
+        usart_callback(USART_INSTANCE.dr);
+    }
+}
+
+pub fn initUsart(baud: u32, callback: *const fn(u8) void) void {
+    usart_callback = callback;
+    rcc.rcc.ahb1enr.gpioaen = true;
+    rcc.rcc.apb2enr.usart1en = true;
+    var init_data: gpio.GpioInit = .{
+        .pins = USART_TX_PIN_MASK,
+        .mode = .alternate,
+        .speed = .high,
+        .alternate_function = 7
+    };
+    USART_PORT.init(&init_data);
+    init_data.pins = USART_RX_PIN_MASK;
+    init_data.pupdr = .pullup;
+    USART_PORT.init(&init_data);
+    USART_INSTANCE.init(baud, cpu.cpu.apb2_frequency);
+    nvic.nvic.enableInterrupt(interrupts.Interrupt.USART1.toU8());
 }
 
 pub fn init() void {

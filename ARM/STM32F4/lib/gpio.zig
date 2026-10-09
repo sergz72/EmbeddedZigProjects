@@ -70,7 +70,7 @@ pub const Gpio = extern struct {
                 otyper &= ~mask1;
                 ospeedr &= ~mask2;
                 pupdr &= ~mask2;
-                afr[afr_idx] &= mask4;
+                afr[afr_idx] &= ~mask4;
                 moder |= @intFromEnum(init_data.mode) << shift2;
                 if (init_data.open_drain)
                     otyper |= @as(u32, 1) << shift1;
