@@ -20,11 +20,18 @@ pub const RccCr = packed struct(u32) {
     reserved4: u2 = 0
 };
 
+pub const RccPllCfgrPllp = enum(u2) {
+    div2 = 0,
+    div4 = 1,
+    div6 = 2,
+    div8 = 3
+};
+
 pub const RccPllCfgr = packed struct(u32) {
     pllm: u6 = 0x10,
     plln: u9 = 0xC0,
     reserved: u1 = 0,
-    pllp: u2 = 0,
+    pllp: RccPllCfgrPllp = .div2,
     reserved2: u4 = 0,
     pllsrc: bool = false,
     reserved3: u1 = 0,
@@ -35,7 +42,7 @@ pub const RccPllCfgr = packed struct(u32) {
 pub const RccCfgrSw = enum(u2) {
     hsi = 0,
     hse = 1,
-    pll1 = 2
+    pll = 2
 };
 
 pub const RccCfgrHpre = enum(u4) {

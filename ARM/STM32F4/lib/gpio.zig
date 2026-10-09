@@ -33,7 +33,7 @@ pub const GpioPupdr = enum(u32) {
 pub const GpioInit = struct {
     pins: u16,
     mode: GpioMode,
-    speed: GpioSpeed,
+    speed: GpioSpeed = .low,
     pupdr: GpioPupdr = .floating,
     alternate_function: u4 = 0,
     open_drain: bool = false

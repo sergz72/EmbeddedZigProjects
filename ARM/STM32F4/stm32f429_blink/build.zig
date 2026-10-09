@@ -34,6 +34,12 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const flash = b.addModule("flash", .{
+        .root_source_file = b.path("../lib/flash.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const system_timer = b.addModule("system_timer", .{
         .root_source_file = b.path("../../lib/system_timer.zig"),
         .target = target,
@@ -48,8 +54,12 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .optimize = optimize,
         .imports = &.{
+            .{ .name = "cpu", .module = cpu },
             .{ .name = "rcc", .module = rcc },
-            .{ .name = "gpio", .module = gpio }
+            .{ .name = "gpio", .module = gpio },
+            .{ .name = "nvic", .module = nvic },
+            .{ .name = "flash", .module = flash },
+            .{ .name = "system_timer", .module = system_timer }
         },
     });
 
@@ -61,11 +71,7 @@ pub fn build(b: *std.Build) !void {
             .optimize = optimize,
             .imports = &.{
                 .{ .name = "system_timer", .module = system_timer },
-                .{ .name = "cpu", .module = cpu },
-                .{ .name = "board", .module = board },
-                .{ .name = "rcc", .module = rcc },
-                .{ .name = "gpio", .module = gpio },
-                .{ .name = "nvic", .module = nvic }
+                .{ .name = "board", .module = board }
             },
         }),
     });

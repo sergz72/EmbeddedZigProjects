@@ -2,17 +2,17 @@ const system_timer = @import("system_timer");
 const board = @import("board");
 
 export fn SystemInit() callconv(.c) void {
-    system_timer.delay_init(system_timer.init_div8);
-    board.init_leds();
+    board.init();
+    board.initUart(115200);
 }
 
 export fn main() callconv(.c) noreturn {
     while (true) {
-        board.led_green_on();
-        board.led_red_off();
+        board.ledGreenOn();
+        board.ledRedOff();
         system_timer.delayms(1000);
-        board.led_green_off();
-        board.led_red_on();
+        board.ledGreenOff();
+        board.ledRedOn();
         system_timer.delayms(1000);
     }
 }
