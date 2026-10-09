@@ -1,9 +1,13 @@
 const system_timer = @import("system_timer");
 const board = @import("board");
 
+fn usart_callback(data: u8) void {
+    board.USART_INSTANCE.dr = data;
+}
+
 export fn SystemInit() callconv(.c) void {
     board.init();
-    board.initUart(115200);
+    board.initUsart(115200, usart_callback);
 }
 
 export fn main() callconv(.c) noreturn {

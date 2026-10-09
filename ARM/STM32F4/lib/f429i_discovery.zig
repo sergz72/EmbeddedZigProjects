@@ -6,6 +6,9 @@ const nvic = @import("nvic");
 const flash = @import("flash");
 const usart = @import("usart");
 const interrupts = @import("interrupts");
+const usart_writer = @import("usart_writer");
+const fmc = @import("fmc");
+const ltdc = @import("ltdc");
 
 const LED_GREEN_PIN = 13;
 const LED_GREEN_PIN_MASK: u16 = 1 << LED_GREEN_PIN;
@@ -128,6 +131,10 @@ export fn USART1_IRQHandler() callconv(.c) void {
     }
 }
 
+pub fn usartWrite(byte: u8) void {
+    USART_INSTANCE.write(byte);
+}
+
 pub fn initUsart(baud: u32, callback: *const fn(u8) void) void {
     usart_callback = callback;
     rcc.rcc.ahb1enr.gpioaen = true;
@@ -144,6 +151,7 @@ pub fn initUsart(baud: u32, callback: *const fn(u8) void) void {
     USART_PORT.init(&init_data);
     USART_INSTANCE.init(baud, cpu.cpu.apb2_frequency);
     nvic.nvic.enableInterrupt(interrupts.Interrupt.USART1.toU8());
+    usart_writer.usart_writer.writeCharFunc = usartWrite;
 }
 
 pub fn init() void {

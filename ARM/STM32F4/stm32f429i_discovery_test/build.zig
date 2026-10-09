@@ -61,6 +61,42 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const timer = b.addModule("timer", .{
+        .root_source_file = b.path("../lib/timer.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const fmc = b.addModule("fmc", .{
+        .root_source_file = b.path("../lib/fmc.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const ltdc = b.addModule("ltdc", .{
+        .root_source_file = b.path("../lib/ltdc.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const allocator = b.addModule("allocator", .{
+        .root_source_file = b.path("../../lib/fb_allocator.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const shell = b.addModule("shell", .{
+        .root_source_file = b.path("../../../common_lib/shell.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const usart_writer = b.addModule("usart_writer", .{
+        .root_source_file = b.path("../../../common_lib/usart_writer.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const board = b.addModule("board", .{
         .root_source_file = b.path("../lib/f429i_discovery.zig"),
         .target = target,
@@ -72,20 +108,41 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "nvic", .module = nvic },
             .{ .name = "flash", .module = flash },
             .{ .name = "usart", .module = usart },
+            .{ .name = "fmc", .module = fmc },
+            .{ .name = "ltdc", .module = ltdc },
             .{ .name = "interrupts", .module = interrupts },
+            .{ .name = "usart_writer", .module = usart_writer },
             .{ .name = "system_timer", .module = system_timer }
         },
     });
 
+    const hal = b.addModule("hal", .{
+        .root_source_file = b.path("src/hal.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "cpu", .module = cpu },
+            .{ .name = "rcc", .module = rcc },
+            .{ .name = "board", .module = board },
+            .{ .name = "timer", .module = timer },
+            .{ .name = "shell", .module = shell },
+            .{ .name = "nvic", .module = nvic },
+            .{ .name = "interrupts", .module = interrupts }
+        },
+    });
+
     const exe = b.addExecutable(.{
-        .name = "stm32f429_blink.elf",
+        .name = "stm32f429i_discovery_test.elf",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
             .target = target,
             .optimize = optimize,
             .imports = &.{
-                .{ .name = "system_timer", .module = system_timer },
-                .{ .name = "board", .module = board }
+                .{ .name = "shell", .module = shell },
+                .{ .name = "board", .module = board },
+                .{ .name = "usart_writer", .module = usart_writer },
+                .{ .name = "hal", .module = hal },
+                .{ .name = "allocator", .module = allocator }
             },
         }),
     });
@@ -94,7 +151,7 @@ pub fn build(b: *std.Build) !void {
     exe.link_gc_sections = true;
     exe.link_function_sections = true;
     exe.link_data_sections = true;
-    exe.lto = .full;                     // Whole-program optimization & inlining
+    //exe.lto = .full;                     // Whole-program optimization & inlining
 
     exe.root_module.addAssemblyFile(b.path("../startup_stm32f429xx.s"));
 
