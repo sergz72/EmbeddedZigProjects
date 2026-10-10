@@ -5,7 +5,7 @@ const SYSTICK_BASE: usize = 0xE000F000;
 
 var p_us: u64 = undefined;
 var p_ms: u64 = undefined;
-var systick_interrupt: bool = undefined;
+var systick_counter: usize = undefined;
 
 const SystickCtlr = packed struct(u32) {
     ste: bool = false,
@@ -34,18 +34,19 @@ pub fn delayInit() void {
 }
 
 export fn SysTick_Handler() callconv(.naked) void {
-    systick_interrupt = true;
+    systick_counter += 1;
     systick.sr = 0;
     asm volatile("mret");
 }
 
 fn delay(n: u64) void {
     systick.ctlr = SystickCtlr{};
-    systick_interrupt = false;
+    systick_counter = 0;
+    systick.cntr = 0;
     systick.cmpr = n;
     systick.ctlr = SystickCtlr{.init = true};
     systick.ctlr = SystickCtlr{.ste = true, .stie = true, .stclk_hclk = true};
-    while (!systick_interrupt) {
+    while (systick_counter == 0) {
         asm volatile ("wfi");
     }
     systick.ctlr = SystickCtlr{};
@@ -57,4 +58,27 @@ pub fn delayms(ms: usize) void {
 
 pub fn delayus(us: usize) void {
     delay(us * p_us);
+}
+
+pub fn start1us() void {
+    systick.ctlr = SystickCtlr{};
+    systick_counter = 0;
+    systick.cntr = 0;
+    systick.cmpr = p_us;
+    systick.ctlr = SystickCtlr{.init = true};
+    systick.ctlr = SystickCtlr{.ste = true, .stie = true, .stclk_hclk = true};
+}
+
+pub fn start1ms() void {
+    systick.ctlr = SystickCtlr{};
+    systick_counter = 0;
+    systick.cntr = 0;
+    systick.cmpr = p_ms;
+    systick.ctlr = SystickCtlr{.init = true};
+    systick.ctlr = SystickCtlr{.ste = true, .stie = true, .stclk_hclk = true};
+}
+
+pub fn stop() usize {
+    systick.ctlr = SystickCtlr{};
+    return systick_counter;
 }
