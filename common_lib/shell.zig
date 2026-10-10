@@ -5,7 +5,6 @@ pub const ShellError = error {
 };
 
 pub const ShellHandlerParameters = struct {
-    argc: usize,
     argv: [][]const u8,
     allocator: std.mem.Allocator,
     writer: *std.Io.Writer
@@ -28,10 +27,11 @@ pub const ShellInit = struct {
 
 pub const Shell = struct {
     init_data: *const ShellInit,
-    writer: *std.Io.Writer,
-    commands: []*const ShellCommand,
     argc: usize,
     argv: [][]const u8,
+    allocator: std.mem.Allocator,
+    writer: *std.Io.Writer,
+    commands: []*const ShellCommand,
     history: [][]u8,
     history_size: usize,
     history_offset: usize,
@@ -41,7 +41,6 @@ pub const Shell = struct {
     command_idx: usize,
     command_ready: bool,
     echo_func: *const fn(u8) void,
-    allocator: std.mem.Allocator,
 
     pub fn init(init_data: *const ShellInit, allocator: std.mem.Allocator, writer: *std.Io.Writer,
         echo_func: *const fn(u8) void) !*Shell {
@@ -53,18 +52,18 @@ pub const Shell = struct {
         sh.* = Shell {
             .init_data = init_data,
             .writer = writer,
-            .commands = commands,
+            .argc = 0,
             .argv = argv,
+            .allocator = allocator,
+            .commands = commands,
             .history = history,
             .next_command_idx = 0,
             .history_offset = 0,
             .history_size = 0,
             .history_buffer = history_buffer,
-            .argc = 0,
             .command_idx = 0,
             .command_ready = false,
             .echo_func = echo_func,
-            .allocator = allocator,
             .command = undefined
         };
         return sh;
@@ -116,10 +115,9 @@ pub const Shell = struct {
             if (std.mem.eql(u8, cmd.name, self.argv[0])) {
                 if (cmd.parameter_mask & (@as(usize, 1) << @truncate(self.argc - 1)) != 0) {
                     return try cmd.handler(.{
-                        .argc = self.argc - 1,
-                        .argv = self.argv[1..],
+                        .writer = self.writer,
                         .allocator = self.allocator,
-                        .writer = self.writer
+                        .argv = self.argv[1..self.argc]
                     });
                 } else {
                     _ = try self.writer.writeAll("incorrect number of parameters\n");

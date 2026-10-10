@@ -20,7 +20,7 @@ var memory_regions: *const std.StaticStringMap(MemoryRegion) = undefined;
 var random_number_generator: *const fn([]u32) bool = undefined;
 
 fn testHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isize {
-    if (parameters.argc == 0) {
+    if (parameters.argv.len == 0) {
         for (memory_regions.keys()) |k| {
             try parameters.writer.print("{s}\n", .{k});
         }

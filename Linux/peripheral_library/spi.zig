@@ -73,7 +73,6 @@ pub const SPIMaster = struct {
     }
 
     pub fn transfer(self: *SPIMaster, wdata: []const u8, rdata: []u8) SPIError!void {
-        //std.debug.print("transfer {x} {x} {} {}\n", .{wdata, rdata, self.speed_hz, self.bits_per_word});
         var trfr: SpiIocTransfer = .{
             .tx_buf           = @intFromPtr(&wdata[0]),
             .rx_buf           = @intFromPtr(&rdata[0]),
@@ -95,7 +94,6 @@ pub const SPIMaster = struct {
     }
 
     pub fn write(self: *SPIMaster, wdata: []const u8) SPIError!void {
-        //std.debug.print("write {x} {} {}\n", .{wdata, self.speed_hz, self.bits_per_word});
         var trfr: SpiIocTransfer = .{
             .tx_buf           = @intFromPtr(&wdata[0]),
             .rx_buf           = 0,

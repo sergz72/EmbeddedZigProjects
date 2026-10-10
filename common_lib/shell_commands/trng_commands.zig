@@ -12,7 +12,7 @@ var rng: *const fn([]u32) bool = undefined;
 
 fn genHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isize {
     const number_of_words = std.fmt.parseInt(u8, parameters.argv[0], 10) catch {
-        _ = try parameters.writer.write("invalid number of words\n");
+        try parameters.writer.print("invalid number of words {s}\n", .{parameters.argv[0]});
         return 1;
     };
     const buffer = parameters.allocator.alloc(u32, number_of_words) catch {

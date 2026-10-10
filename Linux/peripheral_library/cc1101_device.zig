@@ -253,14 +253,11 @@ pub const CC1101Device = struct {
 
     fn spiReadWrite(context: *anyopaque, data: []u8) bool {
         const self: *CC1101Device = @ptrCast(@alignCast(context));
-        @memcpy(self.transfer_tx_buffer[0..data.len], data);
-        //std.debug.print("spiReadWrite {x}\n", .{data});
-        self.bus.transfer(self.transfer_tx_buffer[0..data.len], self.transfer_rx_buffer[0..data.len]) catch |err| {
+        self.bus.transfer(data, data) catch |err| {
             self.spi_error_location = "spiReadWrite";
             self.spi_error_name = @errorName(err);
             return false;
         };
-        @memcpy(data, self.transfer_rx_buffer[0..data.len]);
         return true;
     }
 
