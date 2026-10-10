@@ -61,6 +61,12 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const usart_writer = b.addModule("usart_writer", .{
+        .root_source_file = b.path("../../../common_lib/usart_writer.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const board = b.addModule("board", .{
         .root_source_file = b.path("../lib/f429i_discovery.zig"),
         .target = target,
@@ -73,6 +79,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "flash", .module = flash },
             .{ .name = "usart", .module = usart },
             .{ .name = "interrupts", .module = interrupts },
+            .{ .name = "usart_writer", .module = usart_writer },
             .{ .name = "system_timer", .module = system_timer }
         },
     });

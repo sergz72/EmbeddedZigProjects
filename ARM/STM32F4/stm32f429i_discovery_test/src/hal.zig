@@ -5,6 +5,7 @@ const cpu = @import("cpu");
 const nvic = @import("nvic");
 const interrupts = @import("interrupts");
 const rcc = @import("rcc");
+const rng = @import("rng");
 
 const TIMER_INSTANCE = timer.bctm7;
 
@@ -32,8 +33,13 @@ export fn SystemInit() callconv(.c) void {
     board.init();
     board.initSdram();
     initTimer();
+    rng.rng.init();
 }
 
 pub inline fn startTimer() void {
     TIMER_INSTANCE.cr1 = .{.cen = true, .apre = true};
+}
+
+pub fn generate_random_numbers(data: []u32) bool {
+    return rng.rng.generate(data);
 }

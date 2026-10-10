@@ -227,7 +227,15 @@ pub const Timer = extern struct {
     reserved14: u16,
     dcr: TimerDcr,
     reserved15: u16,
-    dmar: u32
+    dmar: u32,
+
+    pub fn getCounterValue(self: *volatile Timer) u32 {
+        return self.cnt.value32;
+    }
+
+    pub fn elapsed(self: *volatile Timer, since: u32) u32 {
+        return self.cnt.value32 -% since;
+    }
 };
 
 pub const adtm1: *volatile Timer = @ptrFromInt(TIM1_BASE);

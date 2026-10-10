@@ -88,6 +88,15 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const rng = b.addModule("rng", .{
+        .root_source_file = b.path("../lib/rng.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "rcc", .module = rcc }
+        },
+    });
+
     const allocator = b.addModule("allocator", .{
         .root_source_file = b.path("../../lib/fb_allocator.zig"),
         .target = target,
@@ -104,6 +113,35 @@ pub fn build(b: *std.Build) !void {
         .root_source_file = b.path("../../../common_lib/usart_writer.zig"),
         .target = target,
         .optimize = optimize
+    });
+
+    const memory_test_commands = b.addModule("memory_test_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/memory_test_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "system_timer", .module = system_timer }
+        },
+    });
+
+    const trng_commands = b.addModule("trng_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/trng_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell }
+        },
+    });
+
+    const system_commands = b.addModule("system_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/system_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "allocator", .module = allocator }
+        },
     });
 
     const board = b.addModule("board", .{
@@ -135,9 +173,11 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "rcc", .module = rcc },
             .{ .name = "board", .module = board },
             .{ .name = "timer", .module = timer },
+            .{ .name = "rng", .module = rng },
             .{ .name = "shell", .module = shell },
             .{ .name = "nvic", .module = nvic },
-            .{ .name = "interrupts", .module = interrupts }
+            .{ .name = "interrupts", .module = interrupts },
+            .{ .name = "rng", .module = rng }
         },
     });
 
@@ -149,6 +189,9 @@ pub fn build(b: *std.Build) !void {
             .optimize = optimize,
             .imports = &.{
                 .{ .name = "shell", .module = shell },
+                .{ .name = "memory_test_commands", .module = memory_test_commands },
+                .{ .name = "trng_commands", .module = trng_commands },
+                .{ .name = "system_commands", .module = system_commands },
                 .{ .name = "board", .module = board },
                 .{ .name = "usart_writer", .module = usart_writer },
                 .{ .name = "hal", .module = hal },
@@ -161,7 +204,7 @@ pub fn build(b: *std.Build) !void {
     exe.link_gc_sections = true;
     exe.link_function_sections = true;
     exe.link_data_sections = true;
-    //exe.lto = .full;                     // Whole-program optimization & inlining
+    exe.lto = .full;                     // Whole-program optimization & inlining
 
     exe.root_module.addAssemblyFile(b.path("../startup_stm32f429xx.s"));
 

@@ -126,7 +126,8 @@ pub fn initClock() void {
         asm volatile ("nop");
     }
 
-    flash.flash.acr = .{.dcrst = true, .icrst = true};
+    flash.flash.acr = .{.dcrst = true, .icrst = true, .prften = true, .latency = 5};
+    flash.flash.acr = .{.prften = true, .latency = 5};
     flash.flash.acr = .{.dcen = true, .icen = true, .prften = true, .latency = 5};
 
     rcc.rcc.cfgr = .{.ppre1 = .div4, .ppre2 = .div2};

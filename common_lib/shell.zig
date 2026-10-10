@@ -4,11 +4,18 @@ pub const ShellError = error {
     TooManyCommands
 };
 
+pub const ShellHandlerParameters = struct {
+    argc: usize,
+    argv: [][]const u8,
+    allocator: std.mem.Allocator,
+    writer: *std.Io.Writer
+};
+
 pub const ShellCommand = struct {
     name: []const u8,
     help: []const u8,
     parameter_mask: usize,
-    handler: *const fn (argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.Writer.Error!isize,
+    handler: *const fn (parameters: ShellHandlerParameters) std.Io.Writer.Error!isize,
 };
 
 pub const ShellInit = struct {
@@ -34,6 +41,7 @@ pub const Shell = struct {
     command_idx: usize,
     command_ready: bool,
     echo_func: *const fn(u8) void,
+    allocator: std.mem.Allocator,
 
     pub fn init(init_data: *const ShellInit, allocator: std.mem.Allocator, writer: *std.Io.Writer,
         echo_func: *const fn(u8) void) !*Shell {
@@ -56,6 +64,7 @@ pub const Shell = struct {
             .command_idx = 0,
             .command_ready = false,
             .echo_func = echo_func,
+            .allocator = allocator,
             .command = undefined
         };
         return sh;
@@ -106,7 +115,12 @@ pub const Shell = struct {
         for (self.commands[0..self.next_command_idx]) |cmd| {
             if (std.mem.eql(u8, cmd.name, self.argv[0])) {
                 if (cmd.parameter_mask & (@as(usize, 1) << @truncate(self.argc - 1)) != 0) {
-                    return try cmd.handler(self.argc - 1, self.argv[1..], self.writer);
+                    return try cmd.handler(.{
+                        .argc = self.argc - 1,
+                        .argv = self.argv[1..],
+                        .allocator = self.allocator,
+                        .writer = self.writer
+                    });
                 } else {
                     _ = try self.writer.writeAll("incorrect number of parameters\n");
                     return -1;

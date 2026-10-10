@@ -3,7 +3,8 @@ const cpu = @import("cpu");
 const SYSTICK_BASE: usize = 0xE000E010;
 
 var p_us: usize = undefined;
-var systick_interrupt: bool = undefined;
+var p_ms: usize = undefined;
+var systick_counter: usize = undefined;
 
 const SystickCsr = packed struct(u32) {
     enable: bool = false,
@@ -28,35 +29,53 @@ const SystickInit = struct {
 
 const systick: *volatile Systick = @ptrFromInt(SYSTICK_BASE);
 
-pub const init_div8 = SystickInit{.clksource = false, .divider = 8000000};
-pub const init_div1 = SystickInit{.clksource = true, .divider = 1000000};
+pub const init_div8 = SystickInit{.clksource = false, .divider = 8000};
+pub const init_div1 = SystickInit{.clksource = true, .divider = 1000};
 
 pub fn delay_init(init: SystickInit) void {
-    p_us = cpu.cpu.current_frequency / init.divider;
+    p_ms = cpu.cpu.current_frequency / init.divider;
+    p_us = p_ms / 1000;
     systick.csr = SystickCsr{.tickint = true, .clksource = init.clksource};
 }
 
 export fn SysTick_Handler() callconv(.c) void {
-    systick_interrupt = true;
+    systick_counter += 1;
 }
 
-fn delay(n: u24) void {
-    systick_interrupt = false;
+fn delay(n: u24, count: usize) void {
+    systick_counter = 0;
     systick.cvr = 0;
     systick.rvr = n;
     systick.csr.enable = true;
-    while (!systick_interrupt) {
+    while (systick_counter < count) {
         asm volatile ("wfi");
     }
     systick.csr.enable = false;
 }
 
+pub fn start1us() void {
+    systick_counter = 0;
+    systick.cvr = 0;
+    systick.rvr = @truncate(p_us);
+    systick.csr.enable = true;
+}
+
+pub fn start1ms() void {
+    systick_counter = 0;
+    systick.cvr = 0;
+    systick.rvr = @truncate(p_ms);
+    systick.csr.enable = true;
+}
+
+pub fn stop() usize {
+    systick.csr.enable = false;
+    return systick_counter;
+}
+
 pub fn delayms(ms: usize) void {
-    for (0..ms) |_| {
-        delayus(1000);
-    }
+    delay(@truncate(p_ms), ms);
 }
 
 pub fn delayus(us: usize) void {
-    delay(@truncate(us * p_us));
+    delay(@truncate(us * p_us), 1);
 }

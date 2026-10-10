@@ -53,7 +53,8 @@ const send_command = shell.ShellCommand{
 };
 
 var rx_buffer: [64 * 3 + 1]u8 = undefined;
-var cc1101_devices: []const cc1101.CC1101Device = undefined;
+var cc1101_cfg: []const cc1101.CC1101Cfg = undefined;
+var cc1101_devices: []cc1101.CC1101 = undefined;
 
 fn getChannel(arg: []const u8, writer: *std.Io.Writer) std.Io.Writer.Error!?usize {
     const channel = std.fmt.parseInt(usize, arg, 10) catch {
@@ -73,9 +74,9 @@ fn initHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.W
     if (channel == null)
         return 1;
 
-    cc1101_devices[channel.?].device.validateAndInit(&cc1101_devices[channel.?].cfg) catch |err| {
+    cc1101_devices[channel.?].validateAndInit(&cc1101_cfg[channel.?]) catch |err| {
         try writer.print("{s}\n", .{@errorName(err)});
-        return 1;
+        return 2;
     };
     return 0;
 }
@@ -86,7 +87,7 @@ fn receiveHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.I
     if (channel == null)
         return 1;
 
-    const rx_data = cc1101_devices[channel.?].device.receive() catch |err| {
+    const rx_data = cc1101_devices[channel.?].receive() catch |err| {
         try writer.print("{s}\n", .{@errorName(err)});
         return 2;
     };
@@ -109,7 +110,7 @@ fn receiveStartHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) 
     if (channel == null)
         return 1;
 
-    cc1101_devices[channel.?].device.receiveStart() catch |err| {
+    cc1101_devices[channel.?].receiveStart() catch |err| {
         try writer.print("{s}\n", .{@errorName(err)});
         return 2;
     };
@@ -123,7 +124,7 @@ fn receiveStopHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) s
     if (channel == null)
         return 1;
 
-    cc1101_devices[channel.?].device.receiveStop() catch |err| {
+    cc1101_devices[channel.?].receiveStop() catch |err| {
         try writer.print("{s}\n", .{@errorName(err)});
         return 2;
     };
@@ -137,7 +138,7 @@ fn powerDownHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std
     if (channel == null)
         return 1;
 
-    cc1101_devices[channel.?].device.powerDown() catch |err| {
+    cc1101_devices[channel.?].powerDown() catch |err| {
         try writer.print("{s}\n", .{@errorName(err)});
         return 2;
     };
@@ -151,7 +152,7 @@ fn xoffHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.W
     if (channel == null)
         return 1;
 
-    cc1101_devices[channel.?].device.xoff() catch |err| {
+    cc1101_devices[channel.?].xoff() catch |err| {
         try writer.print("{s}\n", .{@errorName(err)});
         return 2;
     };
@@ -179,7 +180,7 @@ fn sendHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.W
         return 4;
     };
 
-    cc1101_devices[channel.?].device.transmit(address, bytes) catch |err| {
+    cc1101_devices[channel.?].transmit(address, bytes) catch |err| {
         try writer.print("{s}\n", .{@errorName(err)});
         return 5;
     };
@@ -187,7 +188,8 @@ fn sendHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.W
     return 0;
 }
 
-pub fn registerCommands(sh: *shell.Shell, devices: []const cc1101.CC1101Device) shell.ShellError!void {
+pub fn registerCommands(sh: *shell.Shell, cfg: []const cc1101.CC1101Cfg, devices: []cc1101.CC1101) shell.ShellError!void {
+    cc1101_cfg = cfg;
     cc1101_devices = devices;
     try sh.registerCommand(&init_command);
     try sh.registerCommand(&receive_command);
