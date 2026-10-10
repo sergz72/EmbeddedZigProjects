@@ -68,120 +68,113 @@ fn getChannel(arg: []const u8, writer: *std.Io.Writer) std.Io.Writer.Error!?usiz
     return channel;
 }
 
-fn initHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.Writer.Error!isize {
-    _ = argc;
-    const channel = try getChannel(argv[0], writer);
+fn initHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isize {
+    const channel = try getChannel(parameters.argv[0], parameters.writer);
     if (channel == null)
         return 1;
 
     cc1101_devices[channel.?].validateAndInit(&cc1101_cfg[channel.?]) catch |err| {
-        try writer.print("{s}\n", .{@errorName(err)});
+        try parameters.writer.print("{s}\n", .{@errorName(err)});
         return 2;
     };
     return 0;
 }
 
-fn receiveHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.Writer.Error!isize {
-    _ = argc;
-    const channel = try getChannel(argv[0], writer);
+fn receiveHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isize {
+    const channel = try getChannel(parameters.argv[0], parameters.writer);
     if (channel == null)
         return 1;
 
     const rx_data = cc1101_devices[channel.?].receive() catch |err| {
-        try writer.print("{s}\n", .{@errorName(err)});
+        try parameters.writer.print("{s}\n", .{@errorName(err)});
         return 2;
     };
 
     if (rx_data.len == 0) {
-        _ = try writer.write("no data received\n");
+        _ = try parameters.writer.write("no data received\n");
         return 3;
     }
 
     const idx = utils.bytesToHex(rx_data, &rx_buffer);
     rx_buffer[idx-1] = '\n';
-    _ = try writer.write(rx_buffer[0..idx]);
+    _ = try parameters.writer.write(rx_buffer[0..idx]);
 
     return 0;
 }
 
-fn receiveStartHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.Writer.Error!isize {
-    _ = argc;
-    const channel = try getChannel(argv[0], writer);
+fn receiveStartHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isize {
+    const channel = try getChannel(parameters.argv[0], parameters.writer);
     if (channel == null)
         return 1;
 
     cc1101_devices[channel.?].receiveStart() catch |err| {
-        try writer.print("{s}\n", .{@errorName(err)});
+        try parameters.writer.print("{s}\n", .{@errorName(err)});
         return 2;
     };
 
     return 0;
 }
 
-fn receiveStopHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.Writer.Error!isize {
-    _ = argc;
-    const channel = try getChannel(argv[0], writer);
+fn receiveStopHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isize {
+    const channel = try getChannel(parameters.argv[0], parameters.writer);
     if (channel == null)
         return 1;
 
     cc1101_devices[channel.?].receiveStop() catch |err| {
-        try writer.print("{s}\n", .{@errorName(err)});
+        try parameters.writer.print("{s}\n", .{@errorName(err)});
         return 2;
     };
 
     return 0;
 }
 
-fn powerDownHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.Writer.Error!isize {
-    _ = argc;
-    const channel = try getChannel(argv[0], writer);
+fn powerDownHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isize {
+    const channel = try getChannel(parameters.argv[0], parameters.writer);
     if (channel == null)
         return 1;
 
     cc1101_devices[channel.?].powerDown() catch |err| {
-        try writer.print("{s}\n", .{@errorName(err)});
+        try parameters.writer.print("{s}\n", .{@errorName(err)});
         return 2;
     };
 
     return 0;
 }
 
-fn xoffHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.Writer.Error!isize {
-    _ = argc;
-    const channel = try getChannel(argv[0], writer);
+fn xoffHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isize {
+    const channel = try getChannel(parameters.argv[0], parameters.writer);
     if (channel == null)
         return 1;
 
     cc1101_devices[channel.?].xoff() catch |err| {
-        try writer.print("{s}\n", .{@errorName(err)});
+        try parameters.writer.print("{s}\n", .{@errorName(err)});
         return 2;
     };
 
     return 0;
 }
 
-fn sendHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.Writer.Error!isize {
-    _ = argc;
-    const channel = try getChannel(argv[0], writer);
+fn sendHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isize {
+    const channel = try getChannel(parameters.argv[0], parameters.writer);
     if (channel == null)
         return 1;
 
-    const address = std.fmt.parseInt(u8, argv[1], 10) catch {
-        _ = try writer.write("invalidaddress\n");
+    const address = std.fmt.parseInt(u8, parameters.argv[1], 10) catch {
+        _ = try parameters.writer.write("invalid address\n");
         return 2;
     };
 
-    if (argv[2].len & 1 != 0 or argv[2].len / 2 > rx_buffer.len) {
-        _ = try writer.write("invalid data length\n");
+    if (parameters.argv[2].len & 1 != 0 or parameters.argv[2].len / 2 > rx_buffer.len) {
+        _ = try parameters.writer.write("invalid data length\n");
         return 3;
     }
-    const bytes = std.fmt.hexToBytes(&rx_buffer, argv[2]) catch {
-        _ = try writer.write("invalid data\n");
+    const bytes = std.fmt.hexToBytes(&rx_buffer, parameters.argv[2]) catch {
+        _ = try parameters.writer.write("invalid data\n");
         return 4;
     };
 
     cc1101_devices[channel.?].transmit(address, bytes) catch |err| {
-        try writer.print("{s}\n", .{@errorName(err)});
+        try parameters.writer.print("{s}\n", .{@errorName(err)});
         return 5;
     };
 

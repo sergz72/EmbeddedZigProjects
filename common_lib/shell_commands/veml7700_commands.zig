@@ -18,25 +18,21 @@ const get_command = shell.ShellCommand{
 
 var veml_device: *veml.VEML7700 = undefined;
 
-fn initHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.Writer.Error!isize {
-    _ = argc;
-    _ = argv;
+fn initHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isize {
     veml_device.init() catch |err| {
-        try writer.print("{s} {s}\n", .{@errorName(err), veml_device.i2c_error_name});
+        try parameters.writer.print("{s} {s}\n", .{@errorName(err), veml_device.i2c_error_name});
         return 1;
     };
     return 0;
 }
 
-fn getHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.Writer.Error!isize {
-    _ = argc;
-    _ = argv;
+fn getHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isize {
     var result: veml.VEML7700Result = undefined;
     veml_device.measure(&result, false) catch |err| {
-        try writer.print("{s} {s}\n", .{@errorName(err), veml_device.i2c_error_name});
+        try parameters.writer.print("{s} {s}\n", .{@errorName(err), veml_device.i2c_error_name});
         return 1;
     };
-    try writer.print("Lux: {} gain: {s} tries: {}\n", .{result.lux, @tagName(result.gain), result.tries});
+    try parameters.writer.print("Lux: {} gain: {s} tries: {}\n", .{result.lux, @tagName(result.gain), result.tries});
     return 0;
 }
 
