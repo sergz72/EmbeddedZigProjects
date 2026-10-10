@@ -19,23 +19,19 @@ const reset_command = shell.ShellCommand{
 
 var chip: spi_memory.SpiMemory = undefined;
 
-fn idHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.Writer.Error!isize {
-    _ = argc;
-    _ = argv;
+fn idHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isize {
     const id = chip.readId();
     if (id == null) {
-        _ = try writer.write("read id error\n");
+        _ = try parameters.writer.write("read id error\n");
         return 1;
     }
-    try writer.print("0x{x:0>8}\n", .{id.?});
+    try parameters.writer.print("0x{x:0>8}\n", .{id.?});
     return 0;
 }
 
-fn resetHandler(argc: usize, argv: [][]const u8, writer: *std.Io.Writer) std.Io.Writer.Error!isize {
-    _ = argc;
-    _ = argv;
+fn resetHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isize {
     if (!chip.reset()) {
-        _ = try writer.write("reset error\n");
+        _ = try parameters.writer.write("reset error\n");
         return 1;
     }
     return 0;

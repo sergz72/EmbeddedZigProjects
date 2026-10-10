@@ -58,22 +58,37 @@ pub const SpiMemory = struct {
     }
 
     pub fn wren(self: *const SpiMemory) bool {
-
+        _ = self;
+        return false;
     }
 
     pub fn write(self: *const SpiMemory, address: u32, data: []u8) bool {
-
+        _ = self;
+        _ = address;
+        _ = data;
+        return false;
     }
 
     fn readCommon(self: *const SpiMemory, command: u8, nop_cycles: usize, address: u32, data: []u8) bool {
-
+        _ = self;
+        _ = command;
+        _ = nop_cycles;
+        _ = address;
+        _ = data;
+        return false;
     }
 
     pub fn read(self: *const SpiMemory, address: u32, data: []u8) bool {
-
+        _ = self;
+        _ = address;
+        _ = data;
+        return false;
     }
 
     pub fn fastRead(self: *const SpiMemory, address: u32, data: []u8) bool {
-
+        _ = self;
+        _ = address;
+        _ = data;
+        return false;
     }
 };

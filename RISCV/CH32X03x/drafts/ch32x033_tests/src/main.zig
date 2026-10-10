@@ -20,7 +20,7 @@ var led_status: bool = undefined;
 var led_counter: usize = undefined;
 //var cdc_buffer: [1024]u8 = undefined;
 
-const spi_chip_init: spi_memory.SpiMemoryInit = .{.memory_type = .flash, .address_size = ._3bytes, .qspi = false, .spi_transfer = hal.spiFlashTransfer};
+const spi_chip_init: spi_memory.SpiMemoryInit = .{.memory_type = .flash, .address_size = ._3bytes, .spi_transfer = hal.spiFlashTransfer};
 
 fn ledHandler() void {
     if (!hal.timer_interrupt)
@@ -50,7 +50,7 @@ export fn main() callconv(.c) noreturn {
 //    hal.sh = shell.Shell.init(&shell_init, a, &usb_writer.usb_writer, usb_writer.usbWrite) catch { while (true){} };
 
     i2c_memory_commands.registerCommands(hal.sh) catch { while (true){} };
-    spi_memory_commands.registerCommands(hal.sh, &spi_chip_init, hal.spiFlashSendReceive) catch { while (true){} };
+    spi_memory_commands.registerCommands(hal.sh, &spi_chip_init) catch { while (true){} };
 
     hal.startTimer();
 

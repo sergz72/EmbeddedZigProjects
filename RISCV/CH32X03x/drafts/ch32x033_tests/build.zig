@@ -157,7 +157,7 @@ pub fn build(b: *std.Build) !void {
     });
 
     const i2c_memory_commands = b.addModule("i2c_memory_commands", .{
-        .root_source_file = b.path("../../../common_lib/memory/i2c_memory_commands.zig"),
+        .root_source_file = b.path("../../../common_lib/shell_commands/i2c_memory_commands.zig"),
         .target = target,
         .optimize = optimize,
         .imports = &.{
@@ -167,7 +167,7 @@ pub fn build(b: *std.Build) !void {
     });
 
     const spi_memory_commands = b.addModule("spi_memory_commands", .{
-        .root_source_file = b.path("../../../common_lib/memory/spi_memory_commands.zig"),
+        .root_source_file = b.path("../../../common_lib/shell_commands/spi_memory_commands.zig"),
         .target = target,
         .optimize = optimize,
         .imports = &.{
