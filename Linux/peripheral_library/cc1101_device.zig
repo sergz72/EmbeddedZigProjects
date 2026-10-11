@@ -276,7 +276,7 @@ pub const CC1101Device = struct {
             self.spi_error_name = @errorName(err);
             return false;
         };
-        @memcpy(rdata, self.transfer_rx_buffer[wdata.len..]);
+        @memcpy(rdata, self.transfer_rx_buffer[wdata.len..total_len]);
         return true;
     }
 
