@@ -12,8 +12,6 @@ const timer = @import("timer");
 const shell = @import("shell");
 const i2c = @import("i2c");
 const spi = @import("spi");
-const scd4x = @import("scd4x");
-const veml = @import("veml7700");
 
 const LED_PIN = 2;
 const LED_PIN_MASK: u16 = 1 << LED_PIN;
@@ -44,12 +42,10 @@ const I2C_TIMEOUT = 10000;
 
 const TIMER_INSTANCE = timer.gptm4;
 
-pub const panic = std.debug.no_panic;
+pub const CC1101_TIMEOUT = 10000;
 
 pub var timer_interrupt: bool = undefined;
 pub var sh: *shell.Shell = undefined;
-pub var scd_device: scd4x.SCD4x = .{.i2c_read = scdRead, .i2c_write = scdWrite};
-pub var veml_device: veml.VEML7700 = .{.i2c_read = vemlRead, .i2c_write = vemlWrite};
 var led_status: bool = undefined;
 
 fn USART1IRQHandler() callconv(.c) void {
@@ -138,49 +134,6 @@ export fn SystemInit() callconv(.c) void {
     initSPI();
 }
 
-pub fn i2cScan(channel: usize, address: u10) u8 {
-    if (channel != 0)
-        return 'e';
-    I2C_INSTANCE.scan(address, I2C_TIMEOUT) catch {
-        return 'e';
-    };
-    return 0;
-}
-
-pub fn scdRead(data: []u8) bool {
-    I2C_INSTANCE.read(scd4x.SCD4X_SENSOR_ADDR, data, I2C_TIMEOUT) catch |err| {
-        scd_device.i2c_error_name = @errorName(err);
-        return false;
-    };
-    return true;
-}
-
-pub fn scdWrite(data: []const u8) bool {
-    I2C_INSTANCE.write(scd4x.SCD4X_SENSOR_ADDR, data, I2C_TIMEOUT) catch |err| {
-        scd_device.i2c_error_name = @errorName(err);
-        return false;
-    };
-    return true;
-}
-
-pub fn vemlRead(reg: u8) ?u16 {
-    var rdata: [2]u8 = undefined;
-    I2C_INSTANCE.transfer(veml.VEML7700_I2C_ADDRESS, &[_]u8{ reg }, &rdata, I2C_TIMEOUT) catch |err| {
-        veml_device.i2c_error_name = @errorName(err);
-        return null;
-    };
-    return std.mem.readInt(u16, &rdata, .little);
-}
-
-pub fn vemlWrite(reg: u8, data: u16) bool {
-    const wdata: []const u8 = &.{reg, @truncate(data), @truncate(data >> 8)};
-    I2C_INSTANCE.write(veml.VEML7700_I2C_ADDRESS, wdata, I2C_TIMEOUT) catch |err| {
-        veml_device.i2c_error_name = @errorName(err);
-        return false;
-    };
-    return true;
-}
-
 pub inline fn startTimer() void {
     TIMER_INSTANCE.ctlr1 = timer.TimerCtlr1{.cen = true, .apre = true};
 }
@@ -192,4 +145,88 @@ pub fn ledToggle() void {
     } else {
         LED_PORT.bcr = LED_PIN_MASK;
     }
+}
+
+pub inline fn i2cScan(address: u10) i2c.I2cError!void {
+    _ = address;
+    //return I2C_INSTANCE.scan(address, I2C_TIMEOUT);
+}
+
+pub inline fn i2cRead(address: u10, data: []u8) i2c.I2cError!void {
+    _ = address;
+    _ = data;
+    //return I2C_INSTANCE.read(address, data, I2C_TIMEOUT);
+}
+
+pub inline fn i2cWrite(address: u10, data: []const u8) i2c.I2cError!void {
+    _ = address;
+    _ = data;
+    //return I2C_INSTANCE.write(address, data, I2C_TIMEOUT);
+}
+
+pub inline fn i2cTransfer(address: u10, wdata: []const u8, rdata: []u8) i2c.I2cError!void {
+    _ = address;
+    _ = wdata;
+    _ = rdata;
+    //return I2C_INSTANCE.transfer(address, wdata, rdata, I2C_TIMEOUT);
+}
+
+pub fn spi1CsSet(context: *anyopaque, state: bool) bool {
+    _ = context;
+    _ = state;
+    // if (state) {
+    //     SPI_CS_PORT.bop = SPI_CS_PIN_MASK;
+    // } else {
+    //     SPI_CS_PORT.bc = SPI_CS_PIN_MASK;
+    // }
+    // return true;
+    return false;
+}
+
+pub fn spiSendReceive(channel: usize, wdata: []const u8, rdata: []u8) bool {
+    _ = channel;
+    _ = wdata;
+    _ = rdata;
+    // _ = spi1CsSet(@ptrFromInt(1), false);
+    // SPI_INSTANCE.sendReceivePoll8(wdata, rdata);
+    // _ = spi1CsSet(@ptrFromInt(1), true);
+    // return true;
+    return false;
+}
+
+pub fn spi1Write(context: *anyopaque, data: []const u8) bool {
+    _ = context;
+    _ = data;
+    //SPI_INSTANCE.sendPoll8(data);
+    //return true;
+    return false;
+}
+
+pub fn spi1ReadWrite(context: *anyopaque, data: []u8) bool {
+    _ = context;
+    _ = data;
+    //SPI_INSTANCE.sendReceivePoll8(data, data);
+    //return true;
+    return false;
+}
+
+pub fn spi1Transfer(context: *anyopaque, wdata: []const u8, rdata: []u8) bool {
+    _ = context;
+    _ = wdata;
+    _ = rdata;
+    //SPI_INSTANCE.transferPoll8(wdata, rdata);
+    //return true;
+    return false;
+}
+
+pub fn getGdo01(context: *anyopaque) ?bool {
+    _ = context;
+    //return GDO0_PORT.istat & GDO0_PIN_MASK != 0;
+    return null;
+}
+
+pub fn getGdo21(context: *anyopaque) ?bool {
+    _ = context;
+    //return GDO2_PORT.istat & GDO2_PIN_MASK != 0;
+    return null;
 }

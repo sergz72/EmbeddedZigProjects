@@ -1,4 +1,5 @@
 const std = @import("std");
+const common = @import("build_common.zig");
 
 pub fn build(b: *std.Build) !void {
     const target = b.resolveTargetQuery(.{
@@ -77,112 +78,18 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
-    const scd4x = b.addModule("scd4x", .{
-        .root_source_file = b.path("../../../common_lib/sensor/scd4x.zig"),
-        .target = target,
-        .optimize = optimize,
-        .imports = &.{
-            .{ .name = "system_timer", .module = system_timer }
-        }
-    });
-
-    const veml7700 = b.addModule("veml7700", .{
-        .root_source_file = b.path("../../../common_lib/sensor/veml7700.zig"),
-        .target = target,
-        .optimize = optimize,
-        .imports = &.{
-            .{ .name = "system_timer", .module = system_timer }
-        }
-    });
-
-    const cc1101 = b.addModule("cc1101", .{
-        .root_source_file = b.path("../../../common_lib/rf/cc1101.zig"),
-        .target = target,
-        .optimize = optimize,
-        .imports = &.{
-            .{ .name = "system_timer", .module = system_timer }
-        }
-    });
-
     const allocator = b.addModule("allocator", .{
         .root_source_file = b.path("../../lib/fb_allocator.zig"),
         .target = target,
         .optimize = optimize
     });
 
-    const shell = b.addModule("shell", .{
-        .root_source_file = b.path("../../../common_lib/shell.zig"),
-        .target = target,
-        .optimize = optimize
-    });
-
-    const utils = b.addModule("utils", .{
-        .root_source_file = b.path("../../../common_lib/utils.zig"),
-        .target = target,
-        .optimize = optimize
-    });
-
-    const i2c_commands = b.addModule("i2c_commands", .{
-        .root_source_file = b.path("../../../common_lib/shell_commands/i2c_commands.zig"),
+    var build_parameters = common.preCreateModules(b, .{
         .target = target,
         .optimize = optimize,
-        .imports = &.{
-            .{ .name = "shell", .module = shell }
-        }
+        .system_timer = system_timer
     });
-
-    const spi_commands = b.addModule("spi_commands", .{
-        .root_source_file = b.path("../../../common_lib/shell_commands/spi_commands.zig"),
-        .target = target,
-        .optimize = optimize,
-        .imports = &.{
-            .{ .name = "shell", .module = shell },
-            .{ .name = "utils", .module = utils }
-        }
-    });
-
-    const scd4x_commands = b.addModule("scd4x_commands", .{
-        .root_source_file = b.path("../../../common_lib/shell_commands/scd4x_commands.zig"),
-        .target = target,
-        .optimize = optimize,
-        .imports = &.{
-            .{ .name = "shell", .module = shell },
-            .{ .name = "scd4x", .module = scd4x }
-        }
-    });
-
-    const veml7700_commands = b.addModule("veml7700_commands", .{
-        .root_source_file = b.path("../../../common_lib/shell_commands/veml7700_commands.zig"),
-        .target = target,
-        .optimize = optimize,
-        .imports = &.{
-            .{ .name = "shell", .module = shell },
-            .{ .name = "veml7700", .module = veml7700 }
-        }
-    });
-
-    const cc1101_commands = b.addModule("cc1101_commands", .{
-        .root_source_file = b.path("../../../common_lib/shell_commands/cc1101_commands.zig"),
-        .target = target,
-        .optimize = optimize,
-        .imports = &.{
-            .{ .name = "shell", .module = shell },
-            .{ .name = "cc1101", .module = cc1101 },
-            .{ .name = "utils", .module = utils }
-        }
-    });
-
-    const usart_writer = b.addModule("usart_writer", .{
-        .root_source_file = b.path("../../../common_lib/usart_writer.zig"),
-        .target = target,
-        .optimize = optimize
-    });
-
-    const hal_constants = b.addModule("hal_constants", .{
-        .root_source_file = b.path("../../../iot_device_core/hal_constants.zig"),
-        .target = target,
-        .optimize = optimize
-    });
+    build_parameters.allocator = allocator;
 
     const hal = b.addModule("hal", .{
         .root_source_file = b.path("src/hal.zig"),
@@ -196,63 +103,28 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "cpu", .module = cpu },
             .{ .name = "nvic", .module = nvic },
             .{ .name = "interrupts", .module = interrupts },
-            .{ .name = "usart_writer", .module = usart_writer },
-            .{ .name = "shell", .module = shell },
+            .{ .name = "usart_writer", .module = build_parameters.usart_writer },
+            .{ .name = "shell", .module = build_parameters.shell },
             .{ .name = "timer", .module = timer },
             .{ .name = "i2c", .module = i2c },
             .{ .name = "spi", .module = spi },
-            .{ .name = "hal_constants", .module = hal_constants }
+            .{ .name = "hal_constants", .module = build_parameters.hal_constants }
         },
     });
+    build_parameters.hal = hal;
 
     const config = b.addModule("config", .{
         .root_source_file = b.path("../../../iot_device_core/hal_config_one_cc1101.zig"),
         .target = target,
         .optimize = optimize,
         .imports = &.{
-            .{ .name = "cc1101", .module = cc1101 }
+            .{ .name = "cc1101", .module = build_parameters.cc1101 }
         }
     });
+    build_parameters.config = config;
 
-    const hal_common = b.addModule("hal_common", .{
-        .root_source_file = b.path("../../../iot_device_core/hal_common.zig"),
-        .target = target,
-        .optimize = optimize,
-        .imports = &.{
-            .{ .name = "hal", .module = hal },
-            .{ .name = "scd4x", .module = scd4x },
-            .{ .name = "veml7700", .module = veml7700 },
-            .{ .name = "cc1101", .module = cc1101 },
-            .{ .name = "config", .module = config }
-        }
-    });
-
-    const exe = b.addExecutable(.{
-        .name = "iot_device_gd32e230.elf",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("../../../iot_device_core/main.zig"),
-            .target = target,
-            .optimize = optimize,
-            .imports = &.{
-                .{ .name = "system_timer", .module = system_timer },
-                .{ .name = "hal", .module = hal },
-                .{ .name = "hal_common", .module = hal_common },
-                .{ .name = "shell", .module = shell },
-                .{ .name = "i2c_commands", .module = i2c_commands },
-                .{ .name = "spi_commands", .module = spi_commands },
-                .{ .name = "scd4x_commands", .module = scd4x_commands },
-                .{ .name = "veml7700_commands", .module = veml7700_commands },
-                .{ .name = "cc1101_commands", .module = cc1101_commands },
-                .{ .name = "allocator", .module = allocator },
-                .{ .name = "usart_writer", .module = usart_writer }
-            },
-        }),
-    });
-
+    var exe = common.buildExe(b, build_parameters);
     exe.entry = .{ .symbol_name = "Reset_Handler" };
-    exe.link_gc_sections = true;
-    exe.link_function_sections = true;
-    exe.link_data_sections = true;
     exe.lto = .full;                     // Whole-program optimization & inlining
 
     exe.root_module.addAssemblyFile(b.path("../startup_gd32e23x.S"));

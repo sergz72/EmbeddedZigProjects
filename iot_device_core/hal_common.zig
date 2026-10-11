@@ -8,10 +8,14 @@ const config = @import("config");
 const cfg1: cc1101.CC1101Cfg = .{
     .mode = .gfsk1200,
     .freq = 433800,
-    .packet_length = 64,
-    .address = 1,
-    .mcsm1 = .{},
-    .tx_power = .m30
+    .packet_length = 5,
+    .address = 2,
+    .mcsm1 = .{.txoff_mode = .rx, .rxoff_mode = .idle, .cca_mode = .always},
+    .pktctrl0 = .{
+        .crc_en = true, .white_data = true, .length_config = .fixed,
+        .pkt_format = .normal_mode
+    },
+    .tx_power = ._0
 };
 
 pub var scd_device: scd4x.SCD4x = .{.i2c_read = scdRead, .i2c_write = scdWrite};
