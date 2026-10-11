@@ -369,7 +369,7 @@ const FOSC = 26000;
 
 pub const CC1101Error = error {
     Timeout, SpiError, InvalidFrequency, InvalidPacketLength, InvalidPartNum,
-    InvalidDeviceVersion, RxBufferTooSmall, GpioError, TransmitDataTooLarge
+    InvalidDeviceVersion, RxBufferTooSmall, GpioError, TransmitDataTooLarge, InvalidRxLength
 };
 
 pub const CC1101State = enum(u3) {
@@ -405,10 +405,16 @@ pub const CC1101 = struct {
     rx_buffer: [64]u8 = undefined,
     band: u2 = undefined,
     variable_length_packets: bool = undefined,
+    append_status: bool = undefined,
+    packet_length: u8 = undefined,
+    last_rssi: u8 = undefined,
+    last_lqi: u8 = undefined,
 
     pub fn init(self: *CC1101, cfg: *const CC1101Cfg) CC1101Error!void {
         self.band = try getBand(cfg.freq);
         self.variable_length_packets = cfg.pktctrl0.length_config == .variable;
+        self.packet_length = cfg.packet_length;
+        self.append_status = cfg.pktctrl1.append_status;
 
         const p = baudRateAndModeParameters[cfg.mode.toU8()];
         try self.write(&.{
@@ -432,7 +438,7 @@ pub const CC1101 = struct {
 
         try self.write(&.{
             CC1101Registers.pktlen.toU8(),
-            cfg.packet_length,
+            cfg.packet_length + 1, // add 1 for address byte
             cfg.pktctrl1.toU8(),
             cfg.pktctrl0.toU8(),
             cfg.address,
@@ -561,22 +567,40 @@ pub const CC1101 = struct {
             _ = self.strobe(CC1101_STROBE_SFRX) catch {};
             return err;
         };
-        var sz = data[1];
-        if (sz >= self.rx_buffer.len)
+        const sz = data[1];
+        if (sz > self.rx_buffer.len) {
+            _ = self.strobe(CC1101_STROBE_SFRX) catch {};
             return CC1101Error.RxBufferTooSmall;
-        sz += 1;
+        }
+        if ((self.append_status and sz < 4) or (!self.append_status and sz < 2)) {
+            _ = self.strobe(CC1101_STROBE_SFRX) catch {};
+            return CC1101Error.InvalidRxLength;
+        }
         data[0] = CC1101Registers.fifo.toU8() | CC1101_READ;
         try self.transfer(data[0..1], self.rx_buffer[0..sz]);
-        return self.rx_buffer[2..sz];
+        if (self.append_status) {
+            self.last_rssi = self.rx_buffer[sz-2];
+            self.last_lqi = self.rx_buffer[sz-1];
+            if (self.variable_length_packets)
+                return self.rx_buffer[2..sz-2];
+            return self.rx_buffer[1..sz-2];
+        }
+        if (self.variable_length_packets)
+            return self.rx_buffer[2..sz];
+        return self.rx_buffer[1..sz];
     }
 
     pub fn transmit(self: *const CC1101, address: u8, data: []u8) CC1101Error!void {
+        if ((!self.variable_length_packets and data.len != self.packet_length) or
+            (self.variable_length_packets and data.len > self.packet_length))
+            return CC1101Error.InvalidPacketLength;
         _ = try self.strobe(CC1101_STROBE_SFTX);
+        _ = try self.strobe(CC1101_STROBE_SIDLE);
         errdefer { _ = self.strobe(CC1101_STROBE_SIDLE) catch {};}
         if (self.variable_length_packets) {
             if (data.len > 62)
                 return CC1101Error.TransmitDataTooLarge;
-            try self.write(&.{CC1101Registers.fifo.toU8(), address, @truncate(data.len)}, data);
+            try self.write(&.{CC1101Registers.fifo.toU8(), @truncate(data.len+1), address}, data);
         } else {
             if (data.len > 63)
                 return CC1101Error.TransmitDataTooLarge;
