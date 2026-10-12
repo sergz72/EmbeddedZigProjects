@@ -11,6 +11,13 @@ pub const SercomMode = enum(u3) {
     i2c_host = 5
 };
 
+pub const SercomI2cInactOut = enum(u2) {
+    disabled = 0,
+    _55us = 1,
+    _105us = 2,
+    _205us = 3
+};
+
 pub const SercomI2cHostCtrlA = packed struct(u32) {
     swrst: bool = false,
     enable: bool = false,
@@ -20,15 +27,22 @@ pub const SercomI2cHostCtrlA = packed struct(u32) {
     reserved2: u8 = 0,
     pinout: bool = false,
     reserved3: u3 = 0,
-    sdahold: u2 = 0,
+    sdahold: SercomSdaHold = .disabled,
     mexttoen: bool = false,
     sexttoen: bool = false,
-    speed: u2 = 0,
+    speed: SercomI2cSpeed = .standard,
     reserved5: u1 = 0,
     sclsm: bool = false,
-    inactout: u2 = 0,
+    inactout: SercomI2cInactOut = .disabled,
     lowtouten: bool = false,
     reserved7: u1 = 0
+};
+
+pub const SercomI2cHostCmd = enum(u2) {
+    none = 0,
+    repeated_start = 1,
+    byte_read = 2,
+    stop = 3
 };
 
 pub const SercomI2cHostCtrlB = packed struct(u32) {
@@ -36,7 +50,7 @@ pub const SercomI2cHostCtrlB = packed struct(u32) {
     smen: bool = false,
     gcen: bool = false,
     reserved3: u6 = 0,
-    cmd: u2 = 0,
+    cmd: SercomI2cHostCmd = .none,
     ackact: bool = false,
     reserved5: u13 = 0
 };
@@ -48,12 +62,19 @@ pub const SercomI2cHostInt = packed struct(u8) {
     err: bool = false
 };
 
+pub const SercomI2cBusState = enum(u2) {
+    unknown = 0,
+    idle = 1,
+    owner = 2,
+    busy = 3
+};
+
 pub const SercomI2cHostStatus = packed struct(u16) {
     buserr: bool = false,
     arblost: bool = false,
     rxnack: bool = false,
     reserved: u1 = 0,
-    busstate: u2 = 0,
+    busstate: SercomI2cBusState = .unknown,
     lowtout: bool = false,
     clkhold: bool = false,
     mexttout: bool = false,
@@ -108,6 +129,19 @@ pub const SercomI2cHost = extern struct {
     reserved8: [3]u8
 };
 
+pub const SercomSdaHold = enum(u2) {
+    disabled = 0,
+    _75ns = 1,
+    _450ns = 2,
+    _600ns = 3
+};
+
+pub const SercomI2cSpeed = enum(u2) {
+    standard = 0,
+    fast = 1,
+    high = 2
+};
+
 pub const SercomI2cClientCtrlA = packed struct(u32) {
     swrst: bool = false,
     enable: bool = false,
@@ -117,15 +151,21 @@ pub const SercomI2cClientCtrlA = packed struct(u32) {
     reserved2: u8 = 0,
     pinout: bool = false,
     reserved3: u3 = 0,
-    sdahold: u2 = 0,
+    sdahold: SercomSdaHold = .disabled,
     reserved4: u1 = 0,
     sexttoen: bool = false,
-    speed: u2 = 0,
+    speed: SercomI2cSpeed = .standard,
     reserved5: u1 = 0,
     sclsm: bool = false,
     reserved6: u2 = 0,
     lowtout: bool = false,
     reserved7: u1 = 0
+};
+
+pub const SercomI2cClientCmd = enum(u2) {
+    none = 0,
+    start_wait = 2,
+    byte_read = 3
 };
 
 pub const SercomI2cClientCtrlB = packed struct(u32) {
@@ -134,8 +174,8 @@ pub const SercomI2cClientCtrlB = packed struct(u32) {
     gcmd: bool = false,
     aacken: bool = false,
     reserved3: u3 = 0,
-    amode: u2 = 0,
-    cmd: u2 = 0,
+    amode: SercomAmode = .mask,
+    cmd: SercomI2cClientCmd = .none,
     ackact: bool = false,
     reserved5: u13 = 0
 };
@@ -221,15 +261,26 @@ pub const SercomSpiCtrlA = packed struct(u32) {
     reserved5: u1 = 0
 };
 
+pub const SercomSpiChSize = enum(u3) {
+    _8 = 0,
+    _9 = 1
+};
+
+pub const SercomAmode = enum(u2) {
+    mask = 0,
+    addr2 = 1,
+    range = 2
+};
+
 pub const SercomSpiCtrlB = packed struct(u32) {
-    chsize: u3 = 0,
+    chsize: SercomSpiChSize = ._8,
     reserved: u3 = 0,
     ploaden: bool = false,
     reserved2: u2 = 0,
     ssde: bool = false,
     reserved3: u3 = 0,
     mssen: bool = false,
-    amode: u2 = 0,
+    amode: SercomAmode = .mask,
     reserved4: u1 = 0,
     rxen: bool = false,
     reserved5: u14 = 0
@@ -324,8 +375,16 @@ pub const SercomUsartCtrlA = packed struct(u32) {
     reserved4: u1 = 0
 };
 
+pub const SercomUsartChSize = enum(u3) {
+    _8 = 0,
+    _9 = 1,
+    _5 = 5,
+    _6 = 6,
+    _7 = 7
+};
+
 pub const SercomUsartCtrlB = packed struct(u32) {
-    chsize: u3 = 0,
+    chsize: SercomUsartChSize = ._8,
     reserved: u3 = 0,
     sbmode: bool = false,
     reserved2: u1 = 0,
