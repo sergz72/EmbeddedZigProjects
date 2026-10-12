@@ -158,7 +158,14 @@ pub const Tc8 = extern struct {
     reserved2: [17]u8,
     perbuf: u8,
     ccbuf: [2]u8,
-    reserved3: u16
+    reserved3: u16,
+
+    pub fn setPer(self: *volatile Tc8, value: u8) void {
+        self.per = value;
+        while (self.syncbusy.per) {
+            asm volatile("nop");
+        }
+    }
 };
 
 pub const Tc16 = extern struct {
@@ -181,7 +188,14 @@ pub const Tc16 = extern struct {
     cc: [2]u16,
     reserved3: [7]u16,
     perbuf: u16,
-    ccbuf: [2]u16
+    ccbuf: [2]u16,
+
+    pub fn setPer(self: *volatile Tc16, value: u16) void {
+        self.per = value;
+        while (self.syncbusy.per) {
+            asm volatile("nop");
+        }
+    }
 };
 
 pub const Tc32 = extern struct {
@@ -204,6 +218,13 @@ pub const Tc32 = extern struct {
     reserved2: [2]u32,
     perbuf: u32,
     ccbuf: [2]u32,
+
+    pub fn setPer(self: *volatile Tc32, value: u32) void {
+        self.per = value;
+        while (self.syncbusy.per) {
+            asm volatile("nop");
+        }
+    }
 };
 
 pub const tc0_8: *volatile Tc8 = @ptrFromInt(TC0_BASE);

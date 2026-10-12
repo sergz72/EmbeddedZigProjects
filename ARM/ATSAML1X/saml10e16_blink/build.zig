@@ -22,8 +22,44 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const gclk = b.addModule("gclk", .{
+        .root_source_file = b.path("../lib/gclk.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const pm = b.addModule("pm", .{
+        .root_source_file = b.path("../lib/pm.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const supc = b.addModule("supc", .{
+        .root_source_file = b.path("../lib/supc.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const sercom = b.addModule("sercom", .{
+        .root_source_file = b.path("../lib/sercom.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const tc = b.addModule("tc", .{
+        .root_source_file = b.path("../lib/tc.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const nvic = b.addModule("nvic", .{
         .root_source_file = b.path("../../lib/nvic.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const interrupts = b.addModule("interrupts", .{
+        .root_source_file = b.path("../lib/interrupts.zig"),
         .target = target,
         .optimize = optimize
     });
@@ -46,7 +82,15 @@ pub fn build(b: *std.Build) !void {
             .optimize = optimize,
             .imports = &.{
                 .{ .name = "port", .module = port },
-                .{ .name = "system_timer", .module = system_timer },
+                .{ .name = "gclk", .module = gclk },
+                .{ .name = "pm", .module = pm },
+                .{ .name = "supc", .module = supc },
+                .{ .name = "sercom", .module = sercom },
+                .{ .name = "tc", .module = tc },
+                .{ .name = "cpu", .module = cpu },
+                .{ .name = "nvic", .module = nvic },
+                .{ .name = "interrupts", .module = interrupts },
+                .{ .name = "system_timer", .module = system_timer }
             },
         }),
     });
