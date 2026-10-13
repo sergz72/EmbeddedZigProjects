@@ -45,9 +45,10 @@ extern unsigned int _estack;
 
 /** \cond DOXYGEN_SHOULD_SKIP_THIS */
 int main(void);
+void SystemInit(void);
 /** \endcond */
 
-void __libc_init_array(void);
+//void __libc_init_array(void);
 
 /* Reset handler */
 void Reset_Handler(void);
@@ -220,6 +221,7 @@ void Reset_Handler(void)
         //        _on_bootstrap();
         //}
 
+        SystemInit();
         /* Branch to main function */
         main();
 

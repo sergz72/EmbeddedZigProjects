@@ -87,7 +87,8 @@ pub fn build(b: *std.Build) !void {
     var build_parameters = common.preCreateModules(b, .{
         .target = target,
         .optimize = optimize,
-        .system_timer = system_timer
+        .system_timer = system_timer,
+        .name = "iot_device_gd32e230.elf"
     });
     build_parameters.allocator = allocator;
 

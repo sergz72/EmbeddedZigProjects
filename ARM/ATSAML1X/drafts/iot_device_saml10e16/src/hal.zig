@@ -1,0 +1,239 @@
+const std = @import("std");
+const port = @import("port");
+const gclk = @import("gclk");
+const pm = @import("pm");
+const supc = @import("supc");
+const sercom = @import("sercom");
+const i2c = @import("i2c");
+const tc = @import("tc");
+const cpu = @import("cpu");
+const nvic = @import("nvic");
+const shell = @import("shell");
+const interrupts = @import("interrupts");
+const system_timer = @import("system_timer");
+const hal_constants = @import("hal_constants");
+
+const LED_PIN = 27;
+const LED_PIN_MASK: u32 = 1 << LED_PIN;
+
+const USART_INSTANCE = sercom.sercom2;
+const USART_RX_PIN = 25;
+const USART_RX_PIN_MASK: u32 = 1 << USART_RX_PIN;
+const USART_TX_PIN = 24;
+const USART_TX_PIN_MASK: u32 = 1 << USART_TX_PIN;
+
+const I2C_INSTANCE = sercom.sercom1;
+//--------------------------
+const I2C_SCL_PIN = 10;
+const I2C_SCL_PIN_MASK = 1 << I2C_SCL_PIN;
+const I2C_SDA_PIN = 11;
+const I2C_SDA_PIN_MASK = 1 << I2C_SDA_PIN;
+//------------------------------
+const I2C_TIMEOUT = 10000;
+const I2C_SCLSM = false;
+
+const SPI_INSTANCE = sercom.sercom0;
+//--------------------------
+const SPI_RX_PIN = 6;
+const SPI_RX_PIN_MASK: u24 = 1 << SPI_RX_PIN;
+//--------------------------
+const SPI_TX_PIN = 7;
+const SPI_TX_PIN_MASK: u24 = 1 << SPI_TX_PIN;
+//--------------------------
+const SPI_CLK_PIN = 5;
+const SPI_CLK_PIN_MASK: u24 = 1 << SPI_CLK_PIN;
+//--------------------------
+const SPI_CS_PIN = 1;
+const SPI_CS_PIN_MASK: u24 = 1 << SPI_CS_PIN;
+
+pub const CC1101_TIMEOUT = 10000;
+//--------------------------
+const GDO0_PIN = 0;
+const GDO0_PIN_MASK: u24 = 1 << GDO0_PIN;
+const GDO2_PIN = 2;
+const GDO2_PIN_MASK: u24 = 1 << GDO2_PIN;
+
+pub const panic = std.debug.no_panic;
+
+pub var timer_interrupt: bool = undefined;
+pub var sh: *shell.Shell = undefined;
+var i2c_instance: i2c.I2cMaster = .{.instance = I2C_INSTANCE, .sclsm = I2C_SCLSM};
+
+export fn SERCOM2_2_Handler() callconv(.c) void {
+    const flags = USART_INSTANCE.usart.intflag;
+    if (flags.err) {
+        USART_INSTANCE.usart.intflag = .{.err = true};
+    }
+    if (flags.rxc) {
+        const data = USART_INSTANCE.usart.data;
+        USART_INSTANCE.usart.data = data;
+    }
+}
+
+export fn TC2_Handler() callconv(.c) void {
+    tc.tc2_16.intflag = .{ .ovf = true };
+    timer_interrupt = true;
+}
+
+export fn SERCOM1_0_Handler() callconv(.c) void {
+    i2c_instance.mbHandler();
+}
+
+export fn SERCOM1_1_Handler() callconv(.c) void {
+    i2c_instance.sbHandler();
+}
+
+export fn SERCOM1_OTHER_Handler() callconv(.c) void {
+    i2c_instance.errorHandler();
+}
+
+inline fn clocksInit() void {
+    //SPI
+    gclk.gclk.channelEnable(.sercom0_core, 0);
+    //I2C
+    gclk.gclk.channelEnable(.sercom1_core, 0);
+    //USART
+    gclk.gclk.channelEnable(.sercom2_core, 0);
+    //Timer
+    gclk.gclk.channelEnable(.tc2, 0);
+}
+
+inline fn usartInit() void {
+    const init: sercom.UsartInitParameters = .{
+        .baud = hal_constants.USART_BAUD,
+        .clock_frequency = cpu.cpu.current_frequency,
+        .rxpo = 3,
+        .txpo = 1,
+        .tx_pin = USART_TX_PIN,
+        .rx_pin = USART_RX_PIN,
+        .pmux = .D
+    };
+    USART_INSTANCE.usart.init(init);
+    nvic.nvic.enableInterrupt(interrupts.Interrupt.SERCOM2_2.toU8());
+}
+
+inline fn timerInit() void {
+    timer_interrupt = false;
+    tc.tc2_16.setPer(@truncate(cpu.cpu.current_frequency / 10240));
+    tc.tc2_16.intenset = .{.ovf = true};
+    tc.tc2_16.ctrla = .{.runstdby = true, .presync = .presc, .prescaler = .div1024};
+    nvic.nvic.enableInterrupt(interrupts.Interrupt.TC2.toU8());
+}
+
+inline fn i2cInit() void {
+    const parameters: sercom.I2CHostInitParameters = .{
+        .baud = hal_constants.I2C_SPEED,
+        .clock_frequency = cpu.cpu.current_frequency,
+        .scl_pin = I2C_SCL_PIN,
+        .sda_pin = I2C_SDA_PIN,
+        .pmux = .C,
+        .sclsm = I2C_SCLSM
+    };
+    _ = I2C_INSTANCE.i2cm.init(parameters);
+    nvic.nvic.enableInterrupt(interrupts.Interrupt.SERCOM1_0.toU8());
+    nvic.nvic.enableInterrupt(interrupts.Interrupt.SERCOM1_1.toU8());
+    nvic.nvic.enableInterrupt(interrupts.Interrupt.SERCOM1_OTHER.toU8());
+}
+
+inline fn spiInit() void {
+
+}
+
+inline fn cc1101Init() void {
+    port.ports[0].pincfg[GDO0_PIN] = .{.inen = true, .pullen = true};
+    port.ports[0].pincfg[GDO2_PIN] = .{.inen = true, .pullen = true};
+}
+
+export fn SystemInit() callconv(.c) void {
+    pm.pm.sleepcfg = .idle;
+    supc.supc.buckConverterEnable();
+    system_timer.delay_init(system_timer.init_div1);
+    port.ports[0].dirset = LED_PIN_MASK;
+    clocksInit();
+    usartInit();
+    timerInit();
+    i2cInit();
+    spiInit();
+    cc1101Init();
+}
+
+pub inline fn startTimer() void {
+    tc.tc2_16.ctrla.enable = true;
+}
+
+pub fn usartWrite(byte: u8) void {
+    USART_INSTANCE.usart.write(byte);
+}
+
+pub inline fn ledToggle() void {
+    port.ports[0].outtgl = LED_PIN_MASK;
+}
+
+pub inline fn i2cScan(address: u10) i2c.I2cError!void {
+    return i2c_instance.scan(address);
+}
+
+pub inline fn i2cRead(address: u10, data: []u8) i2c.I2cError!void {
+    return i2c_instance.read(address, data);
+}
+
+pub inline fn i2cWrite(address: u10, data: []const u8) i2c.I2cError!void {
+    return i2c_instance.write(address, data);
+}
+
+pub inline fn i2cTransfer(address: u10, wdata: []const u8, rdata: []u8) i2c.I2cError!void {
+    return i2c_instance.transfer(address, wdata, rdata);
+}
+
+pub fn spi1CsSet(context: *anyopaque, state: bool) bool {
+    _ = context;
+    _ = state;
+    // if (state) {
+    //     SPI_CS_PORT.bop = SPI_CS_PIN_MASK;
+    // } else {
+    //     SPI_CS_PORT.bc = SPI_CS_PIN_MASK;
+    // }
+    return true;
+}
+
+pub fn spiSendReceive(channel: usize, wdata: []const u8, rdata: []u8) bool {
+    _ = channel;
+    _ = wdata;
+    _ = rdata;
+    _ = spi1CsSet(@ptrFromInt(1), false);
+    //SPI_INSTANCE.sendReceivePoll8(wdata, rdata);
+    _ = spi1CsSet(@ptrFromInt(1), true);
+    return true;
+}
+
+pub fn spi1Write(context: *anyopaque, data: []const u8) bool {
+    _ = context;
+    _ = data;
+    //SPI_INSTANCE.sendPoll8(data);
+    return true;
+}
+
+pub fn spi1ReadWrite(context: *anyopaque, data: []u8) bool {
+    _ = context;
+    _ = data;
+    //SPI_INSTANCE.sendReceivePoll8(data, data);
+    return true;
+}
+
+pub fn spi1Transfer(context: *anyopaque, wdata: []const u8, rdata: []u8) bool {
+    _ = context;
+    _ = wdata;
+    _ = rdata;
+    //SPI_INSTANCE.transferPoll8(wdata, rdata);
+    return true;
+}
+
+pub fn getGdo01(context: *anyopaque) ?bool {
+    _ = context;
+    return null;
+}
+
+pub fn getGdo21(context: *anyopaque) ?bool {
+    _ = context;
+    return null;
+}

@@ -68,7 +68,7 @@ inline fn timerInit() void {
     nvic.nvic.enableInterrupt(interrupts.Interrupt.TC2.toU8());
 }
 
-fn systemInit() void {
+export fn SystemInit() callconv(.c) void {
     pm.pm.sleepcfg = .idle;
     supc.supc.buckConverterEnable();
     system_timer.delay_init(system_timer.init_div1);
@@ -83,7 +83,6 @@ inline fn timerStart() void {
 }
 
 export fn main() callconv(.c) noreturn {
-    systemInit();
     timerStart();
     while (true) {
         asm volatile("wfi");

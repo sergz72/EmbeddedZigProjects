@@ -10,13 +10,15 @@ pub const BuildParameters = struct {
     shell: *std.Build.Module,
     allocator: *std.Build.Module,
     usart_writer: *std.Build.Module,
-    hal_constants: *std.Build.Module
+    hal_constants: *std.Build.Module,
+    name: []const u8
 };
 
 pub const PreCreateParameters = struct {
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.Optimize,
-    system_timer: *std.Build.Module
+    system_timer: *std.Build.Module,
+    name: []const u8
 };
 
 pub fn preCreateModules(b: *std.Build, parameters: PreCreateParameters) BuildParameters {
@@ -56,7 +58,8 @@ pub fn preCreateModules(b: *std.Build, parameters: PreCreateParameters) BuildPar
         .shell = shell,
         .allocator = undefined,
         .usart_writer = usart_writer,
-        .hal_constants = hal_constants
+        .hal_constants = hal_constants,
+        .name = parameters.name
     };
 }
 
@@ -149,7 +152,7 @@ pub fn buildExe(b: *std.Build, parameters: BuildParameters) *std.Build.Step.Comp
     });
 
     const exe = b.addExecutable(.{
-        .name = "iot_device_gd32e230.elf",
+        .name = parameters.name,
         .root_module = b.createModule(.{
             .root_source_file = b.path("../../../iot_device_core/main.zig"),
             .target = parameters.target,
