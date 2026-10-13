@@ -113,8 +113,8 @@ pub const I2CHostInitParameters = struct {
     sclsm: bool,
     baud: usize,
     clock_frequency: usize,
-    scl_pin: usize,
-    sda_pin: usize,
+    scl_pin: u5,
+    sda_pin: u5,
     pmux: port.PortFunction
 };
 
@@ -152,6 +152,7 @@ pub const SercomI2cHost = extern struct {
             return false;
         }
 
+        port.ports[0].dirset = (@as(u32, 1)<<parameters.scl_pin)|(@as(u32, 1)<<parameters.sda_pin);
         port.ports[0].pincfg[parameters.scl_pin] = .{.pmuxen = true, .pullen = true};
         port.ports[0].pincfg[parameters.sda_pin] = .{.pmuxen = true, .pullen = true};
         port.ports[0].pmux[parameters.sda_pin/2] = .{.pmuxe = parameters.pmux, .pmuxo = parameters.pmux};
@@ -489,8 +490,8 @@ pub const UsartInitParameters = struct {
     clock_frequency: usize,
     rxpo: u2,
     txpo: u2,
-    tx_pin: usize,
-    rx_pin: usize,
+    tx_pin: u5,
+    rx_pin: u5,
     pmux: port.PortFunction
 };
 
@@ -517,6 +518,7 @@ pub const SercomUsart = extern struct {
     reserved8: [3]u8,
 
     pub fn init(self: *volatile SercomUsart, params: UsartInitParameters) void {
+        port.ports[0].dirset = @as(u32, 1)<<params.rx_pin;
         port.ports[0].pincfg[params.tx_pin] = .{.pmuxen = true};
         port.ports[0].pincfg[params.rx_pin] = .{.pmuxen = true, .inen = true, .pullen = true};
         port.ports[0].pmux[params.tx_pin/2] = .{.pmuxe = params.pmux, .pmuxo = params.pmux};

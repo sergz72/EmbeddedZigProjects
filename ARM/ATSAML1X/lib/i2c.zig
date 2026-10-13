@@ -157,6 +157,7 @@ pub const I2cMaster = struct {
     pub fn read(self: *volatile I2cMaster, address: u10, data: []u8) I2cError!void {
         self.rx_buffer = data;
         self.rx_index = 0;
+        self.state = .read_data;
         self.instance.i2cm.addr.addr = (@as(u11, address) << 1) | 1;
         while (true) {
             if (self.state == .done)

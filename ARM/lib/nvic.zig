@@ -1,5 +1,7 @@
 const NVIC_BASE: usize = 0xE000E000;
 
+pub var priority_bits: u3 = 2;
+
 pub const Nvic = extern struct {
     reserved: u32,
     ictr: u32,
@@ -24,6 +26,15 @@ pub const Nvic = extern struct {
     pub fn disableInterrupt(self: *volatile Nvic, interrupt: u8) void {
         const shift: u5 = @truncate(interrupt);
         self.icer[interrupt >> 5] = @as(u32, 1) << shift;
+    }
+
+    pub fn setInterruptPriority(self: *volatile Nvic, interrupt: u8, priority: u8) void {
+        const idx = interrupt >> 2;
+        var v = self.ipr[idx];
+        const shift: u5 = @truncate((interrupt & 0x3) << 3);
+        v &= ~(0xFF << shift);
+        v |= priority << (shift + 8 - priority_bits);
+        self.ipr[idx] = v;
     }
 };
 
