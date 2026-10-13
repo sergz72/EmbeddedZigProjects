@@ -440,6 +440,13 @@ pub const SercomUsartSyncBusy = packed struct(u32) {
     reserved: u28
 };
 
+pub const UsartInitParameters = struct {
+    baud: u64,
+    clock_frequency: usize,
+    rxpo: u2,
+    txpo: u2
+};
+
 pub const SercomUsart = extern struct {
     ctrla: SercomUsartCtrlA,
     ctrlb: SercomUsartCtrlB,
@@ -462,10 +469,15 @@ pub const SercomUsart = extern struct {
     dbgctrl: u8,
     reserved8: [3]u8,
 
-    pub fn init(self: *volatile SercomUsart, baud: usize, clock_frequency: usize) void {
-        _ = self;
-        _ = baud;
-        _ = clock_frequency;
+    pub fn init(self: *volatile SercomUsart, params: UsartInitParameters) void {
+        self.baud = @truncate(65536 - (params.baud << 20) / params.clock_frequency);
+        self.ctrlb = .{.rxen = true, .txen = true, .sfde = true};
+        while (self.syncbusy.ctrlb) {
+            asm volatile("nop");
+        }
+        self.ctrla = .{.dord = true, .rxpo = params.rxpo, .txpo = params.txpo, .runstdby = true,
+                        .mode = .usart_int_clk, .enable = true};
+        self.intenset = .{.err = true, .rxc = true};
     }
 };
 

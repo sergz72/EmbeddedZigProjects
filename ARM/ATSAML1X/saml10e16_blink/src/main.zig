@@ -13,6 +13,7 @@ const system_timer = @import("system_timer");
 const LED_PIN = 27;
 const LED_PIN_MASK: u32 = 1 << LED_PIN;
 
+const USART_INSTANCE = sercom.sercom2;
 const USART_RX_PIN = 25;
 const USART_RX_PIN_MASK: u32 = 1 << USART_RX_PIN;
 const USART_TX_PIN = 24;
@@ -22,8 +23,15 @@ pub const panic = std.debug.no_panic;
 
 var timer_interrupt: bool = undefined;
 
-export fn SERCOM0_0_Handler() callconv(.c) void {
-    // Handle USART interrupt here
+export fn SERCOM2_2_Handler() callconv(.c) void {
+    const flags = USART_INSTANCE.usart.intflag;
+    if (flags.err) {
+        USART_INSTANCE.usart.intflag = .{.err = true};
+    }
+    if (flags.rxc) {
+        const data = USART_INSTANCE.usart.data;
+        USART_INSTANCE.usart.data = data;
+    }
 }
 
 export fn TC2_Handler() callconv(.c) void {
@@ -33,13 +41,23 @@ export fn TC2_Handler() callconv(.c) void {
 
 inline fn clocksInit() void {
     //USART
-    gclk.gclk.channelEnable(.sercom0_core, 0);
+    gclk.gclk.channelEnable(.sercom2_core, 0);
     //Timer
     gclk.gclk.channelEnable(.tc2, 0);
 }
 
 inline fn usartInit() void {
-
+    port.ports[0].pincfg[USART_TX_PIN] = .{.pmuxen = true};
+    port.ports[0].pincfg[USART_RX_PIN] = .{.pmuxen = true, .inen = true, .pullen = true};
+    port.ports[0].pmux[USART_TX_PIN/2] = .{.pmuxe = .D, .pmuxo = .D};
+    const init: sercom.UsartInitParameters = .{
+        .baud = 115200,
+        .clock_frequency = cpu.cpu.current_frequency,
+        .rxpo = 3,
+        .txpo = 1
+    };
+    USART_INSTANCE.usart.init(init);
+    nvic.nvic.enableInterrupt(interrupts.Interrupt.SERCOM2_2.toU8());
 }
 
 inline fn timerInit() void {
