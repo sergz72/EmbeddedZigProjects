@@ -20,6 +20,7 @@ pub const I2cMaster = struct {
     rx_index: usize = undefined,
 
     fn readByteSclsm0(self: *I2cMaster) void {
+        @setRuntimeSafety(false);
         if (self.rx_index == self.rx_buffer.len - 1) {
             self.instance.i2cm.ctrlb.ackact = true; // NACK
             self.instance.i2cm.ctrlb.cmd = .stop;
@@ -33,6 +34,7 @@ pub const I2cMaster = struct {
     }
 
     fn readByteSclsm1(self: *I2cMaster) void {
+        @setRuntimeSafety(false);
         self.rx_buffer[self.rx_index] = @truncate(self.instance.i2cm.data);
         self.rx_index += 1;
         if (self.rx_index == self.rx_buffer.len) {
@@ -47,6 +49,7 @@ pub const I2cMaster = struct {
     }
 
     pub fn mbHandler(self: *I2cMaster) void {
+        @setRuntimeSafety(false);
         switch (self.state) {
             .write_data => {
                 if (self.instance.i2cm.status.rxnack) {
@@ -89,6 +92,7 @@ pub const I2cMaster = struct {
     }
 
     pub fn sbHandler(self: *I2cMaster) void {
+        @setRuntimeSafety(false);
         switch (self.state) {
             .read_data => {
                 if (self.instance.i2cm.status.rxnack) {

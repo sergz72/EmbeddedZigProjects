@@ -157,7 +157,8 @@ pub const SercomI2cHost = extern struct {
         port.ports[0].pincfg[parameters.sda_pin] = .{.pmuxen = true, .pullen = true};
         port.ports[0].pmux[parameters.sda_pin/2] = .{.pmuxe = parameters.pmux, .pmuxo = parameters.pmux};
 
-        self.ctrla = .{.mode = .i2c_host, .sdahold = ._75ns, .sclsm = parameters.sclsm};
+        const a: SercomI2cHostCtrlA = .{.mode = .i2c_host, .sdahold = ._75ns, .sclsm = parameters.sclsm};
+        self.ctrla = a;
         self.ctrlb = .{.smen = true};
         self.baud = .{.baud = @truncate(b)};
         self.ctrla.enable = true;
@@ -421,8 +422,9 @@ pub const SercomSpi = extern struct {
             asm volatile("nop");
         }
         self.baud = @truncate(baud - 1);
-        self.ctrla = .{.mode = .spi_host, .enable = true, .dopo = params.dopo,
+        const a: SercomSpiCtrlA = .{.mode = .spi_host, .enable = true, .dopo = params.dopo,
                         .dipo = params.dipo, .cpol = params.cpol, .cpha = params.cpha};
+        self.ctrla = a;
         while (self.syncbusy.enable) {
             asm volatile("nop");
         }
@@ -633,8 +635,9 @@ pub const SercomUsart = extern struct {
         while (self.syncbusy.ctrlb) {
             asm volatile("nop");
         }
-        self.ctrla = .{.dord = true, .rxpo = params.rxpo, .txpo = params.txpo, .runstdby = true,
+        const a: SercomUsartCtrlA = .{.dord = true, .rxpo = params.rxpo, .txpo = params.txpo, .runstdby = true,
                         .mode = .usart_int_clk, .enable = true};
+        self.ctrla = a;
         self.intenset = .{.err = true, .rxc = true};
     }
 
