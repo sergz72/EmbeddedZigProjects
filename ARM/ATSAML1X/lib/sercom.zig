@@ -152,7 +152,7 @@ pub const SercomI2cHost = extern struct {
             return false;
         }
 
-        port.ports[0].dirset = (@as(u32, 1)<<parameters.scl_pin)|(@as(u32, 1)<<parameters.sda_pin);
+        port.ports[0].outset = (@as(u32, 1)<<parameters.scl_pin)|(@as(u32, 1)<<parameters.sda_pin);
         port.ports[0].pincfg[parameters.scl_pin] = .{.pmuxen = true, .pullen = true};
         port.ports[0].pincfg[parameters.sda_pin] = .{.pmuxen = true, .pullen = true};
         port.ports[0].pmux[parameters.sda_pin/2] = .{.pmuxe = parameters.pmux, .pmuxo = parameters.pmux};
@@ -360,6 +360,20 @@ pub const SercomSpiAddr = packed struct(u32) {
     reserved2: u8 = 0
 };
 
+pub const SpiHostInitParameters = struct {
+    baud: usize,
+    clock_frequency: usize,
+    dipo: u2,
+    dopo: u2,
+    tx_pin: u5,
+    rx_pin: u5,
+    sck_pin: u5,
+    ss_pin: ?u5,
+    pmux: port.PortFunction,
+    cpol: bool,
+    cpha: bool
+};
+
 pub const SercomSpi = extern struct {
     ctrla: SercomSpiCtrlA,
     ctrlb: SercomSpiCtrlB,
@@ -376,10 +390,101 @@ pub const SercomSpi = extern struct {
     syncbusy: SercomSpiSyncBusy,
     reserved6: u32,
     addr: SercomSpiAddr,
-    data: u32,
+    data: u16,
+    reserved9: u16,
     reserved7: u32,
     dbgctrl: u8,
-    reserved8: [3]u8
+    reserved8: [3]u8,
+
+    pub fn initHost(self: *volatile SercomSpi, params: SpiHostInitParameters) bool {
+        if (params.baud == 0) {
+            return false;
+        }
+        const baud = params.clock_frequency / (params.baud << 1);
+        if (baud == 0 or baud > 256) {
+            return false;
+        }
+        port.ports[0].outset = @as(u32, 1)<<params.rx_pin;
+        port.ports[0].pincfg[params.tx_pin] = .{.pmuxen = true};
+        port.ports[0].pincfg[params.sck_pin] = .{.pmuxen = true};
+        port.ports[0].pincfg[params.rx_pin] = .{.pmuxen = true, .inen = true, .pullen = true};
+        port.ports[0].setPmux(params.tx_pin, params.pmux);
+        port.ports[0].setPmux(params.rx_pin, params.pmux);
+        port.ports[0].setPmux(params.sck_pin, params.pmux);
+        if (params.ss_pin) |ss_pin| {
+            port.ports[0].setPmux(ss_pin, params.pmux);
+            self.ctrlb = .{.rxen = true, .mssen = true};
+        } else {
+            self.ctrlb = .{.rxen = true};
+        }
+        while (self.syncbusy.ctrlb) {
+            asm volatile("nop");
+        }
+        self.baud = @truncate(baud - 1);
+        self.ctrla = .{.mode = .spi_host, .enable = true, .dopo = params.dopo,
+                        .dipo = params.dipo, .cpol = params.cpol, .cpha = params.cpha};
+        while (self.syncbusy.enable) {
+            asm volatile("nop");
+        }
+        return true;
+    }
+
+    fn rxFlush(self: *volatile SercomSpi) void {
+        while (self.intflag.rxc) {
+            _ = self.data;
+        }
+        self.status.bufovf = true;
+        self.intflag.err = true;
+    }
+
+    pub fn sendPoll8(self: *volatile SercomSpi, data: []const u8) void {
+        for (data) |b| {
+            while (!self.intflag.dre) {
+                asm volatile ("nop");
+            }
+            self.data = b;
+            while (!self.intflag.rxc) {
+                asm volatile ("nop");
+            }
+            _ = self.data;
+        }
+    }
+
+    pub fn sendReceivePoll8(self: *volatile SercomSpi, data_in: []const u8, data_out: []u8) void {
+        self.rxFlush();
+        var idx: usize = 0;
+        for (data_in) |b| {
+            while (!self.intflag.dre) {
+                asm volatile ("nop");
+            }
+            self.data = b;
+            while (!self.intflag.rxc) {
+                asm volatile ("nop");
+            }
+            data_out[idx] = @truncate(self.data);
+            idx += 1;
+        }
+    }
+
+    pub fn receivePoll8(self: *volatile SercomSpi, data_out: []u8) void {
+        self.rxFlush();
+        for (0..data_out.len) |idx| {
+            while (!self.intflag.dre) {
+                asm volatile ("nop");
+            }
+            self.data = 0;
+            while (!self.intflag.rxc) {
+                asm volatile ("nop");
+            }
+            data_out[idx] = @truncate(self.data);
+        }
+    }
+
+    pub fn transferPoll8(self: *volatile SercomSpi, write_data: []const u8, read_data: ?[]u8) void {
+        self.sendPoll8(write_data);
+        if (read_data != null)
+            self.receivePoll8(read_data.?);
+    }
 };
 
 pub const SercomUsartSampr = enum(u3) {
@@ -518,7 +623,7 @@ pub const SercomUsart = extern struct {
     reserved8: [3]u8,
 
     pub fn init(self: *volatile SercomUsart, params: UsartInitParameters) void {
-        port.ports[0].dirset = @as(u32, 1)<<params.rx_pin;
+        port.ports[0].outset = @as(u32, 1)<<params.rx_pin;
         port.ports[0].pincfg[params.tx_pin] = .{.pmuxen = true};
         port.ports[0].pincfg[params.rx_pin] = .{.pmuxen = true, .inen = true, .pullen = true};
         port.ports[0].pmux[params.tx_pin/2] = .{.pmuxe = params.pmux, .pmuxo = params.pmux};

@@ -76,6 +76,14 @@ pub const Port = extern struct {
     nonsec: u32,
     nschk: u32,
     reserved1: [0x0c]u8,
+
+    pub fn setPmux(self: *volatile Port, pin: u5, pmux: PortFunction) void {
+        if (pin & 1 != 0) {
+            self.pmux[pin/2].pmuxo = pmux;
+        } else {
+            self.pmux[pin/2].pmuxe = pmux;
+        }
+    }
 };
 
 pub const ports: *volatile [PORT_GROUP_NUMBER]Port = @ptrFromInt(PORTS_BASE);

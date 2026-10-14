@@ -34,16 +34,18 @@ const I2C_SCLSM = false;
 
 const SPI_INSTANCE = sercom.sercom0;
 //--------------------------
-const SPI_RX_PIN = 16;
+const SPI_RX_PIN = 19;
 const SPI_RX_PIN_MASK = 1 << SPI_RX_PIN;
+const SPI_DIPO = 3;
 //--------------------------
-const SPI_TX_PIN = 17;
+const SPI_TX_PIN = 16;
 const SPI_TX_PIN_MASK = 1 << SPI_TX_PIN;
+const SPI_DOPO = 0;
 //--------------------------
-const SPI_CLK_PIN = 18;
+const SPI_CLK_PIN = 17;
 const SPI_CLK_PIN_MASK = 1 << SPI_CLK_PIN;
 //--------------------------
-const SPI_CS_PIN = 19;
+const SPI_CS_PIN = 18;
 const SPI_CS_PIN_MASK = 1 << SPI_CS_PIN;
 
 pub const CC1101_TIMEOUT = 10000;
@@ -136,7 +138,22 @@ inline fn i2cInit() void {
 }
 
 inline fn spiInit() void {
-
+    const parameters: sercom.SpiHostInitParameters = .{
+        .baud = 1000000,
+        .clock_frequency = cpu.cpu.current_frequency,
+        .dipo = SPI_DIPO,
+        .dopo = SPI_DOPO,
+        .tx_pin = SPI_TX_PIN,
+        .rx_pin = SPI_RX_PIN,
+        .sck_pin = SPI_CLK_PIN,
+        .ss_pin = null,
+        .pmux = .D,
+        .cpol = false,
+        .cpha = false
+    };
+    _ = SPI_INSTANCE.spi.initHost(parameters);
+    port.ports[0].outset = SPI_CS_PIN_MASK;
+    port.ports[0].dirset = SPI_CS_PIN_MASK;
 }
 
 inline fn cc1101Init() void {
@@ -189,44 +206,37 @@ pub inline fn i2cTransfer(address: u10, wdata: []const u8, rdata: []u8) i2c.I2cE
 
 pub fn spi1CsSet(context: *anyopaque, state: bool) bool {
     _ = context;
-    _ = state;
-    // if (state) {
-    //     SPI_CS_PORT.bop = SPI_CS_PIN_MASK;
-    // } else {
-    //     SPI_CS_PORT.bc = SPI_CS_PIN_MASK;
-    // }
+    if (state) {
+        port.ports[0].outset = SPI_CS_PIN_MASK;
+    } else {
+        port.ports[0].outclr = SPI_CS_PIN_MASK;
+    }
     return true;
 }
 
 pub fn spiSendReceive(channel: usize, wdata: []const u8, rdata: []u8) bool {
     _ = channel;
-    _ = wdata;
-    _ = rdata;
     _ = spi1CsSet(@ptrFromInt(1), false);
-    //SPI_INSTANCE.sendReceivePoll8(wdata, rdata);
+    SPI_INSTANCE.spi.sendReceivePoll8(wdata, rdata);
     _ = spi1CsSet(@ptrFromInt(1), true);
     return true;
 }
 
 pub fn spi1Write(context: *anyopaque, data: []const u8) bool {
     _ = context;
-    _ = data;
-    //SPI_INSTANCE.sendPoll8(data);
+    SPI_INSTANCE.spi.sendPoll8(data);
     return true;
 }
 
 pub fn spi1ReadWrite(context: *anyopaque, data: []u8) bool {
     _ = context;
-    _ = data;
-    //SPI_INSTANCE.sendReceivePoll8(data, data);
+    SPI_INSTANCE.spi.sendReceivePoll8(data, data);
     return true;
 }
 
 pub fn spi1Transfer(context: *anyopaque, wdata: []const u8, rdata: []u8) bool {
     _ = context;
-    _ = wdata;
-    _ = rdata;
-    //SPI_INSTANCE.transferPoll8(wdata, rdata);
+    SPI_INSTANCE.spi.transferPoll8(wdata, rdata);
     return true;
 }
 
