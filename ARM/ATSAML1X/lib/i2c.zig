@@ -23,6 +23,7 @@ pub const I2cMaster = struct {
         if (self.rx_index == self.rx_buffer.len - 1) {
             self.instance.i2cm.ctrlb.ackact = true; // NACK
             self.instance.i2cm.ctrlb.cmd = .stop;
+            self.state = .done;
         } else {
             self.instance.i2cm.ctrlb.ackact = false; // ACK
             self.instance.i2cm.ctrlb.cmd = .byte_read;
@@ -55,7 +56,7 @@ pub const I2cMaster = struct {
                     return;
                 }
                 if (self.tx_index == self.tx_buffer.len) {
-                    if (self.rx_buffer.len > 0) {
+                    if (self.rx_buffer.len != 0) {
                         self.state = .repeated_start;
                     } else {
                         self.instance.i2cm.ctrlb.cmd = .stop;
