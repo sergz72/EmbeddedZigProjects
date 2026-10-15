@@ -4,6 +4,7 @@ const SYSTICK_BASE: usize = 0xE000E010;
 
 var p_us: usize = undefined;
 var p_ms: usize = undefined;
+var p_loop_us: usize = undefined;
 var systick_counter: usize = undefined;
 
 const SystickCsr = packed struct(u32) {
@@ -35,11 +36,19 @@ pub const init_div1 = SystickInit{.clksource = true, .divider = 1000};
 pub fn delay_init(init: SystickInit) void {
     p_ms = cpu.cpu.current_frequency / init.divider;
     p_us = p_ms / 1000;
+    p_loop_us = cpu.cpu.current_frequency / 1000000;
     systick.csr = SystickCsr{.tickint = true, .clksource = init.clksource};
 }
 
 export fn SysTick_Handler() callconv(.c) void {
     systick_counter += 1;
+}
+
+pub fn delayLoopus(us: usize) void {
+    const n = p_loop_us * us;
+    for (0..n) |_| {
+        asm volatile("nop");
+    }
 }
 
 fn delay(n: u24, count: usize) void {

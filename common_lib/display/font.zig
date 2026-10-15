@@ -6,7 +6,7 @@ pub const FontInfo = struct {
     character_spacing: u8,
     character_bitmaps: []const u8,
 
-    pub fn get_char_width_bytes(self: *const FontInfo) u8 {
+    pub fn getCharWidthBytes(self: *const FontInfo) u8 {
         const value = self.character_height >> 3;
         if ((self.character_height & 7) == 0) {
             return value;
@@ -14,7 +14,7 @@ pub const FontInfo = struct {
         return value + 1;
     }
 
-    pub fn get_char_total_bytes(self: *const FontInfo) u8 {
-        return self.get_char_width_bytes() * self.character_height;
+    pub fn getCharTotalBytes(self: *const FontInfo) u8 {
+        return self.getCharWidthBytes() * self.character_height;
     }
 };

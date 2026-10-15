@@ -4,6 +4,7 @@ const scd4x = @import("scd4x");
 const veml = @import("veml7700");
 const cc1101 = @import("cc1101");
 const config = @import("config");
+const lcd = @import("lcd");
 
 const cfg1: cc1101.CC1101Cfg = .{
     .mode = .gfsk1200,
@@ -20,6 +21,10 @@ const cfg1: cc1101.CC1101Cfg = .{
 
 pub var scd_device: scd4x.SCD4x = .{.i2c_read = scdRead, .i2c_write = scdWrite};
 pub var veml_device: veml.VEML7700 = .{.i2c_read = vemlRead, .i2c_write = vemlWrite};
+pub var lcd_device: lcd.LcdKS0108 = .{
+    .write = hal.lcdWrite,
+    .set_reset = hal.lcdReset
+};
 
 pub const cc1101_init: [config.NUMBER_OF_CC1101_DEVICES]cc1101.CC1101Init = if (config.NUMBER_OF_CC1101_DEVICES == 2) .{
     .{

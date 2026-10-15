@@ -2,7 +2,7 @@ const std = @import("std");
 
 pub const BuildParameters = struct {
     target: std.Build.ResolvedTarget,
-    optimize: std.builtin.Optimize,
+    optimize: ?std.builtin.Optimize,
     hal: *std.Build.Module,
     config: *std.Build.Module,
     system_timer: *std.Build.Module,
@@ -16,7 +16,7 @@ pub const BuildParameters = struct {
 
 pub const PreCreateParameters = struct {
     target: std.Build.ResolvedTarget,
-    optimize: std.builtin.Optimize,
+    optimize: ?std.builtin.Optimize,
     system_timer: *std.Build.Module,
     name: []const u8
 };
@@ -138,6 +138,40 @@ pub fn buildExe(b: *std.Build, parameters: BuildParameters) *std.Build.Step.Comp
         }
     });
 
+    const font = b.addModule("font", .{
+        .root_source_file = b.path("../../../common_lib/display/font.zig"),
+        .target = parameters.target,
+        .optimize = parameters.optimize
+    });
+
+    const font8 = b.addModule("font8", .{
+        .root_source_file = b.path("../../../common_lib/display/fonts/font8.zig"),
+        .target = parameters.target,
+        .optimize = parameters.optimize,
+        .imports = &.{
+            .{ .name = "font", .module = font }
+        }
+    });
+
+    const lcd_bw = b.addModule("lcd_bw", .{
+        .root_source_file = b.path("../../../common_lib/display/lcd_bw.zig"),
+        .target = parameters.target,
+        .optimize = parameters.optimize,
+        .imports = &.{
+            .{ .name = "font", .module = font }
+        }
+    });
+
+    const lcd = b.addModule("lcd", .{
+        .root_source_file = b.path("../../../common_lib/display/lcd_ks0108.zig"),
+        .target = parameters.target,
+        .optimize = parameters.optimize,
+        .imports = &.{
+            .{ .name = "font", .module = font },
+            .{ .name = "lcd_bw", .module = lcd_bw },
+        }
+    });
+
     const hal_common = b.addModule("hal_common", .{
         .root_source_file = b.path("../../../iot_device_core/hal_common.zig"),
         .target = parameters.target,
@@ -147,7 +181,19 @@ pub fn buildExe(b: *std.Build, parameters: BuildParameters) *std.Build.Step.Comp
             .{ .name = "scd4x", .module = scd4x },
             .{ .name = "veml7700", .module = veml7700 },
             .{ .name = "cc1101", .module = parameters.cc1101 },
+            .{ .name = "lcd", .module = lcd },
             .{ .name = "config", .module = parameters.config }
+        }
+    });
+
+    const ui = b.addModule("ui", .{
+        .root_source_file = b.path("../../../iot_device_core/ui.zig"),
+        .target = parameters.target,
+        .optimize = parameters.optimize,
+        .imports = &.{
+            .{ .name = "lcd", .module = lcd },
+            .{ .name = "hal_common", .module = hal_common },
+            .{ .name = "font8", .module = font8 }
         }
     });
 
@@ -168,7 +214,8 @@ pub fn buildExe(b: *std.Build, parameters: BuildParameters) *std.Build.Step.Comp
                 .{ .name = "veml7700_commands", .module = veml7700_commands },
                 .{ .name = "cc1101_commands", .module = cc1101_commands },
                 .{ .name = "allocator", .module = parameters.allocator },
-                .{ .name = "usart_writer", .module = parameters.usart_writer }
+                .{ .name = "usart_writer", .module = parameters.usart_writer },
+                .{ .name = "ui", .module = ui }
             },
         }),
     });

@@ -55,6 +55,31 @@ const GDO0_PIN_MASK = 1 << GDO0_PIN;
 const GDO2_PIN = 23;
 const GDO2_PIN_MASK = 1 << GDO2_PIN;
 
+const LCD_DC_PIN = 2;
+const LCD_DC_PIN_MASK = 1 << LCD_DC_PIN;
+const LCD_E_PIN = 3;
+const LCD_E_PIN_MASK = 1 << LCD_E_PIN;
+const LCD_D0_PIN = 4;
+const LCD_D0_PIN_MASK = 1 << LCD_D0_PIN;
+const LCD_D1_PIN = 5;
+const LCD_D1_PIN_MASK = 1 << LCD_D1_PIN;
+const LCD_D2_PIN = 6;
+const LCD_D2_PIN_MASK = 1 << LCD_D2_PIN;
+const LCD_D3_PIN = 7;
+const LCD_D3_PIN_MASK = 1 << LCD_D3_PIN;
+const LCD_D4_PIN = 8;
+const LCD_D4_PIN_MASK = 1 << LCD_D4_PIN;
+const LCD_D5_PIN = 9;
+const LCD_D5_PIN_MASK = 1 << LCD_D5_PIN;
+const LCD_D6_PIN = 10;
+const LCD_D6_PIN_MASK = 1 << LCD_D6_PIN;
+const LCD_D7_PIN = 11;
+const LCD_D7_PIN_MASK = 1 << LCD_D7_PIN;
+const LCD_CS1_PIN = 14;
+const LCD_CS1_PIN_MASK = 1 << LCD_CS1_PIN;
+const LCD_CS2_PIN = 15;
+const LCD_CS2_PIN_MASK = 1 << LCD_CS2_PIN;
+
 pub const panic = std.debug.no_panic;
 
 pub var timer_interrupt: bool = undefined;
@@ -163,6 +188,12 @@ inline fn cc1101Init() void {
     port.ports[0].pincfg[GDO2_PIN] = .{.inen = true, .pullen = true};
 }
 
+inline fn lcdInit() void {
+    port.ports[0].dirset = LCD_DC_PIN | LCD_E_PIN | LCD_D0_PIN_MASK | LCD_D1_PIN_MASK | LCD_D2_PIN_MASK |
+                    LCD_D3_PIN_MASK | LCD_D4_PIN_MASK | LCD_D5_PIN_MASK | LCD_D6_PIN_MASK | LCD_D7_PIN_MASK |
+                    LCD_CS1_PIN_MASK | LCD_CS2_PIN_MASK;
+}
+
 export fn SystemInit() callconv(.c) void {
     pm.pm.sleepcfg = .idle;
     supc.supc.buckConverterEnable();
@@ -174,6 +205,7 @@ export fn SystemInit() callconv(.c) void {
     i2cInit();
     spiInit();
     cc1101Init();
+    lcdInit();
 }
 
 pub inline fn startTimer() void {
@@ -248,4 +280,57 @@ pub fn getGdo01(context: *anyopaque) ?bool {
 pub fn getGdo21(context: *anyopaque) ?bool {
     _ = context;
     return port.ports[0].in & GDO2_PIN_MASK != 0;
+}
+
+inline fn setLcdData(data: u8) void {
+    var out = port.ports[0].out;
+    const mask = ~(@as(u32, 0xFF) << LCD_D0_PIN);
+    out &= mask;
+    out |= @as(u32, data) << LCD_D0_PIN;
+    port.ports[0].out = out;
+}
+
+inline fn setLcdCs(cs: u2) void {
+    if (cs & 1 != 0) {
+        port.ports[0].outset = LCD_CS1_PIN_MASK;
+    } else {
+        port.ports[0].outclr = LCD_CS1_PIN_MASK;
+    }
+    if (cs & 2 != 0) {
+        port.ports[0].outset = LCD_CS2_PIN_MASK;
+    } else {
+        port.ports[0].outclr = LCD_CS2_PIN_MASK;
+    }
+}
+
+inline fn setLcdDc(dc: bool) void {
+    if (dc) {
+        port.ports[0].outset = LCD_DC_PIN_MASK;
+    } else {
+        port.ports[0].outclr = LCD_DC_PIN_MASK;
+    }
+}
+
+inline fn setLcdE(e: bool) void {
+    if (e) {
+        port.ports[0].outset = LCD_E_PIN_MASK;
+    } else {
+        port.ports[0].outclr = LCD_E_PIN_MASK;
+    }
+}
+
+pub fn lcdWrite(data: u8, cs: u2, dc: bool) void {
+    setLcdData(data);
+    setLcdCs(cs);
+    setLcdDc(dc);
+    setLcdE(true);
+    system_timer.delayLoopus(1);
+    setLcdE(false);
+    system_timer.delayLoopus(1);
+    setLcdCs(0);
+}
+
+pub fn lcdReset(state: bool) void {
+    _ = state;
+    //rst pin us not connected
 }
