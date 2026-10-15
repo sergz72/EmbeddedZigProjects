@@ -6,7 +6,9 @@ const veml = @import("veml7700");
 pub var veml_device: veml.VEML7700 = .{.i2c_read = vemlRead, .i2c_write = vemlWrite};
 
 pub fn init() void {
-    veml_device.init() catch { while (true){} };
+    if (hal.INIT_DEVICES) {
+        veml_device.init() catch { while (true){} };
+    }
     veml7700_commands.registerCommands(hal.sh, &veml_device) catch { while (true){} };
 }
 

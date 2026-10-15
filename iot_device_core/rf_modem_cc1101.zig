@@ -59,8 +59,10 @@ pub var cc1101_devices: [config.NUMBER_OF_CC1101_DEVICES]cc1101.CC1101 = if (con
 };
 
 pub fn init() void {
-    //for (0..config.NUMBER_OF_CC1101_DEVICES) |n| {
-    //    cc1101_devices[n].validateAndInit(&cc1101_cfg[n]) catch { while (true){} };
-    //}
+    if (hal.INIT_DEVICES) {
+        for (0..config.NUMBER_OF_CC1101_DEVICES) |n| {
+            cc1101_devices[n].validateAndInit(&cc1101_cfg[n]) catch { while (true){} };
+        }
+    }
     cc1101_commands.registerCommands(hal.sh, &cc1101_cfg, &cc1101_devices) catch { while (true){} };
 }

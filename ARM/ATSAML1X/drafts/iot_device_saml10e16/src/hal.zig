@@ -14,6 +14,8 @@ const system_timer = @import("system_timer");
 const hal_constants = @import("hal_constants");
 const usart_writer = @import("usart_writer");
 
+pub const INIT_DEVICES = true;
+
 const LED_PIN = 27;
 const LED_PIN_MASK: u32 = 1 << LED_PIN;
 
@@ -50,9 +52,9 @@ const SPI_CS_PIN_MASK = 1 << SPI_CS_PIN;
 
 pub const CC1101_TIMEOUT = 10000;
 //--------------------------
-const GDO0_PIN = 22;
+const GDO0_PIN = 23;
 const GDO0_PIN_MASK = 1 << GDO0_PIN;
-const GDO2_PIN = 23;
+const GDO2_PIN = 22;
 const GDO2_PIN_MASK = 1 << GDO2_PIN;
 
 const LCD_DC_PIN = 2;
