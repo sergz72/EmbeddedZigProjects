@@ -11,14 +11,20 @@ pub const BuildParameters = struct {
     allocator: *std.Build.Module,
     usart_writer: *std.Build.Module,
     hal_constants: *std.Build.Module,
-    name: []const u8
+    name: []const u8,
+    lux_sensor_module: []const u8,
+    co2_sensor_module: []const u8,
+    rf_modem_module: []const u8
 };
 
 pub const PreCreateParameters = struct {
     target: std.Build.ResolvedTarget,
     optimize: ?std.builtin.Optimize,
     system_timer: *std.Build.Module,
-    name: []const u8
+    name: []const u8,
+    lux_sensor_module: []const u8,
+    co2_sensor_module: []const u8,
+    rf_modem_module: []const u8
 };
 
 pub fn preCreateModules(b: *std.Build, parameters: PreCreateParameters) BuildParameters {
@@ -59,7 +65,10 @@ pub fn preCreateModules(b: *std.Build, parameters: PreCreateParameters) BuildPar
         .allocator = undefined,
         .usart_writer = usart_writer,
         .hal_constants = hal_constants,
-        .name = parameters.name
+        .name = parameters.name,
+        .lux_sensor_module = parameters.lux_sensor_module,
+        .co2_sensor_module = parameters.co2_sensor_module,
+        .rf_modem_module = parameters.rf_modem_module
     };
 }
 
@@ -197,6 +206,43 @@ pub fn buildExe(b: *std.Build, parameters: BuildParameters) *std.Build.Step.Comp
         }
     });
 
+    const lux_sensor = b.addModule("lux_sensor", .{
+        .root_source_file = b.path(parameters.lux_sensor_module),
+        .target = parameters.target,
+        .optimize = parameters.optimize,
+        .imports = &.{
+            .{ .name = "veml7700", .module = veml7700 },
+            .{ .name = "veml7700_commands", .module = veml7700_commands },
+            .{ .name = "shell", .module = parameters.shell },
+            .{ .name = "hal", .module = parameters.hal },
+        }
+    });
+
+    const co2_sensor = b.addModule("co2_sensor", .{
+        .root_source_file = b.path(parameters.co2_sensor_module),
+        .target = parameters.target,
+        .optimize = parameters.optimize,
+        .imports = &.{
+            .{ .name = "scd4x", .module = scd4x },
+            .{ .name = "scd4x_commands", .module = scd4x_commands },
+            .{ .name = "shell", .module = parameters.shell },
+            .{ .name = "hal", .module = parameters.hal },
+        }
+    });
+
+    const rf_modem = b.addModule("rf_modem", .{
+        .root_source_file = b.path(parameters.rf_modem_module),
+        .target = parameters.target,
+        .optimize = parameters.optimize,
+        .imports = &.{
+            .{ .name = "cc1101", .module = parameters.cc1101 },
+            .{ .name = "cc1101_commands", .module = cc1101_commands },
+            .{ .name = "shell", .module = parameters.shell },
+            .{ .name = "hal", .module = parameters.hal },
+            .{ .name = "config", .module = parameters.config }
+        }
+    });
+
     const exe = b.addExecutable(.{
         .name = parameters.name,
         .root_module = b.createModule(.{
@@ -210,9 +256,9 @@ pub fn buildExe(b: *std.Build, parameters: BuildParameters) *std.Build.Step.Comp
                 .{ .name = "shell", .module = parameters.shell },
                 .{ .name = "i2c_commands", .module = i2c_commands },
                 .{ .name = "spi_commands", .module = spi_commands },
-                .{ .name = "scd4x_commands", .module = scd4x_commands },
-                .{ .name = "veml7700_commands", .module = veml7700_commands },
-                .{ .name = "cc1101_commands", .module = cc1101_commands },
+                .{ .name = "lux_sensor", .module = lux_sensor },
+                .{ .name = "co2_sensor", .module = co2_sensor },
+                .{ .name = "rf_modem", .module = rf_modem },
                 .{ .name = "allocator", .module = parameters.allocator },
                 .{ .name = "usart_writer", .module = parameters.usart_writer },
                 .{ .name = "ui", .module = ui }
