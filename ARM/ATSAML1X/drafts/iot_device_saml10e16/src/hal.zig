@@ -141,7 +141,7 @@ inline fn usartInit() void {
 
 inline fn timerInit() void {
     timer_interrupt = false;
-    tc.tc2_16.setPer(@truncate(cpu.cpu.current_frequency / 10240));
+    tc.tc2_16.setPer(@truncate(cpu.cpu.current_frequency / 1024));
     tc.tc2_16.intenset = .{.ovf = true};
     tc.tc2_16.ctrla = .{.runstdby = true, .presync = .presc, .prescaler = .div1024};
     nvic.nvic.enableInterrupt(interrupts.Interrupt.TC2.toU8());
@@ -189,7 +189,7 @@ inline fn cc1101Init() void {
 }
 
 inline fn lcdInit() void {
-    port.ports[0].dirset = LCD_DC_PIN | LCD_E_PIN | LCD_D0_PIN_MASK | LCD_D1_PIN_MASK | LCD_D2_PIN_MASK |
+    port.ports[0].dirset = LCD_DC_PIN_MASK | LCD_E_PIN_MASK | LCD_D0_PIN_MASK | LCD_D1_PIN_MASK | LCD_D2_PIN_MASK |
                     LCD_D3_PIN_MASK | LCD_D4_PIN_MASK | LCD_D5_PIN_MASK | LCD_D6_PIN_MASK | LCD_D7_PIN_MASK |
                     LCD_CS1_PIN_MASK | LCD_CS2_PIN_MASK;
 }
@@ -333,4 +333,8 @@ pub fn lcdWrite(data: u8, cs: u2, dc: bool) void {
 pub fn lcdReset(state: bool) void {
     _ = state;
     //rst pin us not connected
+}
+
+pub inline fn enterSleep() void {
+    pm.pm.enterStandby();
 }

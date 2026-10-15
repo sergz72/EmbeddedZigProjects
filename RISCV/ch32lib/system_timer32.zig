@@ -38,6 +38,13 @@ export fn SysTick_Handler() callconv(.naked) void {
     asm volatile("mret");
 }
 
+pub fn delayLoopus(us: usize) void {
+    const n = p_us * us;
+    for (0..n) |_| {
+        asm volatile("nop");
+    }
+}
+
 fn delay(n: u32) void {
     systick.ctlr = SystickCtlr{};
     systick_counter = 0;

@@ -19,18 +19,12 @@ const shell_init = shell.ShellInit{
     .history_length = 20
 };
 
-var led_counter: usize = undefined;
-
-fn ledHandler() void {
+inline fn timerHandler() void {
     if (!hal.timer_interrupt)
         return;
     hal.timer_interrupt = false;
-    if (led_counter == 9) {
-        led_counter = 0;
-        hal.ledToggle();
-    } else {
-        led_counter += 1;
-    }
+    hal.ledToggle();
+    ui.ui.timerEvent();
 }
 
 export fn main() callconv(.c) noreturn {
@@ -43,16 +37,14 @@ export fn main() callconv(.c) noreturn {
     veml7700_commands.registerCommands(hal.sh, &hal_common.veml_device) catch { while (true){} };
     cc1101_commands.registerCommands(hal.sh, &hal_common.cc1101_cfg, &hal_common.cc1101_devices) catch { while (true){} };
 
-    hal_common.lcd_device.init(.landscape, a) catch { while (true){} };
+    hal_common.lcd_device.init(.reverse_landscape, a) catch { while (true){} };
     ui.ui.init();
-
-    led_counter = 0;
 
     hal.startTimer();
 
     while (true) {
-        asm volatile ("wfi");
+        hal.enterSleep();
         hal.sh.handler() catch { while (true){} };
-        ledHandler();
+        timerHandler();
     }
 }

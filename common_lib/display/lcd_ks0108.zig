@@ -32,9 +32,20 @@ pub const LcdKS0108 = struct {
         };
         try self.canvas.init(allocator);
         self.set_reset(true);
+        self.clearScreen();
+        self.setStartLine(0, LCD_CS1|LCD_CS2);
+    }
+
+    pub fn clearScreen(self: *LcdKS0108) void {
         self.canvas.clearScreen();
         @memset(self.buffer, 0);
-        self.setStartLine(0, LCD_CS1|LCD_CS2);
+        for (0..LCD_PAGE_COUNT) |x| {
+            self.setX(@truncate(x), LCD_CS1|LCD_CS2);
+            self.setY(0, LCD_CS1|LCD_CS2);
+            for (0..LCD_CONTROLLER_AREA) |_| {
+                self.writeData(0, LCD_CS1|LCD_CS2);
+            }
+        }
     }
 
     pub fn off(self: *LcdKS0108) void {

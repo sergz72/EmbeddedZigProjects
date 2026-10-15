@@ -7,8 +7,8 @@ pub const FontInfo = struct {
     character_bitmaps: []const u8,
 
     pub fn getCharWidthBytes(self: *const FontInfo) u8 {
-        const value = self.character_height >> 3;
-        if ((self.character_height & 7) == 0) {
+        const value = self.character_width >> 3;
+        if ((self.character_width & 7) == 0) {
             return value;
         }
         return value + 1;

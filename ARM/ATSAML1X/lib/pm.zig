@@ -52,7 +52,20 @@ pub const Pm = extern struct {
     intenset: u8,
     intflag: u8,
     reserved2: u8,
-    stdbycfg: PmStdbyCfg
+    stdbycfg: PmStdbyCfg,
+
+    pub fn enterStandby(self: *volatile Pm) void {
+        self.sleepcfg = .standby;
+        while (self.sleepcfg != .standby) {
+            asm volatile("nop");
+        }
+        asm volatile("dsb");
+        asm volatile("wfi");
+        self.sleepcfg = .idle;
+        while (self.sleepcfg != .idle) {
+            asm volatile("nop");
+        }
+    }
 };
 
 pub const pm: *volatile Pm = @ptrFromInt(PM_BASE);
