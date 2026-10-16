@@ -26,8 +26,8 @@ pub fn i2cScan(channel: usize, address: u10) [2]u8 {
     if (channel != 0)
         return [2]u8{'e', 'c'};
     hal.i2cScan(address) catch |err| {
-        const e_no: u8 = @truncate(@intFromError(err));
-        return [2]u8{'e', '0' + e_no};
+        const e: []const u8 = @errorName(err);
+        return [2]u8{e[0], e[1]};
     };
     return [2]u8{0,0};
 }

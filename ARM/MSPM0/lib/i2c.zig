@@ -378,12 +378,12 @@ pub const I2c = extern struct {
 
     pub fn startControllerTransmitTransferNoStop(self: *volatile I2c, address: u10, length: u12) void {
         self.master.msa = .{.dir_receive = false, .taddr = address};
-        self.master.mctr = .{.start = true, .burst_run = true, .cblen = length};
+        self.master.mctr = .{.start = true, .burstrun = true, .cblen = length};
     }
 
-    pub fn startControlleRreceiveTransferRepeatedStart(self: *volatile I2c, address: u10, length: u12) void {
+    pub fn startControllerReceiveTransferRepeatedStart(self: *volatile I2c, address: u10, length: u12) void {
         self.master.msa = .{.dir_receive = true, .taddr = address};
-        self.master.mctr = .{.start = true, .stop = true, .burst_run = true, .cblen = length};//, .ack = true};
+        self.master.mctr = .{.start = true, .stop = true, .burstrun = true, .cblen = length};//, .ack = true};
     }
 
     pub fn enableStopCondition(self: *volatile I2c) void {

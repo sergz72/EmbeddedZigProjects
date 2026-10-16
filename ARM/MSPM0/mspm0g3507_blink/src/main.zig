@@ -11,19 +11,19 @@ const system_timer = @import("system_timer");
 
 const LED_PIN = 0;
 const LED_PIN_MASK = 1 << LED_PIN;
-const LED_PIN_IOMUX = 0;
+const LED_PIN_IOMUX = 1;
 const LED_PORT = gpio.gpioa;
 
 const UART_INSTANCE = uart.uart0;
 //--------------------------
 const UART_TX_PIN = 10;
 const UART_TX_PIN_MASK: u24 = 1 << UART_TX_PIN;
-const UART_TX_PIN_IOMUX = 20;
+const UART_TX_PIN_IOMUX = 21;
 const UART_TX_PORT = gpio.gpioa;
 //--------------------------
 const UART_RX_PIN = 11;
 const UART_RX_PIN_MASK: u124 = 1 << UART_RX_PIN;
-const UART_RX_PIN_IOMUX = 21;
+const UART_RX_PIN_IOMUX = 22;
 const UART_RX_PORT = gpio.gpioa;
 //------------------------------
 const UART_IBRD = uart.calculateIbrd(115200, 4000000, 16);
@@ -47,7 +47,7 @@ inline fn initUart() void {
     iomux.iomux.initPeripheralOutputFunction(UART_TX_PIN_IOMUX, .function2);
     iomux.iomux.initPeripheralInputFunction(UART_RX_PIN_IOMUX, .function2);
     UART_INSTANCE.clksel = common.Clksel3{.busclksel = true};
-    UART_INSTANCE.clkdiv = uart.UartClkDiv{.ratio = .div8};
+    UART_INSTANCE.clkdiv = .{.ratio = .div8};
     UART_INSTANCE.setBaudRateDivisor(UART_IBRD, UART_FBRD);
     // When updating the baud-rate divisor (UARTIBRD or UARTIFRD), the LCRH register must also be written.
     // The write strobe for the baud-rate divisor registers is tied to the LCRH register.
