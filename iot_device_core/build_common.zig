@@ -14,6 +14,8 @@ pub const BuildParameters = struct {
     name: []const u8,
     lux_sensor_module: []const u8,
     co2_sensor_module: []const u8,
+    pressure_sensor_module: []const u8,
+    external_temperature_sensor_module: []const u8,
     rf_modem_module: []const u8
 };
 
@@ -24,6 +26,8 @@ pub const PreCreateParameters = struct {
     name: []const u8,
     lux_sensor_module: []const u8,
     co2_sensor_module: []const u8,
+    pressure_sensor_module: []const u8,
+    external_temperature_sensor_module: []const u8,
     rf_modem_module: []const u8
 };
 
@@ -68,6 +72,8 @@ pub fn preCreateModules(b: *std.Build, parameters: PreCreateParameters) BuildPar
         .name = parameters.name,
         .lux_sensor_module = parameters.lux_sensor_module,
         .co2_sensor_module = parameters.co2_sensor_module,
+        .pressure_sensor_module = parameters.pressure_sensor_module,
+        .external_temperature_sensor_module = parameters.external_temperature_sensor_module,
         .rf_modem_module = parameters.rf_modem_module
     };
 }
@@ -215,6 +221,7 @@ pub fn buildExe(b: *std.Build, parameters: BuildParameters) *std.Build.Step.Comp
             .{ .name = "veml7700_commands", .module = veml7700_commands },
             .{ .name = "shell", .module = parameters.shell },
             .{ .name = "hal", .module = parameters.hal },
+            .{ .name = "hal_common", .module = hal_common },
         }
     });
 
@@ -227,6 +234,29 @@ pub fn buildExe(b: *std.Build, parameters: BuildParameters) *std.Build.Step.Comp
             .{ .name = "scd4x_commands", .module = scd4x_commands },
             .{ .name = "shell", .module = parameters.shell },
             .{ .name = "hal", .module = parameters.hal },
+            .{ .name = "hal_common", .module = hal_common },
+        }
+    });
+
+    const pressure_sensor = b.addModule("pressure_sensor", .{
+        .root_source_file = b.path(parameters.pressure_sensor_module),
+        .target = parameters.target,
+        .optimize = parameters.optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = parameters.shell },
+            .{ .name = "hal", .module = parameters.hal },
+            .{ .name = "hal_common", .module = hal_common },
+        }
+    });
+
+    const external_temperature_sensor = b.addModule("external_temperature_sensor", .{
+        .root_source_file = b.path(parameters.external_temperature_sensor_module),
+        .target = parameters.target,
+        .optimize = parameters.optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = parameters.shell },
+            .{ .name = "hal", .module = parameters.hal },
+            .{ .name = "hal_common", .module = hal_common },
         }
     });
 
@@ -239,7 +269,8 @@ pub fn buildExe(b: *std.Build, parameters: BuildParameters) *std.Build.Step.Comp
             .{ .name = "cc1101_commands", .module = cc1101_commands },
             .{ .name = "shell", .module = parameters.shell },
             .{ .name = "hal", .module = parameters.hal },
-            .{ .name = "config", .module = parameters.config }
+            .{ .name = "config", .module = parameters.config },
+            .{ .name = "hal_common", .module = hal_common },
         }
     });
 
@@ -258,6 +289,8 @@ pub fn buildExe(b: *std.Build, parameters: BuildParameters) *std.Build.Step.Comp
                 .{ .name = "spi_commands", .module = spi_commands },
                 .{ .name = "lux_sensor", .module = lux_sensor },
                 .{ .name = "co2_sensor", .module = co2_sensor },
+                .{ .name = "pressure_sensor", .module = pressure_sensor },
+                .{ .name = "external_temperature_sensor", .module = external_temperature_sensor },
                 .{ .name = "rf_modem", .module = rf_modem },
                 .{ .name = "allocator", .module = parameters.allocator },
                 .{ .name = "usart_writer", .module = parameters.usart_writer },

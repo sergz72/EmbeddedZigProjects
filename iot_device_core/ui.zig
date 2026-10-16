@@ -15,6 +15,15 @@ pub const Ui = struct {
         hal_common.lcd_device.on();
     }
 
+    pub fn updateLocalData(self: *Ui) void {
+        _ = self;
+    }
+
+    pub fn updateRemoteData(self: *Ui, data: []u8) void {
+        _ = self;
+        _ = data;
+    }
+
     pub fn timerEvent(self: *Ui) void {
         if (self.seconds < 59) {
             self.seconds += 1;

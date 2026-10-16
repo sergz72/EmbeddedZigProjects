@@ -100,6 +100,8 @@ pub fn build(b: *std.Build) !void {
         .name = "iot_device_saml10e16.elf",
         .lux_sensor_module = "../../../iot_device_core/lux_sensor_veml7700.zig",
         .co2_sensor_module = "../../../iot_device_core/co2_sensor_scd4x.zig",
+        .pressure_sensor_module = "../../../iot_device_core/pressure_sensor_none.zig",
+        .external_temperature_sensor_module = "../../../iot_device_core/external_temperature_sensor_none.zig",
         .rf_modem_module = "../../../iot_device_core/rf_modem_cc1101.zig"
     });
     build_parameters.allocator = allocator;

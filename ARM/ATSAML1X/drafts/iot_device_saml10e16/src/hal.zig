@@ -85,6 +85,7 @@ const LCD_CS2_PIN_MASK = 1 << LCD_CS2_PIN;
 pub const panic = std.debug.no_panic;
 
 pub var timer_interrupt: bool = undefined;
+pub var time: usize = undefined;
 pub var sh: *shell.Shell = undefined;
 var i2c_instance: i2c.I2cMaster = .{.instance = I2C_INSTANCE, .sclsm = I2C_SCLSM};
 
@@ -101,6 +102,7 @@ export fn SERCOM2_2_Handler() callconv(.c) void {
 export fn TC2_Handler() callconv(.c) void {
     tc.tc2_16.intflag = .{ .ovf = true };
     timer_interrupt = true;
+    time += 1;
 }
 
 export fn SERCOM1_0_Handler() callconv(.c) void {
@@ -142,6 +144,7 @@ inline fn usartInit() void {
 }
 
 inline fn timerInit() void {
+    time = 0;
     timer_interrupt = false;
     tc.tc2_16.setPer(@truncate(cpu.cpu.current_frequency / 1024));
     tc.tc2_16.intenset = .{.ovf = true};

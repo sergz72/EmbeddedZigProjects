@@ -66,3 +66,7 @@ pub fn init() void {
     }
     cc1101_commands.registerCommands(hal.sh, &cc1101_cfg, &cc1101_devices) catch { while (true){} };
 }
+
+pub fn timerEvent() ?[]u8 {
+    return null;
+}
