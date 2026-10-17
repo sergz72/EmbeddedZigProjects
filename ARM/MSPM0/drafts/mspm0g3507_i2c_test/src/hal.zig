@@ -14,6 +14,7 @@ const i2c = @import("i2c");
 const usart_writer = @import("usart_writer");
 const scd4x = @import("scd4x");
 const veml = @import("veml7700");
+const bme = @import("bme280");
 
 const LED_PIN = 0;
 const LED_PIN_MASK = 1 << LED_PIN;
@@ -57,6 +58,11 @@ pub var timer_interrupt: bool = undefined;
 pub var sh: *shell.Shell = undefined;
 pub var scd_device: scd4x.SCD4x = .{.i2c_read = scdRead, .i2c_write = scdWrite};
 pub var veml_device: veml.VEML7700 = .{.i2c_read = vemlRead, .i2c_write = vemlWrite};
+pub var bme_device: bme.BME280 = .{
+    .i2c_read = bmeRead,
+    .i2c_write = bmeWrite,
+    .delayms = system_timer.delayms
+};
 
 inline fn initPower() void {
     LED_PORT.reset();
@@ -188,6 +194,22 @@ pub fn vemlWrite(reg: u8, data: u16) bool {
     const wdata: []const u8 = &.{reg, @truncate(data), @truncate(data >> 8)};
     I2C_INSTANCE.write(veml.VEML7700_I2C_ADDRESS, wdata, I2C_TIMEOUT) catch |err| {
         veml_device.i2c_error_name = @errorName(err);
+        return false;
+    };
+    return true;
+}
+
+pub fn bmeRead(reg: u8, data: []u8) bool {
+    I2C_INSTANCE.transfer(bme.BME280_ADDRESS, &[_]u8{ reg }, data, I2C_TIMEOUT) catch |err| {
+        bme_device.i2c_error_name = @errorName(err);
+        return false;
+    };
+    return true;
+}
+
+pub fn bmeWrite(data: []const u8) bool {
+    I2C_INSTANCE.write(bme.BME280_ADDRESS, data, I2C_TIMEOUT) catch |err| {
+        bme_device.i2c_error_name = @errorName(err);
         return false;
     };
     return true;

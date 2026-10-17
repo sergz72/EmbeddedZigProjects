@@ -109,6 +109,15 @@ pub fn build(b: *std.Build) !void {
         }
     });
 
+    const bme280 = b.addModule("bme280", .{
+        .root_source_file = b.path("../../../common_lib/sensor/bme280.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "system_timer", .module = system_timer }
+        }
+    });
+
     const allocator = b.addModule("allocator", .{
         .root_source_file = b.path("../lib/fb_allocator.zig"),
         .target = target,
@@ -150,6 +159,16 @@ pub fn build(b: *std.Build) !void {
         }
     });
 
+    const bme280_commands = b.addModule("bme280_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/bme280_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "bme280", .module = bme280 }
+        }
+    });
+
     const usart_writer = b.addModule("usart_writer", .{
         .root_source_file = b.path("../../../common_lib/usart_writer.zig"),
         .target = target,
@@ -173,6 +192,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "i2c", .module = i2c },
             .{ .name = "scd4x", .module = scd4x },
             .{ .name = "veml7700", .module = veml7700 },
+            .{ .name = "bme280", .module = bme280 },
             .{ .name = "usart_writer", .module = usart_writer },
             .{ .name = "shell", .module = shell },
             .{ .name = "cpu", .module = cpu }
@@ -191,6 +211,7 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "i2c_commands", .module = i2c_commands },
                 .{ .name = "scd4x_commands", .module = scd4x_commands },
                 .{ .name = "veml7700_commands", .module = veml7700_commands },
+                .{ .name = "bme280_commands", .module = bme280_commands },
                 .{ .name = "allocator", .module = allocator },
                 .{ .name = "usart_writer", .module = usart_writer }
             },
