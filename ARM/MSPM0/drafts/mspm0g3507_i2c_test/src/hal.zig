@@ -15,6 +15,7 @@ const usart_writer = @import("usart_writer");
 const scd4x = @import("scd4x");
 const veml = @import("veml7700");
 const bme = @import("bme280");
+const tsl = @import("tsl2591");
 
 const LED_PIN = 0;
 const LED_PIN_MASK = 1 << LED_PIN;
@@ -24,12 +25,12 @@ const LED_PORT = gpio.gpioa;
 const UART_INSTANCE = uart.uart0;
 //--------------------------
 const UART_TX_PIN = 10;
-const UART_TX_PIN_MASK: u24 = 1 << UART_TX_PIN;
+const UART_TX_PIN_MASK = 1 << UART_TX_PIN;
 const UART_TX_PIN_IOMUX = 21;
 const UART_TX_PORT = gpio.gpioa;
 //--------------------------
 const UART_RX_PIN = 11;
-const UART_RX_PIN_MASK: u124 = 1 << UART_RX_PIN;
+const UART_RX_PIN_MASK = 1 << UART_RX_PIN;
 const UART_RX_PIN_IOMUX = 22;
 const UART_RX_PORT = gpio.gpioa;
 //------------------------------
@@ -62,6 +63,19 @@ pub var bme_device: bme.BME280 = .{
     .i2c_read = bmeRead,
     .i2c_write = bmeWrite,
     .delayms = system_timer.delayms
+};
+
+const tsl_init: tsl.TSL2591Init = .{
+    .i2c_read8 = tslRead8,
+    .i2c_read16 = tslRead16,
+    .i2c_write = tslWrite,
+    .i2c_command = tslCommand,
+    .delayms = system_timer.delayms,
+    .config = .{}
+};
+
+pub var tsl_device: tsl.TSL2591 = .{
+    .init_data = &tsl_init
 };
 
 inline fn initPower() void {
@@ -210,6 +224,42 @@ pub fn bmeRead(reg: u8, data: []u8) bool {
 pub fn bmeWrite(data: []const u8) bool {
     I2C_INSTANCE.write(bme.BME280_ADDRESS, data, I2C_TIMEOUT) catch |err| {
         bme_device.i2c_error_name = @errorName(err);
+        return false;
+    };
+    return true;
+}
+
+pub fn tslRead8(reg: u8) ?u8 {
+    var data: [1]u8 = undefined;
+    I2C_INSTANCE.transfer(tsl.TSL2591_I2C_ADDRESS, &[_]u8{ reg }, &data, I2C_TIMEOUT) catch |err| {
+        tsl_device.i2c_error_name = @errorName(err);
+        return null;
+    };
+    return data[0];
+}
+
+pub fn tslRead16(reg: u8) ?u16 {
+    var data: [2]u8 = undefined;
+    I2C_INSTANCE.transfer(tsl.TSL2591_I2C_ADDRESS, &[_]u8{ reg }, &data, I2C_TIMEOUT) catch |err| {
+        tsl_device.i2c_error_name = @errorName(err);
+        return null;
+    };
+    return std.mem.readInt(u16, &data, .little);
+}
+
+pub fn tslWrite(reg: u8, value: u8) bool {
+    const data: [2]u8 = .{reg, value};
+    I2C_INSTANCE.write(tsl.TSL2591_I2C_ADDRESS, &data, I2C_TIMEOUT) catch |err| {
+        tsl_device.i2c_error_name = @errorName(err);
+        return false;
+    };
+    return true;
+}
+
+pub fn tslCommand(command: u8) bool {
+    const data: [1]u8 = .{command};
+    I2C_INSTANCE.write(tsl.TSL2591_I2C_ADDRESS, &data, I2C_TIMEOUT) catch |err| {
+        tsl_device.i2c_error_name = @errorName(err);
         return false;
     };
     return true;
