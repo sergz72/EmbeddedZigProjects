@@ -1,12 +1,21 @@
 const builtin = @import("builtin");
 const common = @import("common");
 //const common = if (builtin.is_test) @import("common.zig") else @import("common");
+const cpu = @import("cpu");
 
 const I2C0_BASE: usize = 0x400F0000 + 0x800;
 const I2C1_BASE: usize = 0x400F2000 + 0x800;
 
 pub const I2cError = error {
-    Timeout, ErrorStatus, TxFifoFull, DataIsTooLarge
+    TimeoutWaitIdle,
+    TimeoutWaitIdleWithStop,
+    TimeoutWaitBusy,
+    TimeoutWaitBusyBus,
+    TimeoutReceive,
+    TimeoutWaitTxComplete,
+    ErrorStatus,
+    TxFifoFull,
+    DataIsTooLarge
 };
 
 pub const I2cSlave = extern struct {
@@ -190,13 +199,13 @@ pub const I2cInt = extern struct {
     reserved0: u32,
     imask: I2cIntIMask,
     reserved1: u32,
-    ris: u32,
+    ris: I2cIntIMask,
     reserved2: u32,
-    mis: u32,
+    mis: I2cIntIMask,
     reserved3: u32,
-    iset: u32,
+    iset: I2cIntIMask,
     reserved4: u32,
-    iclr: u32,
+    iclr: I2cIntIMask,
 };
 
 pub const I2cGprcm = extern struct {
@@ -215,6 +224,8 @@ pub const I2cGfctl = packed struct(u32) {
     chain: bool = true,
     reserved2: u20 = 0
 };
+
+var delay_cycles: [2]usize = undefined;
 
 pub const I2c = extern struct {
     gprcm: I2cGprcm,
@@ -260,8 +271,16 @@ pub const I2c = extern struct {
     }
 
     pub inline fn setSpeed(self: *volatile I2c, speed: usize, i2c_clock_speed: usize) void {
-        const mtpr = i2c_clock_speed / speed / 10 - 1;
-        self.master.mtpr = if (mtpr > 0x7F) 0x7F else @truncate(mtpr);
+        var mtpr = i2c_clock_speed / speed / 10 - 1;
+        if (mtpr > 0x7F) {
+            mtpr = 0x7F;
+        }
+        if (self == i2c0) {
+            delay_cycles[0] = 3 * (mtpr + 1) * (cpu.cpu.current_frequency / i2c_clock_speed);
+        } else {
+            delay_cycles[1] = 3 * (mtpr + 1) * (cpu.cpu.current_frequency / i2c_clock_speed);
+        }
+        self.master.mtpr = @truncate(mtpr);
     }
 
     pub inline fn setControllerTXFIFOThreshold(self: *volatile I2c, threshold: u3) void {
@@ -289,7 +308,7 @@ pub const I2c = extern struct {
             t -= 1;
         }
         if (t == 0)
-            return I2cError.Timeout;
+            return I2cError.TimeoutWaitIdle;
     }
 
     pub fn waitIdleWithStop(self: *volatile I2c, timeout: usize) I2cError!void {
@@ -302,11 +321,16 @@ pub const I2c = extern struct {
         }
         if (t == 0) {
             self.enableStopCondition();
-            return I2cError.Timeout;
+            return I2cError.TimeoutWaitIdleWithStop;
         }
     }
 
     pub fn waitBusy(self: *volatile I2c, timeout: usize) I2cError!void {
+        if (self == i2c0) {
+            delayCycles(delay_cycles[0]);
+        } else {
+            delayCycles(delay_cycles[1]);
+        }
         var t = timeout;
         while (t != 0)
         {
@@ -320,7 +344,25 @@ pub const I2c = extern struct {
         }
         if (t == 0) {
             self.enableStopCondition();
-            return I2cError.Timeout;
+            return I2cError.TimeoutWaitBusy;
+        }
+    }
+
+    pub fn waitTxComplete(self: *volatile I2c, timeout: usize) I2cError!void {
+        var t = timeout;
+        while (t != 0)
+        {
+            if (self.master.msr.err) {
+                self.enableStopCondition();
+                return I2cError.ErrorStatus;
+            }
+            if (self.cpu_int.ris.ctxdone)
+                break;
+            t -= 1;
+        }
+        if (t == 0) {
+            self.enableStopCondition();
+            return I2cError.TimeoutWaitTxComplete;
         }
     }
 
@@ -338,7 +380,7 @@ pub const I2c = extern struct {
         }
         if (t == 0) {
             self.enableStopCondition();
-            return I2cError.Timeout;
+            return I2cError.TimeoutWaitBusyBus;
         }
     }
 
@@ -411,7 +453,7 @@ pub const I2c = extern struct {
         self.flushControllerRXFIFO();
         try self.waitIdle(timeout);
         self.startControllerTransmitTransferNoStop(address, @truncate(wdata.len));
-        try self.waitBusy(timeout);
+        try self.waitTxComplete(timeout);
         self.startControllerReceiveTransferRepeatedStart(address, @truncate(rdata.len));
         try self.receive(rdata, timeout);
     }
@@ -430,7 +472,7 @@ pub const I2c = extern struct {
             }
             if (t == 0) {
                 self.enableStopCondition();
-                return I2cError.Timeout;
+                return I2cError.TimeoutReceive;
             }
             rdata[idx] = @truncate(self.master.mrxdata);
         }
@@ -453,6 +495,12 @@ pub const I2c = extern struct {
         try self.receive(data, timeout);
     }
 };
+
+fn delayCycles(cycles: usize) void {
+    for (0..cycles) |_| {
+        asm volatile("nop");
+    }
+}
 
 pub const i2c0: *volatile I2c = @ptrFromInt(I2C0_BASE);
 pub const i2c1: *volatile I2c = @ptrFromInt(I2C1_BASE);

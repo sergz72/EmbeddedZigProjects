@@ -53,7 +53,7 @@ const I2C_SDA_PORT = gpio.gpioa;
 //------------------------------
 const I2C_SPEED = 100000;
 //------------------------------
-const I2C_TIMEOUT = 10000;
+const I2C_TIMEOUT = 100000;
 
 pub var timer_interrupt: bool = undefined;
 pub var sh: *shell.Shell = undefined;

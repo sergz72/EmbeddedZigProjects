@@ -87,7 +87,8 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .optimize = optimize,
         .imports = &.{
-            .{ .name = "common", .module = common }
+            .{ .name = "common", .module = common },
+            .{ .name = "cpu", .module = cpu },
         },
     });
 
