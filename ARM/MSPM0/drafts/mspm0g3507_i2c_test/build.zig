@@ -89,6 +89,8 @@ pub fn build(b: *std.Build) !void {
         .imports = &.{
             .{ .name = "common", .module = common },
             .{ .name = "cpu", .module = cpu },
+            .{ .name = "nvic", .module = nvic },
+            .{ .name = "interrupts", .module = interrupts },
         },
     });
 
@@ -238,7 +240,7 @@ pub fn build(b: *std.Build) !void {
     exe.link_gc_sections = true;
     exe.link_function_sections = true;
     exe.link_data_sections = true;
-    exe.lto = .full;                     // Whole-program optimization & inlining
+    //exe.lto = .full;                     // Whole-program optimization & inlining
 
     exe.root_module.addCSourceFile(.{
         .file = b.path("../startup_mspm0g350x_gcc.c"),

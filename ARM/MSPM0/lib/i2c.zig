@@ -2,19 +2,19 @@ const builtin = @import("builtin");
 const common = @import("common");
 //const common = if (builtin.is_test) @import("common.zig") else @import("common");
 const cpu = @import("cpu");
+const nvic = @import("nvic");
+const interrupts = @import("interrupts");
 
 const I2C0_BASE: usize = 0x400F0000 + 0x800;
 const I2C1_BASE: usize = 0x400F2000 + 0x800;
 
 pub const I2cError = error {
     TimeoutWaitIdle,
-    TimeoutWaitIdleWithStop,
-    TimeoutWaitBusy,
     TimeoutWaitBusyBus,
-    TimeoutReceive,
-    TimeoutWaitTxComplete,
+    TimeoutWaitIdleWithStop,
     ErrorStatus,
-    TxFifoFull,
+    Nack,
+    ArbitrationLost,
     DataIsTooLarge
 };
 
@@ -225,7 +225,20 @@ pub const I2cGfctl = packed struct(u32) {
     reserved2: u20 = 0
 };
 
-var delay_cycles: [2]usize = undefined;
+const ControllerStatus = enum(usize) {
+    idle, tx_started, tx_in_progress, tx_complete, rx_started, rx_in_progress, rx_complete,
+    arbitration_lost, nack
+};
+
+const ControllerData = struct {
+    status: ControllerStatus,
+    tx_buffer: []const u8 = undefined,
+    tx_index: usize = undefined,
+    rx_buffer: []u8 = undefined,
+    rx_index: usize = undefined
+};
+
+var controller_data: [2]ControllerData = undefined;
 
 pub const I2c = extern struct {
     gprcm: I2cGprcm,
@@ -275,11 +288,6 @@ pub const I2c = extern struct {
         if (mtpr > 0x7F) {
             mtpr = 0x7F;
         }
-        if (self == i2c0) {
-            delay_cycles[0] = 3 * (mtpr + 1) * (cpu.cpu.current_frequency / i2c_clock_speed);
-        } else {
-            delay_cycles[1] = 3 * (mtpr + 1) * (cpu.cpu.current_frequency / i2c_clock_speed);
-        }
         self.master.mtpr = @truncate(mtpr);
     }
 
@@ -299,89 +307,8 @@ pub const I2c = extern struct {
         self.master.mcr.active = true;
     }
 
-    pub fn waitIdle(self: *volatile I2c, timeout: usize) I2cError!void {
-        var t = timeout;
-        while (t != 0)
-        {
-            if (self.master.msr.idle)
-                break;
-            t -= 1;
-        }
-        if (t == 0)
-            return I2cError.TimeoutWaitIdle;
-    }
-
-    pub fn waitIdleWithStop(self: *volatile I2c, timeout: usize) I2cError!void {
-        var t = timeout;
-        while (t != 0)
-        {
-            if (self.master.msr.idle)
-                break;
-            t -= 1;
-        }
-        if (t == 0) {
-            self.enableStopCondition();
-            return I2cError.TimeoutWaitIdleWithStop;
-        }
-    }
-
-    pub fn waitBusy(self: *volatile I2c, timeout: usize) I2cError!void {
-        if (self == i2c0) {
-            delayCycles(delay_cycles[0]);
-        } else {
-            delayCycles(delay_cycles[1]);
-        }
-        var t = timeout;
-        while (t != 0)
-        {
-            if (self.master.msr.err) {
-                self.enableStopCondition();
-                return I2cError.ErrorStatus;
-            }
-            if (!self.master.msr.busy)
-                break;
-            t -= 1;
-        }
-        if (t == 0) {
-            self.enableStopCondition();
-            return I2cError.TimeoutWaitBusy;
-        }
-    }
-
-    pub fn waitTxComplete(self: *volatile I2c, timeout: usize) I2cError!void {
-        var t = timeout;
-        while (t != 0)
-        {
-            if (self.master.msr.err) {
-                self.enableStopCondition();
-                return I2cError.ErrorStatus;
-            }
-            if (self.cpu_int.ris.ctxdone)
-                break;
-            t -= 1;
-        }
-        if (t == 0) {
-            self.enableStopCondition();
-            return I2cError.TimeoutWaitTxComplete;
-        }
-    }
-
-    pub fn waitBusyBus(self: *volatile I2c, timeout: usize) I2cError!void {
-        var t = timeout;
-        while (t != 0)
-        {
-            if (self.master.msr.err) {
-                self.enableStopCondition();
-                return I2cError.ErrorStatus;
-            }
-            if (!self.master.msr.busbsy)
-                break;
-            t -= 1;
-        }
-        if (t == 0) {
-            self.enableStopCondition();
-            return I2cError.TimeoutWaitBusyBus;
-        }
+    pub inline fn disableController(self: *volatile I2c) void {
+        self.master.mcr.active = false;
     }
 
     pub inline fn isControllerTXFIFOFull(self: *volatile I2c) bool {
@@ -404,13 +331,15 @@ pub const I2c = extern struct {
         self.master.mfifoctl.rxflush = false;
     }
 
-    pub fn fillControllerTXFIFO(self: *volatile I2c, data: []const u8) I2cError!void {
-        self.flushControllerTXFIFO();
-        for (data) |d| {
+    pub fn fillControllerTXFIFO(self: *volatile I2c, data: []const u8, index: usize) usize {
+        var idx = index;
+        while (idx < data.len) {
             if (self.isControllerTXFIFOFull())
-                return I2cError.TxFifoFull;
-            self.master.mtxdata = d;
+                return idx;
+            self.master.mtxdata = data[idx];
+            idx += 1;
         }
+        return idx;
     }
 
     pub fn startControllerTransfer(self: *volatile I2c, address: u10, dir_receive: bool, length: u12, ack: bool) void {
@@ -428,78 +357,231 @@ pub const I2c = extern struct {
         self.master.mctr = .{.start = true, .stop = true, .burstrun = true, .cblen = length};//, .ack = true};
     }
 
-    pub fn enableStopCondition(self: *volatile I2c) void {
-        self.master.mctr.stop = true;
-    }
-
-    pub fn write(self: *volatile I2c, address: u10, data: []const u8, timeout: usize) I2cError!void {
-        if (data.len >= 4096)
-            return I2cError.DataIsTooLarge;
-        try self.fillControllerTXFIFO(data);
-        try self.waitIdle(timeout);
-        self.startControllerTransfer(address, false, @truncate(data.len), false);
-        try self.waitBusyBus(timeout);
-        try self.waitIdleWithStop(timeout);
+    pub fn stop(self: *volatile I2c) void {
+        self.master.mctr = .{.stop = true, .burstrun = true};
     }
 
     pub fn isControllerRXFIFOEmpty(self: *volatile I2c) bool {
         return self.master.mfifosr.rxfifocnt == 0;
     }
 
-    pub fn transfer(self: *volatile I2c, address: u10, wdata: []const u8, rdata: []u8, timeout: usize) I2cError!void {
-        if (wdata.len >= 4096 or rdata.len >= 4096)
-            return I2cError.DataIsTooLarge;
-        try self.fillControllerTXFIFO(wdata);
-        self.flushControllerRXFIFO();
-        try self.waitIdle(timeout);
-        self.startControllerTransmitTransferNoStop(address, @truncate(wdata.len));
-        try self.waitTxComplete(timeout);
-        self.startControllerReceiveTransferRepeatedStart(address, @truncate(rdata.len));
-        try self.receive(rdata, timeout);
-    }
-
-    fn receive(self: *volatile I2c, rdata: []u8, timeout: usize) I2cError!void {
-        for (0..rdata.len) |idx| {
-            var t = timeout;
-            while (t != 0) {
-                if (self.master.msr.err) {
-                    self.enableStopCondition();
-                    return I2cError.ErrorStatus;
-                }
-                if (!self.isControllerRXFIFOEmpty())
-                    break;
-                t -= 1;
-            }
-            if (t == 0) {
-                self.enableStopCondition();
-                return I2cError.TimeoutReceive;
-            }
-            rdata[idx] = @truncate(self.master.mrxdata);
+    pub fn getControllerData(self: *volatile I2c) *ControllerData {
+        if (self == i2c0) {
+            return &controller_data[0];
+        } else {
+            return &controller_data[1];
         }
     }
 
+    pub fn irqHandler(self: *volatile I2c) void {
+        @setRuntimeSafety(false);
+        const data = self.getControllerData();
+        switch (self.cpu_int.iidx) {
+            .data_received => {
+                data.status = .rx_complete;
+            },
+            .data_transmitted => {
+                self.cpu_int.imask.ctxfifotrg = false;
+                data.status = .tx_complete;
+            },
+            .receive_fifo_trigger => {
+                data.status = .rx_in_progress;
+                while (!self.isControllerRXFIFOEmpty()) {
+                    if (data.rx_index < data.rx_buffer.len) {
+                        data.rx_buffer[data.rx_index] = @truncate(self.master.mrxdata);
+                        data.rx_index += 1;
+                    } else {
+                        _ = self.master.mrxdata;
+                    }
+                }
+            },
+            .transmit_fifo_trigger => {
+                data.status = .tx_in_progress;
+                data.tx_index = self.fillControllerTXFIFO(data.tx_buffer, data.tx_index);
+            },
+            .arbitration_lost => {
+                if (data.status == .rx_started or data.status == .tx_started) {
+                    data.status = .arbitration_lost;
+                }
+            },
+            .nack => {
+                if (data.status == .rx_started or data.status == .tx_started) {
+                    data.status = .nack;
+                }
+            },
+            else => {}
+        }
+    }
+
+    pub fn waitIdle(self: *volatile I2c, timeout: usize, error_check: bool) I2cError!void {
+        var t = timeout;
+        while (t != 0)
+        {
+            if (error_check and self.master.msr.err) {
+                self.stop();
+                return I2cError.ErrorStatus;
+            }
+            if (self.master.msr.idle)
+                break;
+            t -= 1;
+        }
+        if (t == 0)
+            return I2cError.TimeoutWaitIdle;
+    }
+
+    pub fn waitIdleWithStop(self: *volatile I2c, timeout: usize, error_check: bool) I2cError!void {
+        var t = timeout;
+        while (t != 0)
+        {
+            if (error_check and self.master.msr.err) {
+                self.stop();
+                return I2cError.ErrorStatus;
+            }
+            if (self.master.msr.idle)
+                break;
+            t -= 1;
+        }
+        if (t == 0) {
+            self.stop();
+            return I2cError.TimeoutWaitIdleWithStop;
+        }
+    }
+
+    pub fn waitBusyBus(self: *volatile I2c, timeout: usize, error_check: bool) I2cError!void {
+        var t = timeout;
+        while (t != 0)
+        {
+            if (error_check and self.master.msr.err) {
+                self.stop();
+                return I2cError.ErrorStatus;
+            }
+            if (!self.master.msr.busbsy)
+                break;
+            t -= 1;
+        }
+        if (t == 0) {
+            self.stop();
+            return I2cError.TimeoutWaitBusyBus;
+        }
+    }
+
+    fn startTx(self: *volatile I2c, data: []const u8, timeout: usize) I2cError!*ControllerData {
+        self.flushControllerTXFIFO();
+        try self.waitIdle(timeout, false);
+        const cdata = self.getControllerData();
+        cdata.tx_buffer = data;
+        cdata.tx_index = self.fillControllerTXFIFO(data, 0);
+        if (cdata.tx_index < cdata.tx_buffer.len) {
+            self.cpu_int.imask.ctxfifotrg = true;
+        }
+        cdata.status = .tx_started;
+        return cdata;
+    }
+
+    pub fn write(self: *volatile I2c, address: u10, data: []const u8, timeout: usize) I2cError!void {
+        if (data.len >= 4096)
+            return I2cError.DataIsTooLarge;
+        try self.waitBusyBus(timeout, false);
+        const cdata = try self.startTx(data, timeout);
+        self.startControllerTransfer(address, false, @truncate(data.len), false);
+        try finishTx(cdata);
+    }
+
+    pub fn transfer(self: *volatile I2c, address: u10, wdata: []const u8, rdata: []u8, timeout: usize) I2cError!void {
+        if (wdata.len >= 4096 or rdata.len >= 4096)
+            return I2cError.DataIsTooLarge;
+        try self.waitBusyBus(timeout, false);
+        self.flushControllerRXFIFO();
+        const cdata = try self.startTx(wdata, timeout);
+        self.startControllerTransmitTransferNoStop(address, @truncate(wdata.len));
+        try finishTx(cdata);
+        cdata.rx_buffer = rdata;
+        cdata.rx_index = 0;
+        cdata.status = .rx_started;
+        self.startControllerReceiveTransferRepeatedStart(address, @truncate(rdata.len));
+        try finishRx(cdata);
+    }
+
+    fn clearInterruptFlags(self: *volatile I2c) void {
+        self.cpu_int.iclr = @bitCast(@as(u32, 0xFFFFFFFF));
+    }
+
     pub fn scan(self: *volatile I2c, address: u10, timeout: usize) I2cError!void {
-        //self.startControllerTransfer(address, true, 0);
-        //try self.waitBusyBus(timeout);
-        //try self.waitIdleWithStop(timeout);
-        var data: [1]u8 = undefined;
-        return self.read(address, &data, timeout);
+        try self.waitBusyBus(timeout, false);
+        const cdata = try self.startTx(&.{}, timeout);
+        self.startControllerTransfer(address, false, 0, false);
+        try finishTx(cdata);
+        if (self.master.msr.err) {
+            return I2cError.ErrorStatus;
+        }
     }
 
     pub fn read(self: *volatile I2c, address: u10, data: []u8, timeout: usize) I2cError!void {
         if (data.len >= 4096)
             return I2cError.DataIsTooLarge;
-        try self.waitIdle(timeout);
         self.flushControllerRXFIFO();
+        try self.waitIdle(timeout, false);
+        const cdata = self.getControllerData();
+        cdata.rx_buffer = data;
+        cdata.rx_index = 0;
+        cdata.status = .rx_started;
         self.startControllerTransfer(address, true, @truncate(data.len), false);
-        try self.receive(data, timeout);
+        try finishRx(cdata);
+    }
+
+    pub fn init(self: *volatile I2c, speed: usize) void {
+        self.disableAnalogGlitchFilter();
+        self.resetControllerTransfer();
+        self.setSpeed(speed, cpu.cpu.current_frequency / 8);
+        self.setControllerTXFIFOThreshold(0);
+        self.setControllerRXFIFOThreshold(0);
+        self.enableControllerClockStretching();
+        self.enableController();
+        self.cpu_int.imask = .{
+            .carblost = true,
+            .cnack = true,
+            .crxfifotrg = true,
+            .crxdone = true,
+            .ctxdone = true
+        };
+        if (self == i2c0) {
+            nvic.nvic.enableInterrupt(interrupts.Interrupt.I2C0.toU8());
+        } else {
+            nvic.nvic.enableInterrupt(interrupts.Interrupt.I2C1.toU8());
+        }
     }
 };
 
-fn delayCycles(cycles: usize) void {
-    for (0..cycles) |_| {
-        asm volatile("nop");
+fn finishTx(cdata: *ControllerData) I2cError!void {
+    while (true) {
+        switch (cdata.status) {
+            .tx_complete => return,
+            .nack => return I2cError.Nack,
+            .arbitration_lost => return I2cError.ArbitrationLost,
+            else => {
+                asm volatile("wfi");
+            }
+        }
     }
+}
+
+fn finishRx(cdata: *ControllerData) I2cError!void {
+    while (true) {
+        switch (cdata.status) {
+            .rx_complete => return,
+            else => {
+                asm volatile("wfi");
+            }
+        }
+    }
+}
+
+export fn I2C1_IRQHandler() callconv(.c) void {
+    i2c1.irqHandler();
+}
+
+export fn I2C0_IRQHandler() callconv(.c) void {
+    i2c0.irqHandler();
 }
 
 pub const i2c0: *volatile I2c = @ptrFromInt(I2C0_BASE);

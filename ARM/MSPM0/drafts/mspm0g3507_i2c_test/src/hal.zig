@@ -127,13 +127,7 @@ inline fn initI2C() void {
     iomux.iomux.initPeripheralI2CFunction(I2C_SCL_PIN_IOMUX, .function9);
     I2C_INSTANCE.clksel = common.Clksel2{.busclksel = true};
     I2C_INSTANCE.clkdiv = common.ClkDiv{.ratio = .div8};
-    I2C_INSTANCE.disableAnalogGlitchFilter();
-    I2C_INSTANCE.resetControllerTransfer();
-    I2C_INSTANCE.setSpeed(I2C_SPEED, cpu.cpu.current_frequency / 8);
-    I2C_INSTANCE.setControllerTXFIFOThreshold(0);
-    I2C_INSTANCE.setControllerRXFIFOThreshold(1);
-    I2C_INSTANCE.enableControllerClockStretching();
-    I2C_INSTANCE.enableController();
+    I2C_INSTANCE.init(I2C_SPEED);
 }
 
 export fn SystemInit() callconv(.c) void {
