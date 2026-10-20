@@ -1,3 +1,5 @@
+const cpu = @import("cpu");
+
 const RCC_BASE: usize = 0x40021000;
 
 pub const RccCtlr = packed struct(u32) {
@@ -213,7 +215,59 @@ pub const Rcc = extern struct {
     bdctlr: u32,
     rstsckr: u32,
     ahbrstr: u32,
-    cfgr2: RccCfgr2
+    cfgr2: RccCfgr2,
+
+    pub fn usbFsClkConfig(self: *volatile Rcc) bool {
+        switch (cpu.cpu.current_frequency) {
+            144000000 => {
+                self.cfgr0.usbpre = .div3;
+                return true;
+            },
+            96000000 => {
+                self.cfgr0.usbpre = .div2;
+                return true;
+            },
+            48000000 => {
+                self.cfgr0.usbpre = .off;
+                return true;
+            },
+            else => return false
+        }
+    }
+
+    fn hseOn(self: *volatile Rcc) void {
+        self.ctlr.hseon = true;
+        while (!self.ctlr.hserdy) {
+            asm volatile ("nop");
+        }
+    }
+
+    fn pllOn(self: *volatile Rcc) void {
+        self.ctlr.pllon = true;
+        while (!self.ctlr.pllrdy) {
+            asm volatile ("nop");
+        }
+        self.cfgr0.sw = .pll;
+        while (self.cfgr0.sws != .pll) {
+            asm volatile ("nop");
+        }
+    }
+
+    pub fn setSystemClockToHSE(self: *volatile Rcc) void {
+        self.hseOn();
+        self.cfgr0.sw = .hse;
+        while (self.cfgr0.sws != .hse) {
+            asm volatile ("nop");
+        }
+    }
+
+    pub fn setSystemClockTo48MHz(self: *volatile Rcc) void {
+        self.hseOn();
+        self.cfgr0.pllsrc_hse_or_prediv1 = true;
+        self.cfgr0.pllmul = 4; // MUL6 - 8MHz * 6 = 48MHz
+        self.pllOn();
+        cpu.cpu.setAll(48000000);
+    }
 };
 
 pub const rcc: *volatile Rcc = @ptrFromInt(RCC_BASE);

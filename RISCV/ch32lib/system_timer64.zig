@@ -40,7 +40,7 @@ export fn SysTick_Handler() callconv(.naked) void {
 }
 
 pub fn delayLoopus(us: usize) void {
-    const n = p_us * us;
+    const n: u32 = @truncate(p_us * us);
     for (0..n) |_| {
         asm volatile("nop");
     }
