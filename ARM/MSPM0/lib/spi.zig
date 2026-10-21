@@ -232,7 +232,15 @@ pub const Spi = extern struct {
     reserved8: [7]u32,
     rxdata: u32,
     reserved9: [3]u32,
-    txdata: u32
+    txdata: u32,
+
+    pub inline fn enablePower(self: *volatile Spi) void {
+        self.gprcm.pwren = common.GprcmPwren{.enable = true};
+    }
+
+    pub inline fn reset(self: *volatile Spi) void {
+        self.gprcm.rstctl = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
+    }
 };
 
 pub const spi0: *volatile Spi = @ptrFromInt(SPI0_BASE);

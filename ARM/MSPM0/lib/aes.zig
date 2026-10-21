@@ -183,7 +183,15 @@ pub const Aes = extern struct {
     aesadin: u32,
     aesadout: u32,
     aesaxdin: u32,
-    aesaxin: u32
+    aesaxin: u32,
+
+    pub inline fn enablePower(self: *volatile Aes) void {
+        self.gprcm.pwren = common.GprcmPwren{.enable = true};
+    }
+
+    pub inline fn reset(self: *volatile Aes) void {
+        self.gprcm.rstctl = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
+    }
 };
 
 pub const aes: *volatile Aes = @ptrFromInt(AES_BASE);

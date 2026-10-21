@@ -117,7 +117,15 @@ pub const Trng = extern struct {
     stat: TrngStat,
     data_capture: u32,
     test_results: TrngTestResults,
-    clkdivide: TrngClkDivide
+    clkdivide: TrngClkDivide,
+
+    pub inline fn enablePower(self: *volatile Trng) void {
+        self.gprcm.pwren = common.GprcmPwren{.enable = true};
+    }
+
+    pub inline fn reset(self: *volatile Trng) void {
+        self.gprcm.rstctl = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
+    }
 };
 
 pub const trng: *volatile Trng = @ptrFromInt(TRNG_BASE);
