@@ -119,6 +119,10 @@ pub const Gpio = extern struct {
     pub inline fn reset(self: *volatile Gpio) void {
         self.gprcm.rstctl = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
     }
+
+    pub inline fn get(self: *volatile Gpio) u32 {
+        return self.din31_0;
+    }
 };
 
 pub const gpioa: *volatile Gpio = @ptrFromInt(GPIOA_BASE);

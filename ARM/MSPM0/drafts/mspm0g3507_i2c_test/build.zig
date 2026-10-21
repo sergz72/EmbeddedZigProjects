@@ -94,6 +94,12 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const i2c_soft = b.addModule("i2c_soft", .{
+        .root_source_file = b.path("../../../common_lib/i2c_soft.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const scd4x = b.addModule("scd4x", .{
         .root_source_file = b.path("../../../common_lib/sensor/scd4x.zig"),
         .target = target,
@@ -191,6 +197,9 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const options = b.addOptions();
+    options.addOption(bool, "i2c_soft", true);
+
     const hal = b.addModule("hal", .{
         .root_source_file = b.path("src/hal.zig"),
         .target = target,
@@ -205,6 +214,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "interrupts", .module = interrupts },
             .{ .name = "system_timer", .module = system_timer },
             .{ .name = "gptimer", .module = gptimer },
+            .{ .name = "i2c_soft", .module = i2c_soft },
             .{ .name = "i2c", .module = i2c },
             .{ .name = "scd4x", .module = scd4x },
             .{ .name = "veml7700", .module = veml7700 },
@@ -215,6 +225,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "cpu", .module = cpu }
         },
     });
+    hal.addOptions("config", options);
 
     const exe = b.addExecutable(.{
         .name = "mspm0g3507_i2c_test.elf",
@@ -240,7 +251,7 @@ pub fn build(b: *std.Build) !void {
     exe.link_gc_sections = true;
     exe.link_function_sections = true;
     exe.link_data_sections = true;
-    //exe.lto = .full;                     // Whole-program optimization & inlining
+    exe.lto = .full;                     // Whole-program optimization & inlining
 
     exe.root_module.addCSourceFile(.{
         .file = b.path("../startup_mspm0g350x_gcc.c"),

@@ -83,7 +83,7 @@ pub const BME280Result = struct {
 };
 
 pub const BME280Error = error {
-    I2CErrorRead, I2CErrorWrite
+    I2CErrorRead, I2CErrorWrite, InvalidChipId
 };
 
 const Calibration1 = extern struct {
@@ -167,6 +167,7 @@ pub const BME280 = struct {
     i2c_error_name: []const u8 = &.{},
     cal: Calibration = undefined,
     raw_data: RawData = undefined,
+    has_humidity_sensor: bool = undefined,
 
     fn getTemperatureCalibration(self: *BME280) isize {
         const t = self.raw_data.getTemperature();
@@ -223,6 +224,15 @@ pub const BME280 = struct {
     }
 
     pub fn init(self: *BME280) BME280Error!void {
+        var id: [1]u8 = undefined;
+        if (!self.i2c_read(REGISTER_ID, &id)) {
+            return BME280Error.I2CErrorRead;
+        }
+        switch (id[0]) {
+            0x58 => self.has_humidity_sensor = false,
+            0x60 => self.has_humidity_sensor = true,
+            else => return BME280Error.InvalidChipId
+        }
         if (!self.i2c_write(&.{REGISTER_CTRL_HUM, @backingInt(CtrlHum{.osrs_h = Oversampling.x1})}))
             return BME280Error.I2CErrorWrite;
         const c1: []u8 = std.mem.asBytes(&self.cal.c1);
@@ -275,7 +285,7 @@ pub const BME280 = struct {
         const t_fine = self.getTemperatureCalibration();
         const result: BME280Result = .{
             .temperature = @intCast(compensateTemperature(t_fine)),
-            .humidity = @truncate(self.compensateHumidity(t_fine)),
+            .humidity = if (self.has_humidity_sensor) @truncate(self.compensateHumidity(t_fine)) else 0,
             .pressure = @truncate(self.compensatePressure(t_fine))
         };
         return result;
