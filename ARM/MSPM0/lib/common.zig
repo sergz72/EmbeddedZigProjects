@@ -11,6 +11,14 @@ pub const GprcmRstctl = packed struct(u32) {
     key: u8 = 0xB1
 };
 
+pub const Clksel4 = packed struct(u32) {
+    reserved: u1 = 0,
+    lfclksel: bool = false,
+    mfclksel: bool = false,
+    sysclksel: bool = false,
+    reserved2: u28 = 0
+};
+
 pub const Clksel3 = packed struct(u32) {
     reserved: u1 = 0,
     lfclksel: bool = false,
@@ -40,6 +48,18 @@ pub const ClkDivRatio = enum(u3) {
 pub const ClkDiv = packed struct(u32) {
     ratio: ClkDivRatio = .div1,
     reserved: u29 = 0
+};
+
+pub const PdbgCtl = packed struct(u32) {
+    free: bool = true,
+    soft: bool = true,
+    reserved: u30 = 0
+};
+
+pub const EvtCfg = enum(u2) {
+    disabled = 0,
+    software_mode = 1,
+    hardware_mode = 2
 };
 
 pub fn powerStartupDelay() void {
