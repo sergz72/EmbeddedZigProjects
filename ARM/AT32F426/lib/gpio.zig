@@ -28,7 +28,6 @@ pub const GpioMux = enum(u4) {
 };
 
 pub const GpioInit = struct {
-    pins: u16,
     mode: GpioMode,
     mux: GpioMux = .mux0,
     open_drain: bool = false,
@@ -57,8 +56,8 @@ pub const Gpio = extern struct {
     reserved1: [3]u32,
     hdrv: u32,
 
-    pub fn init(self: *Gpio, init_data: GpioInit) void {
-        var pins = init_data.pins;
+    pub fn init(self: *volatile Gpio, pins_mask: u16, init_data: GpioInit) void {
+        var pins = pins_mask;
         var cfgr = self.cfgr;
         var omode = self.omode;
         var odrvr = self.odrvr;
@@ -76,7 +75,7 @@ pub const Gpio = extern struct {
                 cfgr = (cfgr & ~mask2) | (@as(u32, @intFromEnum(init_data.mode)) << shift2);
                 omode &= ~mask1;
                 if (init_data.open_drain) {
-                    omode |= @as(u32, 1 << shift1) << shift1;
+                    omode |= @as(u32, 1) << shift1;
                 }
                 odrvr &= ~mask2;
                 if (init_data.large_drive) {
@@ -104,6 +103,14 @@ pub const Gpio = extern struct {
         self.odrvr = odrvr;
         self.omode = omode;
         self.cfgr = cfgr;
+    }
+
+    pub fn setPins(self: *volatile Gpio, pins_mask: u16) void {
+        self.scr = .{.iosb = pins_mask};
+    }
+
+    pub fn clearPins(self: *volatile Gpio, pins_mask: u16) void {
+        self.clr = pins_mask;
     }
 };
 
