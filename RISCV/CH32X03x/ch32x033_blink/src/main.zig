@@ -35,7 +35,7 @@ fn usartWrite(byte: u8) void {
 }
 
 export fn SystemInit() callconv(.c) void {
-    system_timer.delay_init();
+    system_timer.delayInit();
     rcc.rcc.apb2pcenr = rcc.RccCfgrApb2pcEnr{.iopaen = true, .afioen = true};
     rcc.rcc.apb1pcenr = rcc.RccCfgrApb1pcEnr{.usart2en = true};
     LED_PORT.init(LED_PIN_MASK, gpio.GpioModeOutput | gpio.GpioCnfOutputPushPull);
@@ -43,7 +43,7 @@ export fn SystemInit() callconv(.c) void {
     RX_PORT.bshr = RX_PIN_MASK; // pullup
     RX_PORT.init(RX_PIN_MASK, gpio.GpioCnfInputPullupPulldown);
     USART_INSTANCE.init(115200, cpu.cpu.current_frequency);
-    pfic.pfic.interrupt_enable(interrupts.Interrupt.USART2.to_u8());
+    pfic.pfic.interruptEnable(interrupts.Interrupt.USART2.toU8());
 }
 
 export fn main() callconv(.c) noreturn {

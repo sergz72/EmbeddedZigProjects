@@ -40,6 +40,12 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const tmr = b.addModule("tmr", .{
+        .root_source_file = b.path("../lib/tmr.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const interrupts = b.addModule("interrupts", .{
         .root_source_file = b.path("../lib/interrupts.zig"),
         .target = target,
@@ -75,7 +81,8 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "usart_writer", .module = usart_writer },
                 .{ .name = "cpu", .module = cpu },
                 .{ .name = "crm", .module = crm },
-                .{ .name = "gpio", .module = gpio }
+                .{ .name = "gpio", .module = gpio },
+                .{ .name = "tmr", .module = tmr }
             },
         }),
     });

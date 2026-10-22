@@ -27,6 +27,8 @@ FLASH (rx)      : ORIGIN = 0x08000000, LENGTH = 128K
 RAM (xrw)       : ORIGIN = 0x20000000, LENGTH = 20K
 }
 
+__stack_size = DEFINED(__stack_size) ? __stack_size : 2K;
+
 /* Define output sections */
 SECTIONS
 {
