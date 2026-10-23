@@ -115,8 +115,9 @@ pub const Spi = extern struct {
                 div_h = 1;
             }
         }
-        self.ctrl1 = .{.msten = true, .spien = true, .mdiv_l = div_l, .swcsil = true, .swcsen = true};
+        self.ctrl1 = .{.msten = true, .mdiv_l = div_l, .swcsil = true, .swcsen = true};
         self.ctrl2 = .{.mdiv_h = div_h};
+        self.ctrl1.spien = true;
     }
 
     pub fn sendPoll8(self: *volatile Spi, data: []const u8) void {

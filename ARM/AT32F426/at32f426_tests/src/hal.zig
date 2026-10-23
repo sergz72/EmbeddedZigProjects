@@ -182,7 +182,7 @@ inline fn initCC1101() void {
 
 export fn SystemInit() callconv(.c) void {
     system_timer.delay_init(system_timer.init_div1);
-    crm.crm.ahben = .{.gpioben = true, .gpiofen = true};
+    crm.crm.ahben = .{.gpioaen = true, .gpioben = true, .gpiofen = true};
     crm.crm.apb1en = .{.tmr6 = true, .i2c1 = true};
     crm.crm.apb2en = .{.usart1 = true, .spi1 = true};
     LED_PORT.init(LED_PIN_MASK, LED_INIT);
