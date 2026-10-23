@@ -6,7 +6,17 @@ pub const Exint = extern struct {
     polcfg1: u32,
     polcfg2: u32,
     swtrg: u32,
-    intsts: u32
+    intsts: u32,
+
+    pub fn interruptEnable(self: *volatile Exint, line: u6, rising_edge: bool, falling_edge: bool) void {
+        self.inten |= (1 << line);
+        if (rising_edge) {
+            self.polcfg1 |= (1 << line);
+        }
+        if (falling_edge) {
+            self.polcfg2 |= (1 << line);
+        }
+    }
 };
 
 pub const exint: *volatile Exint = @ptrFromInt(EXINT_BASE);
