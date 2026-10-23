@@ -11,9 +11,9 @@ pub const GpioMode = enum(u2) {
 };
 
 pub const GpioPull = enum(u2) {
-    none = 0,
-    up = 1,
-    down = 2,
+    floating = 0,
+    pullup = 1,
+    pulldown = 2,
 };
 
 pub const GpioMux = enum(u4) {
@@ -33,7 +33,7 @@ pub const GpioInit = struct {
     open_drain: bool = false,
     large_drive: bool = false,
     high_drive: bool = false,
-    pull: GpioPull = .none,
+    pull: GpioPull = .floating,
 };
 
 pub const GpioScr = packed struct(u32) {
