@@ -151,7 +151,8 @@ export fn USART1_IRQHandler() callconv(.c) void {
 inline fn initTimer() void {
     TIMER_INSTANCE.div = @truncate(cpu.cpu.current_frequency / 10000 - 1);
     TIMER_INSTANCE.pr = 10000 - 1; //1 second interval
-    TIMER_INSTANCE.iden = .{.ovfien = true};
+    const v: tmr.TmrIden = .{.ovfien = true};
+    TIMER_INSTANCE.iden = v;
     nvic.nvic.enableInterrupt(interrupts.Interrupt.TMR6_GLOBAL.toU8());
     timer_interrupt = false;
 }
@@ -185,18 +186,21 @@ inline fn initCC1101() void {
 
 export fn SystemInit() callconv(.c) void {
     system_timer.delay_init(system_timer.init_div1);
-    crm.crm.ahben = .{.gpioaen = true, .gpioben = true, .gpiofen = true};
-    crm.crm.apb1en = .{.tmr6 = true, .i2c1 = true};
-    crm.crm.apb2en = .{.usart1 = true, .spi1 = true};
+    const v: crm.CrmAhbEn = .{.gpioaen = true, .gpioben = true, .gpiofen = true};
+    crm.crm.ahben = v;
+    const v2: crm.CrmApb1 = .{.tmr6 = true, .i2c1 = true};
+    crm.crm.apb1en = v2;
+    const v3: crm.CrmApb2 = .{.usart1 = true, .spi1 = true};
+    crm.crm.apb2en = v3;
     LED_PORT.init(LED_PIN_MASK, LED_INIT);
     initTimer();
     initUsart();
     initI2c();
     initSpi();
     initCC1101();
-    //if (!wdt.wdt.init(10000)) {
-    //    while (true) {}
-    //}
+    if (!wdt.wdt.init(10000)) {
+        while (true) {}
+    }
 }
 
 pub fn usartWrite(byte: u8) void {
@@ -204,7 +208,8 @@ pub fn usartWrite(byte: u8) void {
 }
 
 pub inline fn startTimer() void {
-    TIMER_INSTANCE.ctrl1 = .{.tmren = true};
+    const v: tmr.TmrCtrl1 = .{.tmren = true};
+    TIMER_INSTANCE.ctrl1 = v;
 }
 
 pub inline fn ledToggle() void {

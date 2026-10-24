@@ -37,7 +37,8 @@ pub fn delay_init(init: SystickInit) void {
     p_ms = cpu.cpu.current_frequency / init.divider;
     p_us = p_ms / 1000;
     p_loop_us = cpu.cpu.current_frequency / 1000000;
-    systick.csr = SystickCsr{.tickint = true, .clksource = init.clksource};
+    const v = SystickCsr{.tickint = true, .clksource = init.clksource};
+    systick.csr = v;
 }
 
 export fn SysTick_Handler() callconv(.c) void {

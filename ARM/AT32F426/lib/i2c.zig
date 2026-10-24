@@ -122,19 +122,22 @@ pub const I2c = extern struct {
     }
 
     pub fn initMaster(self: *volatile I2c, speed: usize) void {
-        self.ctrl2 = .{ .clkfreq = @truncate(cpu.cpu.apb1_frequency / 1000000) };
+        const v: I2cCtrl2 = .{ .clkfreq = @truncate(cpu.cpu.apb1_frequency / 1000000) };
+        self.ctrl2 = v;
         if (speed > 100000) {
             var ccr: u12 = @truncate(cpu.cpu.apb1_frequency / (speed * 3));
             if (ccr < 4) {
                 ccr = 4;
             }
-            self.clkctrl = .{ .speed = ccr, .speedmode = true };
+            const v2: I2cClkctrl = .{ .speed = ccr, .speedmode = true };
+            self.clkctrl = v2;
         } else {
             var ccr: u12 = @truncate(cpu.cpu.apb1_frequency / (speed * 2));
             if (ccr < 4) {
                 ccr = 4;
             }
-            self.clkctrl = .{ .speed = ccr };
+            const v2: I2cClkctrl = .{ .speed = ccr };
+            self.clkctrl = v2;
         }
         self.tmrise = @truncate((cpu.cpu.apb1_frequency / 1000000) + 1);
     }

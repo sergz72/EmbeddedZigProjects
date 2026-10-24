@@ -106,7 +106,8 @@ pub const Gpio = extern struct {
     }
 
     pub fn setPins(self: *volatile Gpio, pins_mask: u16) void {
-        self.scr = .{.iosb = pins_mask};
+        const v: GpioScr = .{.iosb = pins_mask};
+        self.scr = v;
     }
 
     pub fn togglePins(self: *volatile Gpio, pins_mask: u16) void {

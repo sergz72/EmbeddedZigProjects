@@ -35,9 +35,9 @@ pub const Wdt = extern struct {
         if (rld == 0 or rld > 4095) {
             return false;
         }
+        self.cmd = WdtCommand.unlock;
         self.div = .div128;
         self.rld = @truncate(rld);
-        self.cmd = WdtCommand.unlock;
         self.cmd = WdtCommand.enable;
         return true;
     }
