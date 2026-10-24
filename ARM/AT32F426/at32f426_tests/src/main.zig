@@ -36,17 +36,19 @@ const rng: trng_commands.Rng = .{
 };
 
 fn aesEncrypt(key: []const u8, iv: []const u8, in: []const u8, out: []u8) bool {
+    @setRuntimeSafety(false);
     if (key.len != 16 or iv.len != 16) return false;
     var aes: aes128.Aes128 = undefined;
-    aes.setKey(key[0..16].*);
-    return aes.encryptCbc(iv[0..16].*, in, out);
+    aes.setKey(key[0..16]);
+    return aes.encryptCbc(iv[0..16], in, out);
 }
 
 fn aesDecrypt(key: []const u8, iv: []const u8, in: []const u8, out: []u8) bool {
+    @setRuntimeSafety(false);
     if (key.len != 16 or iv.len != 16) return false;
     var aes: aes128.Aes128 = undefined;
-    aes.setKey(key[0..16].*);
-    return aes.decryptCbc(iv[0..16].*, in, out);
+    aes.setKey(key[0..16]);
+    return aes.decryptCbc(iv[0..16], in, out);
 }
 
 export fn main() callconv(.c) noreturn {

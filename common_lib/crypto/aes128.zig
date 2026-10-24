@@ -52,6 +52,7 @@ inline fn mul2(a: u8) u8 {
 }
 
 fn shiftRows(s: []u8) void {
+    @setRuntimeSafety(false);
     var t = s[1]; s[1] = s[5]; s[5] = s[9]; s[9] = s[13]; s[13] = t;
     t = s[2]; s[2] = s[10]; s[10] = t;
     t = s[6]; s[6] = s[14]; s[14] = t;
@@ -59,6 +60,7 @@ fn shiftRows(s: []u8) void {
 }
 
 fn invShiftRows(s: []u8) void {
+    @setRuntimeSafety(false);
     var t = s[13]; s[13] = s[9]; s[9] = s[5]; s[5] = s[1]; s[1] = t;
     t = s[2]; s[2] = s[10]; s[10] = t;
     t = s[6]; s[6] = s[14]; s[14] = t;
@@ -68,12 +70,12 @@ fn invShiftRows(s: []u8) void {
 pub const Aes128 = struct {
     round_keys: [AES_ROUND_KEY_SIZE]u8,
 
-    pub fn setKey(self: *Aes128, key: [16]u8) void {
+    pub fn setKey(self: *Aes128, key: *const [16]u8) void {
         @setRuntimeSafety(false);
 
         var temp: [4]u8 = undefined;
 
-        @memcpy(self.round_keys[0..16], &key);
+        @memcpy(self.round_keys[0..16], key);
         
         var idx4: usize = 12;
         for (0..AES_ROUNDS) |i| {
@@ -226,7 +228,7 @@ pub const Aes128 = struct {
         return true;
     }
 
-    pub fn encryptCbc(self: *const Aes128, iv: [16]u8, data:[]const u8, encrypted: []u8) bool {
+    pub fn encryptCbc(self: *const Aes128, iv: *const [16]u8, data:[]const u8, encrypted: []u8) bool {
         if (data.len != encrypted.len or data.len & 0x0F != 0) {
             return false;
         }
@@ -234,7 +236,7 @@ pub const Aes128 = struct {
             return true;
         }
         var prev_block: [16]u8 = undefined;
-        @memcpy(&prev_block, &iv);
+        @memcpy(&prev_block, iv);
 
         var i: usize = 0;
         while (i < data.len) : (i += 16) {
@@ -253,7 +255,7 @@ pub const Aes128 = struct {
         return true;
     }
 
-    pub fn decryptCbc(self: *const Aes128, iv: [16]u8, data:[]const u8, decrypted: []u8) bool {
+    pub fn decryptCbc(self: *const Aes128, iv: *const [16]u8, data:[]const u8, decrypted: []u8) bool {
         if (data.len != decrypted.len or data.len & 0x0F != 0) {
             return false;
         }
@@ -261,7 +263,7 @@ pub const Aes128 = struct {
             return true;
         }
         var prev_block: [16]u8 = undefined;
-        @memcpy(&prev_block, &iv);
+        @memcpy(&prev_block, iv);
 
         var i: usize = 0;
         while (i < data.len) : (i += 16) {
@@ -338,7 +340,7 @@ test "AES-128 key expansion FIPS-197" {
     };
 
     var aes: Aes128 = undefined;
-    aes.setKey(key);
+    aes.setKey(&key);
 
     try std.testing.expectEqualSlices(
         u8,
@@ -364,7 +366,7 @@ test "AES-128 NIST known-answer vector" {
     };
 
     var aes: Aes128 = undefined;
-    aes.setKey(key);
+    aes.setKey(&key);
     var encrypted: [AES_BLOCK_SIZE]u8 = undefined;
     _  = aes.encrypt(&plaintext, &encrypted);
     //var ectx = std.crypto.core.aes.Aes128.initEnc(key);
@@ -395,13 +397,13 @@ test "AES-128-CBC 64-byte fixed round-trip" {
     var decrypted: [64]u8 = undefined;
 
     var aes: Aes128 = undefined;
-    aes.setKey(key);
+    aes.setKey(&key);
 
-    try std.testing.expect(aes.encryptCbc(iv, &plaintext, &ciphertext));
+    try std.testing.expect(aes.encryptCbc(&iv, &plaintext, &ciphertext));
 
     try std.testing.expect(!std.mem.eql(u8, &ciphertext, &plaintext));
 
-    try std.testing.expect(aes.decryptCbc(iv, &ciphertext, &decrypted));
+    try std.testing.expect(aes.decryptCbc(&iv, &ciphertext, &decrypted));
 
     try std.testing.expectEqualSlices(u8, &plaintext, &decrypted);
 }
