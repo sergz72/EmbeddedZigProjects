@@ -17,7 +17,7 @@ const veml = @import("veml7700");
 const bme = @import("bme280");
 const tsl = @import("tsl2591");
 
-const LED_PIN = 10;
+const LED_PIN = 4;
 const LED_PIN_MASK: u16 = 1 << LED_PIN;
 const LED_PORT = gpio.gpiob;
 const LED_INIT: gpio.GpioInit = .{

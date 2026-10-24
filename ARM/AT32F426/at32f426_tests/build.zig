@@ -130,6 +130,18 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const prng = b.addModule("prng", .{
+        .root_source_file = b.path("../../lib/prng.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const aes128 = b.addModule("aes128", .{
+        .root_source_file = b.path("../../../common_lib/crypto/aes128.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const i2c_commands = b.addModule("i2c_commands", .{
         .root_source_file = b.path("../../../common_lib/shell_commands/i2c_commands.zig"),
         .target = target,
@@ -278,9 +290,11 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "tsl2591_commands", .module = tsl2591_commands },
                 .{ .name = "spi_commands", .module = spi_commands },
                 .{ .name = "trng_commands", .module = trng_commands },
+                .{ .name = "prng", .module = prng },
                 .{ .name = "system_commands", .module = system_commands },
                 .{ .name = "flash_commands", .module = flash_commands },
                 .{ .name = "aes_commands", .module = aes_commands },
+                .{ .name = "aes128", .module = aes128 },
                 .{ .name = "allocator", .module = allocator },
                 .{ .name = "usart_writer", .module = usart_writer }
             },

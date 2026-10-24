@@ -3,7 +3,7 @@ const shell = @import("shell");
 
 const init_command = shell.ShellCommand{
     .name = "trng_init",
-    .help = "trng_gen seed",
+    .help = "trng_init seed",
     .parameter_mask = 2,
     .handler = initHandler
 };

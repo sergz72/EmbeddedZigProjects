@@ -1,3 +1,4 @@
+const std = @import("std");
 const hal = @import("hal");
 const shell = @import("shell");
 const allocator = @import("allocator");
@@ -12,6 +13,8 @@ const system_commands = @import("system_commands");
 const flash_commands = @import("flash_commands");
 const trng_commands = @import("trng_commands");
 const aes_commands = @import("aes_commands");
+const prng = @import("prng");
+const aes128 = @import("aes128");
 
 const shell_init = shell.ShellInit{
     .max_commands = 50,
@@ -22,39 +25,28 @@ const shell_init = shell.ShellInit{
 };
 
 const aes_engine: aes_commands.Engine = .{
-    .gen_random = &trngGen,
+    .gen_random = &prng.prngGen,
     .encrypt = &aesEncrypt,
     .decrypt = &aesDecrypt
 };
 
 const rng: trng_commands.Rng = .{
-    .gen = &trngGen,
-    .init = &trngInit
+    .gen = &prng.prngGen,
+    .init = &prng.prngInit
 };
 
-fn trngInit(seed: usize) void {
-    _ = seed;
+fn aesEncrypt(key: []const u8, iv: []const u8, in: []const u8, out: []u8) bool {
+    if (key.len != 16 or iv.len != 16) return false;
+    var aes: aes128.Aes128 = undefined;
+    aes.setKey(key[0..16].*);
+    return aes.encryptCbc(iv[0..16].*, in, out);
 }
 
-fn trngGen(data:[]u32) bool {
-    _ = data;
-    return false;
-}
-
-fn aesEncrypt(key: []const u8, iv: []const u8, data:[]const u8, encrypted: []u8) bool {
-    _ = key;
-    _ = iv;
-    _ = data;
-    _ = encrypted;
-    return false;
-}
-
-fn aesDecrypt(key: []const u8, iv: []const u8, data:[]const u8, decrypted: []u8) bool {
-    _ = key;
-    _ = iv;
-    _ = data;
-    _ = decrypted;
-    return false;
+fn aesDecrypt(key: []const u8, iv: []const u8, in: []const u8, out: []u8) bool {
+    if (key.len != 16 or iv.len != 16) return false;
+    var aes: aes128.Aes128 = undefined;
+    aes.setKey(key[0..16].*);
+    return aes.decryptCbc(iv[0..16].*, in, out);
 }
 
 export fn main() callconv(.c) noreturn {
