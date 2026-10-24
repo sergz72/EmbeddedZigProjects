@@ -1,3 +1,5 @@
+const cpu = @import("cpu");
+
 pub const WDT_BASE = 0x40003000;
 
 pub const WdtCommand = enum(u32) {
@@ -26,7 +28,23 @@ pub const Wdt = extern struct {
     cmd: WdtCommand,
     div: WdtDiv,
     rld: u32,
-    sts: WdtSts
+    sts: WdtSts,
+
+    pub fn init(self: *volatile Wdt, interval_ms: usize) bool {
+        const rld = interval_ms * 1000 / (128000000/cpu.LICK_FREQUENCY);
+        if (rld == 0 or rld > 4095) {
+            return false;
+        }
+        self.div = .div128;
+        self.rld = @truncate(rld);
+        self.cmd = WdtCommand.unlock;
+        self.cmd = WdtCommand.enable;
+        return true;
+    }
+
+    pub fn reload(self: *volatile Wdt) void {
+        self.cmd = WdtCommand.reload_counter;
+    }
 };
 
 pub const wdt: *volatile Wdt = @ptrFromInt(WDT_BASE);

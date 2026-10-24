@@ -66,10 +66,13 @@ export fn main() callconv(.c) noreturn {
     trng_commands.registerCommands(hal.sh, &rng) catch { while (true){} };
     aes_commands.registerCommands(hal.sh, &aes_engine) catch { while (true){} };
 
+    _ = usart_writer.usart_writer.writer.write(hal.getResetCause()) catch { while (true){} };
+
     hal.startTimer();
 
     while (true) {
         asm volatile("wfi");
+        hal.wdtReset();
         hal.sh.handler() catch { while (true){} };
         if (hal.timer_interrupt) {
             hal.timer_interrupt = false;

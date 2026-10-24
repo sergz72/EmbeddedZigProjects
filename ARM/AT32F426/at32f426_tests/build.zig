@@ -73,6 +73,15 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const wdt = b.addModule("wdt", .{
+        .root_source_file = b.path("../lib/wdt.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "cpu", .module = cpu }
+        },
+    });
+
     const system_timer = b.addModule("system_timer", .{
         .root_source_file = b.path("../../lib/system_timer.zig"),
         .target = target,
@@ -80,6 +89,12 @@ pub fn build(b: *std.Build) !void {
         .imports = &.{
             .{ .name = "cpu", .module = cpu }
         },
+    });
+
+    const scb = b.addModule("scb", .{
+        .root_source_file = b.path("../../lib/scb.zig"),
+        .target = target,
+        .optimize = optimize
     });
 
     const scd4x = b.addModule("scd4x", .{
@@ -237,7 +252,9 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "veml7700", .module = veml7700 },
             .{ .name = "bme280", .module = bme280 },
             .{ .name = "tsl2591", .module = tsl2591 },
-            .{ .name = "shell", .module = shell }
+            .{ .name = "shell", .module = shell },
+            .{ .name = "scb", .module = scb },
+            .{ .name = "wdt", .module = wdt }
         },
     });
 

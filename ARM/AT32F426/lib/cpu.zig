@@ -1,3 +1,6 @@
+pub const LICK_FREQUENCY = 35000;
+pub const HICK_FREQUENCY = 48000000;
+
 pub const Cpu = struct {
     current_frequency: usize,
     apb1_frequency: usize,

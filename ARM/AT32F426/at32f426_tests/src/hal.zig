@@ -16,6 +16,8 @@ const scd4x = @import("scd4x");
 const veml = @import("veml7700");
 const bme = @import("bme280");
 const tsl = @import("tsl2591");
+const scb = @import("scb");
+const wdt = @import("wdt");
 
 const LED_PIN = 4;
 const LED_PIN_MASK: u16 = 1 << LED_PIN;
@@ -192,6 +194,9 @@ export fn SystemInit() callconv(.c) void {
     initI2c();
     initSpi();
     initCC1101();
+    //if (!wdt.wdt.init(10000)) {
+    //    while (true) {}
+    //}
 }
 
 pub fn usartWrite(byte: u8) void {
@@ -353,5 +358,13 @@ pub fn flashWrite(address: usize, data: []u8) flash.FlashError!void {
 }
 
 pub fn reboot() void {
-    //todo
+    scb.scb.reboot();
+}
+
+pub fn wdtReset() void {
+    wdt.wdt.reload();
+}
+
+pub fn getResetCause() []const u8 {
+    return "Test";
 }

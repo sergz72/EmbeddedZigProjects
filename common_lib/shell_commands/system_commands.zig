@@ -37,7 +37,7 @@ fn rebootHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!i
 }
 
 fn delayHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isize {
-    const ms = std.fmt.parseInt(u8, parameters.argv[0], 10) catch {
+    const ms = std.fmt.parseInt(usize, parameters.argv[0], 10) catch {
         try parameters.writer.print("invalid number {s}\n", .{parameters.argv[0]});
         return 1;
     };
