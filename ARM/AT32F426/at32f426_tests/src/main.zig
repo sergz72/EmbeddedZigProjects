@@ -8,6 +8,10 @@ const veml7700_commands = @import("veml7700_commands");
 const scd4x_commands = @import("scd4x_commands");
 const bme280_commands = @import("bme280_commands");
 const tsl2591_commands = @import("tsl2591_commands");
+const system_commands = @import("system_commands");
+const flash_commands = @import("flash_commands");
+const trng_commands = @import("trng_commands");
+const aes_commands = @import("aes_commands");
 
 const shell_init = shell.ShellInit{
     .max_commands = 50,
@@ -16,6 +20,42 @@ const shell_init = shell.ShellInit{
     .max_command_length = 100,
     .history_length = 20
 };
+
+const aes_engine: aes_commands.Engine = .{
+    .gen_random = &trngGen,
+    .encrypt = &aesEncrypt,
+    .decrypt = &aesDecrypt
+};
+
+const rng: trng_commands.Rng = .{
+    .gen = &trngGen,
+    .init = &trngInit
+};
+
+fn trngInit(seed: usize) void {
+    _ = seed;
+}
+
+fn trngGen(data:[]u32) bool {
+    _ = data;
+    return false;
+}
+
+fn aesEncrypt(key: []const u8, iv: []const u8, data:[]const u8, encrypted: []u8) bool {
+    _ = key;
+    _ = iv;
+    _ = data;
+    _ = encrypted;
+    return false;
+}
+
+fn aesDecrypt(key: []const u8, iv: []const u8, data:[]const u8, decrypted: []u8) bool {
+    _ = key;
+    _ = iv;
+    _ = data;
+    _ = decrypted;
+    return false;
+}
 
 export fn main() callconv(.c) noreturn {
     const a = allocator.buildAllocator();
@@ -27,6 +67,10 @@ export fn main() callconv(.c) noreturn {
     scd4x_commands.registerCommands(hal.sh, &hal.scd_device) catch { while (true){} };
     bme280_commands.registerCommands(hal.sh, &hal.bme_device) catch { while (true){} };
     tsl2591_commands.registerCommands(hal.sh, &hal.tsl_device) catch { while (true){} };
+    system_commands.registerCommands(hal.sh) catch { while (true){} };
+    flash_commands.registerCommands(hal.sh) catch { while (true){} };
+    trng_commands.registerCommands(hal.sh, &rng) catch { while (true){} };
+    aes_commands.registerCommands(hal.sh, &aes_engine) catch { while (true){} };
 
     hal.startTimer();
 

@@ -1,6 +1,5 @@
 const std = @import("std");
 const shell = @import("shell");
-const hal = @import("hal");
 const utils = @import("utils");
 
 const encrypt_command = shell.ShellCommand{
@@ -17,11 +16,18 @@ const decrypt_command = shell.ShellCommand{
     .handler = aesDecryptHandler
 };
 
-const DATA_SIZE = 64;
-var key: [32]u8 = undefined;
+pub const Engine = struct {
+    gen_random: *const fn([]u32) bool,
+    encrypt: *const fn([]const u8, []const u8, []const u8, []u8) bool,
+    decrypt: *const fn([]const u8, []const u8, []const u8, []u8) bool
+};
+
+const DATA_SIZE = 16;
+var key: [8]u32 = undefined;
 var key_length: usize = undefined;
-var iv: [16]u8 = undefined;
-var encrypted: [DATA_SIZE]u8 = undefined;
+var iv: [4]u32 = undefined;
+var encrypted: [DATA_SIZE*4]u8 = undefined;
+var engine: *const Engine = undefined;
 
 fn aesEncryptHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isize {
     const key_size = std.fmt.parseInt(usize, parameters.argv[0], 10) catch {
@@ -32,49 +38,54 @@ fn aesEncryptHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Err
         _ = try parameters.writer.write("unsupported key size\n");
         return 2;
     }
-    key_length = key_size / 8;
-    const k = &key[0..key_length];
-    try hal.generateRandomBytes(k) catch {
+    key_length = key_size / 32;
+    const k = key[0..key_length];
+    if (!engine.gen_random(k)) {
         _ = try parameters.writer.write("failed to generate random key\n");
         return 3;
-    };
+    }
+    const kb:[]u8 = std.mem.sliceAsBytes(k);
     _ = try parameters.writer.write("key:\n");
-    _ = try utils.printHex(k, parameters.writer);
-    try hal.generateRandomBytes(&iv) catch {
+    _ = try utils.printHex(kb, parameters.writer);
+    if (!engine.gen_random(&iv)) {
         _ = try parameters.writer.write("failed to generate random iv\n");
         return 3;
-    };
+    }
+    const ib:[]u8 = std.mem.sliceAsBytes(&iv);
     _ = try parameters.writer.write("iv:\n");
-    _ = try utils.printHex(&iv, parameters.writer);
-    var data: [DATA_SIZE]u8 = undefined;
-    try hal.generateRandomBytes(&data) catch {
+    _ = try utils.printHex(ib, parameters.writer);
+    var data: [DATA_SIZE]u32 = undefined;
+    if (!engine.gen_random(&data)) {
         _ = try parameters.writer.write("failed to generate random data\n");
         return 4;
-    };
+    }
+    const db:[]u8 = std.mem.sliceAsBytes(&data);
     _ = try parameters.writer.write("data:\n");
-    _ = try utils.printHex(&data, parameters.writer);
-    try hal.aesEncrypt(k, &iv, &data, &encrypted) catch {
+    _ = try utils.printHex(db, parameters.writer);
+    if (!engine.encrypt(kb, ib, db, &encrypted)) {
         _ = try parameters.writer.write("failed to encrypt data\n");
         return 5;
-    };
+    }
     _ = try parameters.writer.write("encrypted:\n");
     _ = try utils.printHex(&encrypted, parameters.writer);
     return 0;
 }
 
 fn aesDecryptHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isize {
-    var data: [DATA_SIZE]u8 = undefined;
-    try hal.aesDecrypt(&key[0..key_length], &iv, &encrypted, &data) catch {
+    var data: [DATA_SIZE*4]u8 = undefined;
+    const kb:[]u8 = std.mem.sliceAsBytes(key[0..key_length]);
+    const ib:[]u8 = std.mem.sliceAsBytes(&iv);
+    if (!engine.decrypt(kb, ib, &encrypted, &data)) {
         _ = try parameters.writer.write("failed to decrypt data\n");
         return 5;
-    };
+    }
     _ = try parameters.writer.write("decrypted:\n");
     _ = try utils.printHex(&data, parameters.writer);
     return 0;
 }
 
-pub fn registerCommands(sh: *shell.Shell) shell.ShellError!void {
+pub fn registerCommands(sh: *shell.Shell, eng: *const Engine) shell.ShellError!void {
+    engine = eng;
     try sh.registerCommand(&encrypt_command);
     try sh.registerCommand(&decrypt_command);
 }
-

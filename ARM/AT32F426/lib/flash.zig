@@ -103,6 +103,10 @@ pub const FlashBtmModeSet = enum(u32) {
     boot_memory_as_system_area = 0xFF
 };
 
+pub const FlashError = error {
+    Timeout
+};
+
 pub const Flash = extern struct {
     psr: FlashPsr,
     unlock: u32,
@@ -127,7 +131,14 @@ pub const Flash = extern struct {
     slib_set_range: FlashSlib,
     em_slib_set: FlashEmSlibSet,
     btm_mode_set: FlashBtmModeSet,
-    slib_unlock: u32
+    slib_unlock: u32,
+
+    pub fn write(self: *volatile Flash, address: usize, data: []u8) FlashError!void {
+        _ = self;
+        _ = address;
+        _ = data;
+        return FlashError.Timeout;
+    }
 };
 
 pub const flash: *volatile Flash = @ptrFromInt(FLASH_BASE);

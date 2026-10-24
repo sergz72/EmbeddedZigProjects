@@ -48,8 +48,8 @@ fn flashWriteHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Err
         _ = try parameters.writer.write("invalid data\n");
         return 3;
     };
-    try hal.flashWrite(address, bytes) catch |err| {
-        _ = try parameters.writer.write("flash write error {s}\n", .{@errorName(err)});
+    hal.flashWrite(address, bytes) catch |err| {
+        try parameters.writer.print("flash write error {s}\n", .{@errorName(err)});
         return 4;
     };
     return 0;

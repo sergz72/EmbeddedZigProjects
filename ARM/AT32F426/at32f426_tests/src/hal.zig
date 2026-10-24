@@ -9,6 +9,7 @@ const interrupts = @import("interrupts");
 const usart = @import("usart");
 const i2c = @import("i2c");
 const spi = @import("spi");
+const flash = @import("flash");
 const shell = @import("shell");
 const usart_writer = @import("usart_writer");
 const scd4x = @import("scd4x");
@@ -345,4 +346,12 @@ pub fn tslCommand(command: u8) bool {
         return false;
     };
     return true;
+}
+
+pub fn flashWrite(address: usize, data: []u8) flash.FlashError!void {
+    try flash.flash.write(address, data);
+}
+
+pub fn reboot() void {
+    //todo
 }
