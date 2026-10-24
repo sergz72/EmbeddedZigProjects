@@ -23,6 +23,7 @@ fn initHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isi
         try parameters.writer.print("{s} {s}\n", .{@errorName(err), bme_device.i2c_error_name});
         return 1;
     };
+    try parameters.writer.print("Device model is {s}\n", .{if (bme_device.has_humidity_sensor) "BME280" else "BMP280"});
     return 0;
 }
 
