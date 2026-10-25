@@ -1,6 +1,6 @@
 const builtin = @import("builtin");
-//const common = @import("common");
-const common = if (builtin.is_test) @import("common.zig") else @import("common");
+const common = @import("common");
+//const common = if (builtin.is_test) @import("common.zig") else @import("common");
 
 const MATHACL_BASE: usize = 0x40410000 + 0x800;
 
@@ -54,6 +54,23 @@ pub const MathaclStatusClr = packed struct(u32) {
     reserved2: u29 = 0
 };
 
+pub const MathaclError = error {
+    DivideByZero,
+    Underflow,
+    Overflow,
+    MathError
+};
+
+pub const MathaclDivResultUnsigned = struct {
+    quotient: u32,
+    remainder: u32
+};
+
+pub const MathaclDivResultSigned = struct {
+    quotient: i32,
+    remainder: i32
+};
+
 pub const Mathacl = extern struct {
     gprcm: MathaclGprcm,
     reserved1: [570]u32,
@@ -69,13 +86,59 @@ pub const Mathacl = extern struct {
     statusclr: MathaclStatusClr,
 
     pub inline fn enablePower(self: *volatile Mathacl) void {
-        const v = common.GprcmPwren{.enable = true};
-        self.gprcm.pwren = v;
+        self.gprcm.pwren = common.GprcmPwren{.enable = true};
     }
 
     pub inline fn reset(self: *volatile Mathacl) void {
-        const v = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
-        self.gprcm.rstctl = v;
+        self.gprcm.rstctl = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
+    }
+
+    fn wait(self: *volatile Mathacl) MathaclError!void {
+        while (self.status.busy) {
+            asm volatile("nop");
+        }
+        defer self.statusclr = MathaclStatusClr{
+            .clr_uf = true,
+            .clr_ovf = true,
+            .clr_err = true
+        };
+        if (self.status.uf) return MathaclError.Underflow;
+        if (self.status.ovf) return MathaclError.Overflow;
+        if (self.status.err != 0) return MathaclError.MathError;
+    }
+
+    pub fn divremUnsigned(self: *volatile Mathacl, numerator: u32, denominator: u32) MathaclError!MathaclDivResultUnsigned {
+        if (denominator == 0) return MathaclError.DivideByZero;
+        self.ctl = MathaclCtl{
+            .func = MathaclFunc.div,
+            .optype = false
+        };
+        self.op2 = denominator;
+        self.op1 = numerator;
+
+        try self.wait();
+
+        return MathaclDivResultUnsigned{
+            .quotient = self.res1,
+            .remainder = self.res2
+        };
+    }
+
+    pub fn divremSigned(self: *volatile Mathacl, numerator: i32, denominator: i32) MathaclError!MathaclDivResultSigned {
+        if (denominator == 0) return MathaclError.DivideByZero;
+        self.ctl = MathaclCtl{
+            .func = MathaclFunc.div,
+            .optype = true
+        };
+        self.op2 = @bitCast(denominator);
+        self.op1 = @bitCast(numerator);
+
+        try self.wait();
+
+        return MathaclDivResultSigned{
+            .quotient = @bitCast(self.res1),
+            .remainder = @bitCast(self.res2)
+        };
     }
 };
 

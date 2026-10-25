@@ -67,6 +67,15 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const mathacl = b.addModule("mathacl", .{
+        .root_source_file = b.path("../lib/mathacl.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "common", .module = common }
+        },
+    });
+
     const aes = b.addModule("aes", .{
         .root_source_file = b.path("../lib/aes.zig"),
         .target = target,
@@ -272,6 +281,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "flashctl", .module = flashctl },
             .{ .name = "trng", .module = trng },
             .{ .name = "aes", .module = aes },
+            .{ .name = "mathacl", .module = mathacl },
         },
     });
     hal.addOptions("config", options);
@@ -309,6 +319,16 @@ pub fn build(b: *std.Build) !void {
         }
     });
 
+    const mathacl_commands = b.addModule("mathacl_commands", .{
+        .root_source_file = b.path("../lib/shell_commands/mathacl_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "mathacl", .module = mathacl }
+        }
+    });
+
     const exe = b.addExecutable(.{
         .name = "mspm0g3507_tests.elf",
         .root_module = b.createModule(.{
@@ -328,7 +348,8 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "trng_commands", .module = trng_commands },
                 .{ .name = "system_commands", .module = system_commands },
                 .{ .name = "flash_commands", .module = flash_commands },
-                .{ .name = "aes_commands", .module = aes_commands }
+                .{ .name = "aes_commands", .module = aes_commands },
+                .{ .name = "mathacl_commands", .module = mathacl_commands },
             },
         }),
     });
@@ -343,6 +364,8 @@ pub fn build(b: *std.Build) !void {
         .file = b.path("../startup_mspm0g350x_gcc.c"),
         .flags = &[_][]const u8{"-O3"}, 
     });
+
+    exe.root_module.addAssemblyFile(b.path("../lib/mathacl.s"));
 
     exe.setLinkerScript(b.path("../mspm0g3507.lds"));
 

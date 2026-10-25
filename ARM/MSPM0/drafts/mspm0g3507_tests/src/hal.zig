@@ -22,6 +22,7 @@ const scb = @import("scb");
 const flashctl = @import("flashctl");
 const trng = @import("trng");
 const aes = @import("aes");
+const mathacl = @import("mathacl");
 
 const LED_PIN = 0;
 const LED_PIN_MASK = 1 << LED_PIN;
@@ -102,6 +103,7 @@ inline fn initPower() void {
     }
     trng.trng.reset();
     aes.aes.reset();
+    mathacl.mathacl.reset();
     LED_PORT.enablePower();
     UART_INSTANCE.enablePower();
     TIMER_INSTANCE.enablePower();
@@ -110,6 +112,7 @@ inline fn initPower() void {
     }
     trng.trng.enablePower();
     aes.aes.enablePower();
+    mathacl.mathacl.enablePower();
     common.powerStartupDelay();
 }
 
@@ -180,9 +183,9 @@ inline fn initAes() void {
 }
 
 export fn SystemInit() callconv(.c) void {
+    initPower();
     sysctl.sysctl.mclkcfg.flashwait = .upto48Mhz;
     system_timer.delay_init(system_timer.init_div1);
-    initPower();
     initGpio();
     initUart();
     initTimer();
