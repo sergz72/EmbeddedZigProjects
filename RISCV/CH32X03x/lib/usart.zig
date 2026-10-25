@@ -76,7 +76,8 @@ pub const Usart = extern struct {
 
     pub fn init(self: *volatile Usart, baud_rate: u32, apbclock: u32) void {
         self.brr = apbclock / baud_rate;
-        self.ctlr1 = UsartCtlr1{.te = true, .re = true, .ue = true, .rxneie = true};
+        const v = UsartCtlr1{.te = true, .re = true, .ue = true, .rxneie = true};
+        self.ctlr1 = v;
     }
 
     pub fn write(self: *volatile Usart, byte: u8) void {

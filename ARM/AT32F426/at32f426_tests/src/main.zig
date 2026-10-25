@@ -24,10 +24,14 @@ const shell_init = shell.ShellInit{
     .history_length = 20
 };
 
-const aes_engine: aes_commands.Engine = .{
+const aes_engines: aes_commands.Engines = .{
     .gen_random = &prng.prngGen,
-    .encrypt = &aesEncrypt,
-    .decrypt = &aesDecrypt
+    .implementations = &.{
+        .{
+            .encrypt = &aesEncrypt,
+            .decrypt = &aesDecrypt
+        }
+    }
 };
 
 const rng: trng_commands.Rng = .{
@@ -64,7 +68,7 @@ export fn main() callconv(.c) noreturn {
     system_commands.registerCommands(hal.sh) catch { while (true){} };
     flash_commands.registerCommands(hal.sh) catch { while (true){} };
     trng_commands.registerCommands(hal.sh, &rng) catch { while (true){} };
-    aes_commands.registerCommands(hal.sh, &aes_engine) catch { while (true){} };
+    aes_commands.registerCommands(hal.sh, &aes_engines) catch { while (true){} };
 
     _ = usart_writer.usart_writer.writer.write(hal.getResetCause()) catch { while (true){} };
 
