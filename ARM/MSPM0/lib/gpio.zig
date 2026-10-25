@@ -97,7 +97,8 @@ pub const Gpio = extern struct {
     sub1cfg: u32,
 
     pub inline fn enablePower(self: *volatile Gpio) void {
-        self.gprcm.pwren = common.GprcmPwren{.enable = true};
+        const v = common.GprcmPwren{.enable = true};
+        self.gprcm.pwren = v;
     }
 
     pub inline fn clearPins(self: *volatile Gpio, mask: u32) void {
@@ -117,7 +118,8 @@ pub const Gpio = extern struct {
     }
 
     pub inline fn reset(self: *volatile Gpio) void {
-        self.gprcm.rstctl = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
+        const v = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
+        self.gprcm.rstctl = v;
     }
 
     pub inline fn get(self: *volatile Gpio) u32 {

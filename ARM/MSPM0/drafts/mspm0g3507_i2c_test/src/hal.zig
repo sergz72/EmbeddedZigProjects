@@ -114,13 +114,17 @@ inline fn initGpio() void {
 inline fn initUart() void {
     iomux.iomux.initPeripheralOutputFunction(UART_TX_PIN_IOMUX, .function2);
     iomux.iomux.initPeripheralInputFunction(UART_RX_PIN_IOMUX, .function2);
-    UART_INSTANCE.clksel = common.Clksel3{.busclksel = true};
-    UART_INSTANCE.clkdiv = .{.ratio = .div1};
+    const v = common.Clksel3{.busclksel = true};
+    UART_INSTANCE.clksel = v;
+    const v2: common.ClkDiv = .{.ratio = .div1};
+    UART_INSTANCE.clkdiv = v2;
     UART_INSTANCE.setBaudRateDivisor(UART_IBRD, UART_FBRD);
     // When updating the baud-rate divisor (UARTIBRD or UARTIFRD), the LCRH register must also be written.
     // The write strobe for the baud-rate divisor registers is tied to the LCRH register.
-    UART_INSTANCE.lcrh = uart.UartLcrh{.wlen = ._8};
-    UART_INSTANCE.cpu_int.imask = uart.UartIntIMask{.rxint = true};
+    const v3: uart.UartLcrh = .{.wlen = ._8};
+    UART_INSTANCE.lcrh = v3;
+    const v4 = uart.UartIntIMask{.rxint = true};
+    UART_INSTANCE.cpu_int.imask = v4;
     UART_INSTANCE.ctl0.enable = true;
     nvic.nvic.enableInterrupt(interrupts.Interrupt.UART0.toU8());
     usart_writer.usart_writer.writeCharFunc = usartWrite;
@@ -128,10 +132,13 @@ inline fn initUart() void {
 
 inline fn initTimer() void {
     timer_interrupt = false;
-    TIMER_INSTANCE.clksel = common.Clksel3{.lfclksel = true};
-    TIMER_INSTANCE.clkdiv = common.ClkDiv{.ratio = .div1};
+    const v = common.Clksel3{.lfclksel = true};
+    TIMER_INSTANCE.clksel = v;
+    const v2 = common.ClkDiv{.ratio = .div1};
+    TIMER_INSTANCE.clkdiv = v2;
     TIMER_INSTANCE.initTimer(32768);
-    TIMER_INSTANCE.cpu_int.imask = .{.z = true};
+    const v3: timer.GptimerIntIMask = .{.z = true};
+    TIMER_INSTANCE.cpu_int.imask = v3;
     TIMER_INSTANCE.enableClock();
     nvic.nvic.enableInterrupt(interrupts.Interrupt.TIMG0.toU8());
 }
@@ -140,8 +147,10 @@ inline fn initI2C() void {
     // enable pullups, open-drain
     iomux.iomux.initPeripheralI2CFunction(I2C_SDA_PIN_IOMUX, .function9);
     iomux.iomux.initPeripheralI2CFunction(I2C_SCL_PIN_IOMUX, .function9);
-    I2C_INSTANCE.clksel = common.Clksel2{.busclksel = true};
-    I2C_INSTANCE.clkdiv = common.ClkDiv{.ratio = .div8};
+    const v = common.Clksel2{.busclksel = true};
+    I2C_INSTANCE.clksel = v;
+    const v2 = common.ClkDiv{.ratio = .div8};
+    I2C_INSTANCE.clkdiv = v2;
     I2C_INSTANCE.init(I2C_SPEED);
 }
 

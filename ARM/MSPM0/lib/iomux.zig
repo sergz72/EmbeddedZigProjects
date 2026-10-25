@@ -41,14 +41,16 @@ pub const Iomux = extern struct {
         @setRuntimeSafety(false);
         if (pin == 0 or pin >= self.pincm.len)
             return;
-        self.pincm[pin - 1] = .{.pf = .gpio, .pc = true};
+        const v = IomuxPinCm{.pf = .gpio, .pc = true};
+        self.pincm[pin - 1] = v;
     }
 
     pub fn initPeripheralOutputFunction(self: *volatile Iomux, pin: u8, function: IomuxPf) void {
         @setRuntimeSafety(false);
         if (pin == 0 or pin >= self.pincm.len)
             return;
-        self.pincm[pin - 1] = .{.pf = function, .pc = true};
+        const v = IomuxPinCm{.pf = function, .pc = true};
+        self.pincm[pin - 1] = v;
     }
 
     pub fn initPeripheralFunction(self: *volatile Iomux, pin: u8, function: IomuxPinCm) void {
@@ -62,28 +64,32 @@ pub const Iomux = extern struct {
         @setRuntimeSafety(false);
         if (pin == 0 or pin >= self.pincm.len)
             return;
-        self.pincm[pin - 1] = .{.pf = function, .pc = true, .inena = true};
+        const v = IomuxPinCm{.pf = function, .pc = true, .inena = true};
+        self.pincm[pin - 1] = v;
     }
 
     pub fn initPeripheralInputFunctionWithPullup(self: *volatile Iomux, pin: u8, function: IomuxPf) void {
         @setRuntimeSafety(false);
         if (pin == 0 or pin >= self.pincm.len)
             return;
-        self.pincm[pin - 1] = .{.pf = function, .pc = true, .inena = true, .pipu = true};
+        const v = IomuxPinCm{.pf = function, .pc = true, .inena = true, .pipu = true};
+        self.pincm[pin - 1] = v;
     }
 
     pub fn initPeripheralInputFunctionWithPulldown(self: *volatile Iomux, pin: u8, function: IomuxPf) void {
         @setRuntimeSafety(false);
         if (pin == 0 or pin >= self.pincm.len)
             return;
-        self.pincm[pin - 1] = .{.pf = function, .pc = true, .inena = true, .pipd = true};
+        const v = IomuxPinCm{.pf = function, .pc = true, .inena = true, .pipd = true};
+        self.pincm[pin - 1] = v;
     }
 
     pub fn initPeripheralI2CFunction(self: *volatile Iomux, pin: u8, function: IomuxPf) void {
         @setRuntimeSafety(false);
         if (pin == 0 or pin >= self.pincm.len)
             return;
-        self.pincm[pin - 1] = .{.pf = function, .pc = true, .inena = true, .pipu = true, .hiz1 = true};
+        const v = IomuxPinCm{.pf = function, .pc = true, .inena = true, .pipu = true, .hiz1 = true};
+        self.pincm[pin - 1] = v;
     }
 };
 

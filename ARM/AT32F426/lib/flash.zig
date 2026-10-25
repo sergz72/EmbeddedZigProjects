@@ -1,4 +1,15 @@
+const std = @import("std");
+
 pub const FLASH_BASE = 0x40022000;
+
+const FLASH_UNLOCK_KEY1 = 0x45670123;
+const FLASH_UNLOCK_KEY2 = 0xCDEF89AB;
+
+const ERASE_TIMEOUT = 0x40000000; // internal flash erase operation timeout
+const PROGRAMMING_TIMEOUT = 0x00100000; // internal flash program operation timeout
+const OPERATION_TIMEOUT = 0x10000000; // flash common operation timeout
+
+pub const SECTOR_SIZE = 1024;
 
 pub const FlashWtcyc = enum(u3) {
     _upto32MHz = 0,
@@ -104,7 +115,10 @@ pub const FlashBtmModeSet = enum(u32) {
 };
 
 pub const FlashError = error {
-    Timeout
+    Timeout,
+    EppError,
+    ProgramError,
+    InvalidAddress
 };
 
 pub const Flash = extern struct {
@@ -133,17 +147,104 @@ pub const Flash = extern struct {
     btm_mode_set: FlashBtmModeSet,
     slib_unlock: u32,
 
-    pub fn write(self: *volatile Flash, address: usize, data: []u8) FlashError!void {
-        _ = self;
-        _ = address;
-        _ = data;
+    pub fn flashUnlock(self: *volatile Flash) void {
+        self.unlock = FLASH_UNLOCK_KEY1;
+        self.unlock = FLASH_UNLOCK_KEY2;
+    }
+
+    pub fn flashLock(self: *volatile Flash) void {
+        self.ctrl.oplk = true;
+    }
+
+    pub fn wait(self: *volatile Flash, timeout: usize) FlashError!void {
+        for (0..timeout) |_| {
+            const sts = self.sts;
+            if (sts.epperr) {
+                return FlashError.EppError;
+            }
+            if (sts.prgmerr) {
+                return FlashError.ProgramError;
+            }
+            if (!sts.obf) {
+                return;
+            }
+        }
         return FlashError.Timeout;
+    }
+
+    pub fn sectorErase(self: *volatile Flash, address: usize) FlashError!void {
+        self.ctrl.secers = true;
+        self.addr = address;
+        self.ctrl.erstr = true;
+        defer self.ctrl.secers = false;
+        try self.wait(ERASE_TIMEOUT);
+    }
+
+    pub fn wordProgram(self: *volatile Flash, address: usize, data: u32) FlashError!void {
+        if (address & 3 != 0) {
+            return FlashError.InvalidAddress;
+        }
+        self.ctrl.fprgm = true;
+        const p: *u32 = @ptrFromInt(address);
+        p.* = data;
+        defer self.ctrl.fprgm = false;
+        try self.wait(PROGRAMMING_TIMEOUT);
+    }
+
+    pub fn halfWordProgram(self: *volatile Flash, address: usize, data: u16) FlashError!void {
+        if (address & 1 != 0) {
+            return FlashError.InvalidAddress;
+        }
+        self.ctrl.fprgm = true;
+        const p: *u16 = @ptrFromInt(address);
+        p.* = data;
+        defer self.ctrl.fprgm = false;
+        try self.wait(PROGRAMMING_TIMEOUT);
+    }
+
+    pub fn write32(self: *volatile Flash, address: usize, data: []u32) FlashError!void {
+        var a = address;
+        for (data) |word| {
+            try self.wordProgram(a, word);
+            a += 4;
+        }
+    }
+
+    pub fn write16(self: *volatile Flash, address: usize, data: []u16) FlashError!void {
+        var a = address;
+        for (data) |hword| {
+            try self.halfWordProgram(a, hword);
+            a += 2;
+        }
+    }
+
+    pub fn write(self: *volatile Flash, address: usize, data: []u8) FlashError!void {
+        var a = address;
+        var l = data.len;
+        var idx: usize = 0;
+        while (l >= 4) {
+            const word = std.mem.readInt(u32, data[idx..][0..4], .little);
+            try self.wordProgram(a, word);
+            a += 4;
+            idx += 4;
+            l -= 4;
+        }
+        if (l >= 2) {
+            const hword = std.mem.readInt(u16, data[idx..][0..2], .little);
+            try self.halfWordProgram(a, hword);
+            a += 2;
+            idx += 2;
+            l -= 2;
+        }
+        if (l != 0) {
+            const hword: u16 = data[idx];
+            try self.halfWordProgram(a, hword);
+        }
     }
 };
 
 pub const flash: *volatile Flash = @ptrFromInt(FLASH_BASE);
 
 test "sizeof test" {
-    const std = @import("std");
     try std.testing.expectEqual(0x174, @sizeOf(Flash));
 }

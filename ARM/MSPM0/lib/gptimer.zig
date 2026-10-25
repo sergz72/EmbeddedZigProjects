@@ -203,11 +203,13 @@ pub const Gptimer = extern struct {
     counterregs: GptimerCounterregs,
 
     pub inline fn enablePower(self: *volatile Gptimer) void {
-        self.gprcm.pwren = common.GprcmPwren{.enable = true};
+        const v = common.GprcmPwren{.enable = true};
+        self.gprcm.pwren = v;
     }
 
     pub inline fn reset(self: *volatile Gptimer) void {
-        self.gprcm.rstctl = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
+        const v = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
+        self.gprcm.rstctl = v;
     }
 
     pub inline fn enableClock(self: *volatile Gptimer) void {
@@ -230,9 +232,10 @@ pub const Gptimer = extern struct {
         self.setLoadValue(load_value);
         self.counterregs.cc[0] = 0;
         self.counterregs.ccctl[0] = .{};
-        self.counterregs.ctrctl = .{
+        const v = GptimerCtrCtl{
             .czc = 0, .clc = 0, .cac = 0, .repeat = .continue_to_advance_following_zero_event
         };
+        self.counterregs.ctrctl = v;
     }
 };
 

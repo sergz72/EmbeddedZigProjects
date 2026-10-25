@@ -120,11 +120,13 @@ pub const Trng = extern struct {
     clkdivide: TrngClkDivide,
 
     pub inline fn enablePower(self: *volatile Trng) void {
-        self.gprcm.pwren = common.GprcmPwren{.enable = true};
+        const v = common.GprcmPwren{.enable = true};
+        self.gprcm.pwren = v;
     }
 
     pub inline fn reset(self: *volatile Trng) void {
-        self.gprcm.rstctl = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
+        const v = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
+        self.gprcm.rstctl = v;
     }
 };
 

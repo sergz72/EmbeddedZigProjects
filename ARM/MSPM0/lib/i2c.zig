@@ -268,11 +268,13 @@ pub const I2c = extern struct {
     slave: I2cSlave,
 
     pub inline fn enablePower(self: *volatile I2c) void {
-        self.gprcm.pwren = common.GprcmPwren{.enable = true};
+        const v = common.GprcmPwren{.enable = true};
+        self.gprcm.pwren = v;
     }
 
     pub inline fn reset(self: *volatile I2c) void {
-        self.gprcm.rstctl = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
+        const v = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
+        self.gprcm.rstctl = v;
     }
 
     pub inline fn disableAnalogGlitchFilter(self: *volatile I2c) void {
@@ -343,22 +345,29 @@ pub const I2c = extern struct {
     }
 
     pub fn startControllerTransfer(self: *volatile I2c, address: u10, dir_receive: bool, length: u12, ack: bool) void {
-        self.master.msa = .{.dir_receive = dir_receive, .taddr = address};
-        self.master.mctr = .{.start = true, .stop = true, .burstrun = true, .cblen = length, .ack = ack};
+        const v = I2cMsa{.dir_receive = dir_receive, .taddr = address};
+        self.master.msa = v;
+        const v2 = I2cMctr{.start = true, .stop = true, .burstrun = true, .cblen = length, .ack = ack};
+        self.master.mctr = v2;
     }
 
     pub fn startControllerTransmitTransferNoStop(self: *volatile I2c, address: u10, length: u12) void {
-        self.master.msa = .{.dir_receive = false, .taddr = address};
-        self.master.mctr = .{.start = true, .burstrun = true, .cblen = length};
+        const v = I2cMsa{.dir_receive = false, .taddr = address};
+        self.master.msa = v;
+        const v2 = I2cMctr{.start = true, .burstrun = true, .cblen = length};
+        self.master.mctr = v2;
     }
 
     pub fn startControllerReceiveTransferRepeatedStart(self: *volatile I2c, address: u10, length: u12) void {
-        self.master.msa = .{.dir_receive = true, .taddr = address};
-        self.master.mctr = .{.start = true, .stop = true, .burstrun = true, .cblen = length};//, .ack = true};
+        const v = I2cMsa{.dir_receive = true, .taddr = address};
+        self.master.msa = v;
+        const v2 = I2cMctr{.start = true, .stop = true, .burstrun = true, .cblen = length};//, .ack = true};
+        self.master.mctr = v2;
     }
 
     pub fn stop(self: *volatile I2c) void {
-        self.master.mctr = .{.stop = true, .burstrun = true};
+        const v = I2cMctr{.stop = true, .burstrun = true};
+        self.master.mctr = v;
     }
 
     pub fn isControllerRXFIFOEmpty(self: *volatile I2c) bool {
@@ -537,13 +546,14 @@ pub const I2c = extern struct {
         self.setControllerRXFIFOThreshold(0);
         self.enableControllerClockStretching();
         self.enableController();
-        self.cpu_int.imask = .{
+        const v = I2cIntIMask{
             .carblost = true,
             .cnack = true,
             .crxfifotrg = true,
             .crxdone = true,
             .ctxdone = true
         };
+        self.cpu_int.imask = v;
         if (self == i2c0) {
             nvic.nvic.enableInterrupt(interrupts.Interrupt.I2C0.toU8());
         } else {

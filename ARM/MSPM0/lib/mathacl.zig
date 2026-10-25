@@ -69,11 +69,13 @@ pub const Mathacl = extern struct {
     statusclr: MathaclStatusClr,
 
     pub inline fn enablePower(self: *volatile Mathacl) void {
-        self.gprcm.pwren = common.GprcmPwren{.enable = true};
+        const v = common.GprcmPwren{.enable = true};
+        self.gprcm.pwren = v;
     }
 
     pub inline fn reset(self: *volatile Mathacl) void {
-        self.gprcm.rstctl = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
+        const v = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
+        self.gprcm.rstctl = v;
     }
 };
 

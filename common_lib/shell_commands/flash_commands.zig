@@ -12,6 +12,13 @@ const flash_read_command = shell.ShellCommand{
     .handler = flashReadHandler
 };
 
+const flash_sector_erase_command = shell.ShellCommand{
+    .name = "flash_sector_erase",
+    .help = "flash sector_erase address",
+    .parameter_mask = 2,
+    .handler = flashSectorEraseHandler
+};
+
 const flash_write_command = shell.ShellCommand{
     .name = "flash_write",
     .help = "flash write address data",
@@ -31,6 +38,19 @@ fn flashReadHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Erro
     const ptr: [*]const u8 = @ptrFromInt(address);
     const data = ptr[0..size];
     try utils.printHex(data, parameters.writer);
+    return 0;
+}
+
+fn flashSectorEraseHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isize {
+    const address = std.fmt.parseInt(usize, parameters.argv[0], 0) catch {
+        _ = try parameters.writer.write("invalid address\n");
+        return 1;
+    };
+
+    hal.flashSectorErase(address) catch |err| {
+        try parameters.writer.print("flash sector erase error {s}\n", .{@errorName(err)});
+        return 4;
+    };
     return 0;
 }
 
@@ -57,5 +77,6 @@ fn flashWriteHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Err
     
 pub fn registerCommands(sh: *shell.Shell) shell.ShellError!void {
     try sh.registerCommand(&flash_read_command);
+    try sh.registerCommand(&flash_sector_erase_command);
     try sh.registerCommand(&flash_write_command);
 }

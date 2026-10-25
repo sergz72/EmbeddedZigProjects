@@ -56,7 +56,8 @@ pub const BTimer = extern struct {
     }
 
     pub inline fn reset(self: *volatile BTimer) void {
-        self.gprcm.rstctl = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
+        const v = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
+        self.gprcm.rstctl = v;
     }
 };
 

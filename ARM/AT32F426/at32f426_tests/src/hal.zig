@@ -359,7 +359,15 @@ pub fn tslCommand(command: u8) bool {
 }
 
 pub fn flashWrite(address: usize, data: []u8) flash.FlashError!void {
+    flash.flash.flashUnlock();
+    defer flash.flash.flashLock();
     try flash.flash.write(address, data);
+}
+
+pub fn flashSectorErase(address: usize) flash.FlashError!void {
+    flash.flash.flashUnlock();
+    defer flash.flash.flashLock();
+    try flash.flash.sectorErase(address);
 }
 
 pub fn reboot() void {
