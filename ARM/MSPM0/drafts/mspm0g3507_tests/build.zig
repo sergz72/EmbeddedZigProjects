@@ -350,6 +350,7 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "flash_commands", .module = flash_commands },
                 .{ .name = "aes_commands", .module = aes_commands },
                 .{ .name = "mathacl_commands", .module = mathacl_commands },
+                .{ .name = "aes", .module = aes },
             },
         }),
     });

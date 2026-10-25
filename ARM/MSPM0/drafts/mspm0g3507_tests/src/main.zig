@@ -13,6 +13,7 @@ const flash_commands = @import("flash_commands");
 const trng_commands = @import("trng_commands");
 const aes_commands = @import("aes_commands");
 const mathacl_commands = @import("mathacl_commands");
+const aes = @import("aes");
 
 const shell_init = shell.ShellInit{
     .max_commands = 50,
@@ -54,19 +55,37 @@ fn trngInit(seed: usize) void {
 }
 
 fn aesEncrypt(key: []const u8, iv: []const u8, in: []const u8, out: []u8) bool {
-    _ = key;
     _ = iv;
-    _ = in;
-    _ = out;
-    return false;
+    if (in.len == 0 or in.len != out.len or in.len & 0x0F != 0 or out.len & 0x0F != 0) {
+        return false;
+    }
+    if (!aes.aes.initWithKey(.encryption, key)) {
+        return false;
+    }
+    var idx: usize = 0;
+    while (idx < in.len) : (idx += 16) {
+        if (!aes.aes.process(in[idx..], out[idx..])) {
+            return false;
+        }
+    }
+    return true;
 }
 
 fn aesDecrypt(key: []const u8, iv: []const u8, in: []const u8, out: []u8) bool {
-    _ = key;
     _ = iv;
-    _ = in;
-    _ = out;
-    return false;
+    if (in.len == 0 or in.len != out.len or in.len & 0x0F != 0 or out.len & 0x0F != 0) {
+        return false;
+    }
+    if (!aes.aes.initWithKey(.decryption, key)) {
+        return false;
+    }
+    var idx: usize = 0;
+    while (idx < in.len) : (idx += 16) {
+        if (!aes.aes.process(in[idx..], out[idx..])) {
+            return false;
+        }
+    }
+    return true;
 }
 
 export fn main() callconv(.c) noreturn {
@@ -81,7 +100,6 @@ export fn main() callconv(.c) noreturn {
     system_commands.registerCommands(hal.sh) catch { while (true){} };
     flash_commands.registerCommands(hal.sh) catch { while (true){} };
     trng_commands.registerCommands(hal.sh, &rng) catch { while (true){} };
-    aes_commands.registerCommands(hal.sh, &aes_engines) catch { while (true){} };
     aes_commands.registerCommands(hal.sh, &aes_engines) catch { while (true){} };
     mathacl_commands.registerCommands(hal.sh) catch { while (true){} };
 

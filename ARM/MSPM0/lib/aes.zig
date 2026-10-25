@@ -1,3 +1,4 @@
+const std = @import("std");
 const builtin = @import("builtin");
 const common = @import("common");
 //const common = if (builtin.is_test) @import("common.zig") else @import("common");
@@ -195,45 +196,97 @@ pub const Aes = extern struct {
         self.gprcm.rstctl = v;
     }
 
-    pub fn setKey(self: *volatile Aes, key: []const u32) void {
-        for (key) |k| {
+    pub fn setKey(self: *volatile Aes, key: []const u8) bool {
+        if (key.len != 16 and key.len != 32) {
+            return false;
+        }
+        var idx: usize = 0;
+        while (idx < key.len) : (idx += 4) {
+            const k = std.mem.readInt(u32, key[idx..][0..4], .little);
             self.aesakey = k;
         }
+        return true;
     }
 
-    pub fn setDataIn(self: *volatile Aes, data: []const u32) void {
-        for (data) |d| {
+    pub fn setDataIn(self: *volatile Aes, data: []const u8) bool {
+        if (data.len < 16) {
+            return false;
+        }
+        var idx: usize = 0;
+        while (idx < 16) : (idx += 4) {
+            const d = std.mem.readInt(u32, data[idx..][0..4], .little);
             self.aesadin = d;
         }
+        return true;
     }
 
-    pub fn setXoredDataIn(self: *volatile Aes, data: []const u32) void {
-        for (data) |d| {
+    pub fn setXoredDataIn(self: *volatile Aes, data: []const u8) bool {
+        if (data.len < 16) {
+            return false;
+        }
+        var idx: usize = 0;
+        while (idx < 16) : (idx += 4) {
+            const d = std.mem.readInt(u32, data[idx..][0..4], .little);
             self.aesaxdin = d;
         }
+        return true;
     }
 
-    pub fn setXoredDataInNoTrigger(self: *volatile Aes, data: []const u32) void {
-        for (data) |d| {
+    pub fn setXoredDataInNoTrigger(self: *volatile Aes, data: []const u32) bool {
+        if (data.len < 16) {
+            return false;
+        }
+        var idx: usize = 0;
+        while (idx < 16) : (idx += 4) {
+            const d = std.mem.readInt(u32, data[idx..][0..4], .little);
             self.aesaxin = d;
         }
+        return true;
     }
 
-    pub fn getDataOut(self: *volatile Aes, data: []u32) void {
-        for (data) |*d| {
-            d.* = self.aesadout;
+    pub fn getDataOut(self: *volatile Aes, data: []u8) bool {
+        if (data.len < 16) {
+            return false;
         }
+        var idx: usize = 0;
+        while (idx < 16) : (idx += 4) {
+            const d = self.aesadout;
+            std.mem.writeInt(u32, data[idx..][0..4], d, .little);
+        }
+        return true;
     }
 
     pub fn init(self: *volatile Aes, opx: AesOpx, klx: AesKlx) void {
-        const v = AesActl0{.opx = opx, .klx = klx};
-        self.aesactl0 = v;
+        self.aesactl0 = AesActl0{.opx = opx, .klx = klx};
+    }
+
+    pub fn initWithKey(self: *volatile Aes, opx: AesOpx, key: []const u8) bool {
+        if (key.len == 16) {
+            self.aesactl0 = AesActl0{.opx = opx, .klx = .key_128_bit};
+        } else if (key.len == 32) {
+            self.aesactl0 = AesActl0{.opx = opx, .klx = .key_256_bit};
+        } else {
+            return false;
+        }
+        return self.setKey(key);
+    }
+
+    pub fn process(self: *volatile Aes, in: []const u8, out: []u8) bool {
+        if (in.len < 16 or out.len < 16) {
+            return false;
+        }
+        if (!self.setDataIn(in)) {
+            return false;
+        }
+        while (self.aesastat.busy) {
+            asm volatile ("nop");
+        }
+        return self.getDataOut(out);
     }
 };
 
 pub const aes: *volatile Aes = @ptrFromInt(AES_BASE);
 
 test "sizeof test" {
-    const std = @import("std");
     try std.testing.expectEqual(0x1120-0x800, @sizeOf(Aes));
 }
