@@ -22,6 +22,12 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const flashctl = b.addModule("flashctl", .{
+        .root_source_file = b.path("../lib/flashctl.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const common = b.addModule("common", .{
         .root_source_file = b.path("../lib/common.zig"),
         .target = target,
@@ -52,6 +58,24 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const trng = b.addModule("trng", .{
+        .root_source_file = b.path("../lib/trng.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "common", .module = common }
+        },
+    });
+
+    const aes = b.addModule("aes", .{
+        .root_source_file = b.path("../lib/aes.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "common", .module = common }
+        },
+    });
+
     const nvic = b.addModule("nvic", .{
         .root_source_file = b.path("../../lib/nvic.zig"),
         .target = target,
@@ -71,6 +95,12 @@ pub fn build(b: *std.Build) !void {
         .imports = &.{
             .{ .name = "cpu", .module = cpu }
         },
+    });
+
+    const scb = b.addModule("scb", .{
+        .root_source_file = b.path("../../lib/scb.zig"),
+        .target = target,
+        .optimize = optimize
     });
 
     const gptimer = b.addModule("gptimer", .{
@@ -142,6 +172,12 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const utils = b.addModule("utils", .{
+        .root_source_file = b.path("../../../common_lib/utils.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const i2c_commands = b.addModule("i2c_commands", .{
         .root_source_file = b.path("../../../common_lib/shell_commands/i2c_commands.zig"),
         .target = target,
@@ -191,6 +227,15 @@ pub fn build(b: *std.Build) !void {
         }
     });
 
+    const trng_commands = b.addModule("trng_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/trng_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell }
+        }
+    });
+
     const usart_writer = b.addModule("usart_writer", .{
         .root_source_file = b.path("../../../common_lib/usart_writer.zig"),
         .target = target,
@@ -222,13 +267,50 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "tsl2591", .module = tsl2591 },
             .{ .name = "usart_writer", .module = usart_writer },
             .{ .name = "shell", .module = shell },
-            .{ .name = "cpu", .module = cpu }
+            .{ .name = "cpu", .module = cpu },
+            .{ .name = "scb", .module = scb },
+            .{ .name = "flashctl", .module = flashctl },
+            .{ .name = "trng", .module = trng },
+            .{ .name = "aes", .module = aes },
         },
     });
     hal.addOptions("config", options);
 
+    const system_commands = b.addModule("system_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/system_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "allocator", .module = allocator },
+            .{ .name = "hal", .module = hal },
+            .{ .name = "system_timer", .module = system_timer },
+        }
+    });
+
+    const flash_commands = b.addModule("flash_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/flash_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "hal", .module = hal },
+            .{ .name = "utils", .module = utils },
+        }
+    });
+
+    const aes_commands = b.addModule("aes_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/aes_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "utils", .module = utils }
+        }
+    });
+
     const exe = b.addExecutable(.{
-        .name = "mspm0g3507_i2c_test.elf",
+        .name = "mspm0g3507_tests.elf",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
             .target = target,
@@ -242,7 +324,11 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "bme280_commands", .module = bme280_commands },
                 .{ .name = "tsl2591_commands", .module = tsl2591_commands },
                 .{ .name = "allocator", .module = allocator },
-                .{ .name = "usart_writer", .module = usart_writer }
+                .{ .name = "usart_writer", .module = usart_writer },
+                .{ .name = "trng_commands", .module = trng_commands },
+                .{ .name = "system_commands", .module = system_commands },
+                .{ .name = "flash_commands", .module = flash_commands },
+                .{ .name = "aes_commands", .module = aes_commands }
             },
         }),
     });

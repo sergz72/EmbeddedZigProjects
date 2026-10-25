@@ -128,6 +128,37 @@ pub const Trng = extern struct {
         const v = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
         self.gprcm.rstctl = v;
     }
+
+    pub fn waitForCommandDone(self: *volatile Trng) void {
+        while (!self.cpu_int.ris.command_done) {
+            asm volatile("nop");
+        }
+        self.cpu_int.iclr = TrngIntInt{.command_done = true};
+    }
+
+    pub fn sendCommand(self: *volatile Trng, command: TrngCmd) void {
+        self.ctl.cmd = command;
+        self.waitForCommandDone();
+    }
+
+    pub inline fn setDecimationRate(self: *volatile Trng, rate: u3) void {
+        self.ctl.decim_rate = rate;
+    }
+
+    pub fn getSample(self: *volatile Trng) u32 {
+        while (!self.cpu_int.ris.buffer_ready) {
+            asm volatile("nop");
+        }
+        const data = self.data_capture;
+        self.cpu_int.iclr = TrngIntInt{.buffer_ready = true};
+        return data;
+    }
+
+    pub fn getSamples(self: *volatile Trng, data: []u32) void {
+        for (data) |*d| {
+            d.* = self.getSample();
+        }
+    }
 };
 
 pub const trng: *volatile Trng = @ptrFromInt(TRNG_BASE);

@@ -186,12 +186,48 @@ pub const Aes = extern struct {
     aesaxin: u32,
 
     pub inline fn enablePower(self: *volatile Aes) void {
-        self.gprcm.pwren = common.GprcmPwren{.enable = true};
+        const v = common.GprcmPwren{.enable = true};
+        self.gprcm.pwren = v;
     }
 
     pub inline fn reset(self: *volatile Aes) void {
         const v = common.GprcmRstctl{.resetassert = true, .resetstkyclr = true};
         self.gprcm.rstctl = v;
+    }
+
+    pub fn setKey(self: *volatile Aes, key: []const u32) void {
+        for (key) |k| {
+            self.aesakey = k;
+        }
+    }
+
+    pub fn setDataIn(self: *volatile Aes, data: []const u32) void {
+        for (data) |d| {
+            self.aesadin = d;
+        }
+    }
+
+    pub fn setXoredDataIn(self: *volatile Aes, data: []const u32) void {
+        for (data) |d| {
+            self.aesaxdin = d;
+        }
+    }
+
+    pub fn setXoredDataInNoTrigger(self: *volatile Aes, data: []const u32) void {
+        for (data) |d| {
+            self.aesaxin = d;
+        }
+    }
+
+    pub fn getDataOut(self: *volatile Aes, data: []u32) void {
+        for (data) |*d| {
+            d.* = self.aesadout;
+        }
+    }
+
+    pub fn init(self: *volatile Aes, opx: AesOpx, klx: AesKlx) void {
+        const v = AesActl0{.opx = opx, .klx = klx};
+        self.aesactl0 = v;
     }
 };
 

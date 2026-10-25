@@ -1,7 +1,7 @@
 .{
-    .name = .mspm0g3507_i2c_test,
+    .name = .mspm0g3507_tests,
     .version = "0.0.1",
-    .fingerprint = 0xd09e18c94a016b69, // Changing this has security and trust implications.
+    .fingerprint = 0x23164de2d60f644f, // Changing this has security and trust implications.
     .minimum_zig_version = "0.17.0-dev.2131+d08989840",
     .paths = .{
         "build.zig",

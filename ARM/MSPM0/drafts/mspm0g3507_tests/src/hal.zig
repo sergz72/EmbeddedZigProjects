@@ -18,6 +18,10 @@ const veml = @import("veml7700");
 const bme = @import("bme280");
 const tsl = @import("tsl2591");
 const config = @import("config");
+const scb = @import("scb");
+const flashctl = @import("flashctl");
+const trng = @import("trng");
+const aes = @import("aes");
 
 const LED_PIN = 0;
 const LED_PIN_MASK = 1 << LED_PIN;
@@ -96,12 +100,16 @@ inline fn initPower() void {
     if (!config.i2c_soft) {
         I2C_INSTANCE.reset();
     }
+    trng.trng.reset();
+    aes.aes.reset();
     LED_PORT.enablePower();
     UART_INSTANCE.enablePower();
     TIMER_INSTANCE.enablePower();
     if (!config.i2c_soft) {
         I2C_INSTANCE.enablePower();
     }
+    trng.trng.enablePower();
+    aes.aes.enablePower();
     common.powerStartupDelay();
 }
 
@@ -147,10 +155,8 @@ inline fn initI2C() void {
     // enable pullups, open-drain
     iomux.iomux.initPeripheralI2CFunction(I2C_SDA_PIN_IOMUX, .function9);
     iomux.iomux.initPeripheralI2CFunction(I2C_SCL_PIN_IOMUX, .function9);
-    const v = common.Clksel2{.busclksel = true};
-    I2C_INSTANCE.clksel = v;
-    const v2 = common.ClkDiv{.ratio = .div8};
-    I2C_INSTANCE.clkdiv = v2;
+    I2C_INSTANCE.clksel = common.Clksel2{.busclksel = true};
+    I2C_INSTANCE.clkdiv = common.ClkDiv{.ratio = .div8};
     I2C_INSTANCE.init(I2C_SPEED);
 }
 
@@ -160,6 +166,17 @@ inline fn initI2cSoft() void {
     I2C_SCL_PORT.enableOutput(I2C_SCL_PIN_MASK);
     I2C_SDA_PORT.enableOutput(I2C_SDA_PIN_MASK);
     i2c_soft_instance.init();
+}
+
+inline fn initTrng() void {
+    // maximum clock frequency for TRNG is 25 MHz
+    trng.trng.clkdivide = .div2;
+    trng.trng.sendCommand(.norm_func);
+    trng.trng.setDecimationRate(3);
+}
+
+inline fn initAes() void {
+
 }
 
 export fn SystemInit() callconv(.c) void {
@@ -174,6 +191,8 @@ export fn SystemInit() callconv(.c) void {
     } else {
         initI2C();
     }
+    initTrng();
+    initAes();
 }
 
 pub fn usartWrite(byte: u8) void {
@@ -402,4 +421,23 @@ pub inline fn startTimer() void {
 
 pub inline fn enterSleep() void {
     asm volatile("wfi");
+}
+
+pub fn flashWrite(address: usize, data: []u8) flashctl.FlashCtlError!void {
+    _ = address;
+    _ = data;
+    return flashctl.FlashCtlError.Timeout;
+}
+
+pub fn flashSectorErase(address: usize) flashctl.FlashCtlError!void {
+    _ = address;
+    return flashctl.FlashCtlError.Timeout;
+}
+
+pub fn reboot() void {
+    scb.scb.reboot();
+}
+
+pub fn trngGen(data: []u32) void {
+    trng.trng.getSamples(data);
 }
