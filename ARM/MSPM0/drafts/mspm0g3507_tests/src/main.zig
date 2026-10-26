@@ -55,37 +55,23 @@ fn trngInit(seed: usize) void {
 }
 
 fn aesEncrypt(key: []const u8, iv: []const u8, in: []const u8, out: []u8) bool {
-    _ = iv;
-    if (in.len == 0 or in.len != out.len or in.len & 0x0F != 0 or out.len & 0x0F != 0) {
+    if (iv.len != 16 or in.len == 0 or in.len != out.len or in.len & 0x0F != 0 or out.len & 0x0F != 0) {
         return false;
     }
     if (!aes.aes.initWithKey(.encryption, key)) {
         return false;
     }
-    var idx: usize = 0;
-    while (idx < in.len) : (idx += 16) {
-        if (!aes.aes.process(in[idx..], out[idx..])) {
-            return false;
-        }
-    }
-    return true;
+    return aes.aes.encryptCbc(iv[0..16], in, out);
 }
 
 fn aesDecrypt(key: []const u8, iv: []const u8, in: []const u8, out: []u8) bool {
-    _ = iv;
-    if (in.len == 0 or in.len != out.len or in.len & 0x0F != 0 or out.len & 0x0F != 0) {
+    if (iv.len != 16 or in.len == 0 or in.len != out.len or in.len & 0x0F != 0 or out.len & 0x0F != 0) {
         return false;
     }
     if (!aes.aes.initWithKey(.decryption, key)) {
         return false;
     }
-    var idx: usize = 0;
-    while (idx < in.len) : (idx += 16) {
-        if (!aes.aes.process(in[idx..], out[idx..])) {
-            return false;
-        }
-    }
-    return true;
+    return aes.aes.decryptCbc(iv[0..16], in, out);
 }
 
 export fn main() callconv(.c) noreturn {

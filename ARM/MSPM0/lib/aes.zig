@@ -283,6 +283,62 @@ pub const Aes = extern struct {
         }
         return self.getDataOut(out);
     }
+
+    pub fn encryptCbc(self: *volatile Aes, iv: *const [16]u8, data:[]const u8, encrypted: []u8) bool {
+        if (data.len != encrypted.len or data.len & 0x0F != 0) {
+            return false;
+        }
+        if (data.len == 0) {
+            return true;
+        }
+        self.aesactl0.opx = .encryption;
+        var prev_block: [16]u8 = undefined;
+        @memcpy(&prev_block, iv);
+
+        var i: usize = 0;
+        while (i < data.len) : (i += 16) {
+            var current_block: [16]u8 = undefined;
+
+            for (0..16) |j| {
+                current_block[j] = data[i + j] ^ prev_block[j];
+            }
+
+            if (!self.process(&current_block, encrypted[i..])) {
+                return false;
+            }
+
+            @memcpy(&prev_block, encrypted[i..i+16]);
+        }
+        return true;
+    }
+
+    pub fn decryptCbc(self: *volatile Aes, iv: *const [16]u8, data:[]const u8, decrypted: []u8) bool {
+        if (data.len != decrypted.len or data.len & 0x0F != 0) {
+            return false;
+        }
+        if (data.len == 0) {
+            return true;
+        }
+        self.aesactl0.opx = .decryption;
+        var prev_block: [16]u8 = undefined;
+        @memcpy(&prev_block, iv);
+
+        var i: usize = 0;
+        while (i < data.len) : (i += 16) {
+            var decrypted_block: [16]u8 = undefined;
+
+            if (!self.process(data[i..], &decrypted_block)) {
+                return false;
+            }
+
+            for (0..16) |j| {
+                decrypted[i + j] = decrypted_block[j] ^ prev_block[j];
+            }
+
+            @memcpy(&prev_block, data[i..i+16]);
+        }
+        return true;
+    }
 };
 
 pub const aes: *volatile Aes = @ptrFromInt(AES_BASE);

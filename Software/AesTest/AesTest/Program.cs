@@ -1,12 +1,19 @@
 ﻿using System.Security.Cryptography;
 
-if (args.Length != 1)
+if (args.Length != 2)
 {
-    Console.WriteLine("Usage: AesTest <input_file>");
+    Console.WriteLine("Usage: AesTest ecb|cbc input_file");
     return;
 }
 
-var data = File.ReadAllLines(args[0]);
+var mode = args[0] switch
+{
+    "ecb" => Mode.Ecb,
+    "cbc" => Mode.Cbc,
+    _ => throw new ArgumentException("Invalid mode")
+};
+
+var data = File.ReadAllLines(args[1]);
 
 var state = State.None; 
 var parsed = ParseData(data);
@@ -15,8 +22,14 @@ Console.WriteLine("key = {0}\ndata={1}\nencrypted={2}",
 
 using var aes = Aes.Create();
 aes.Key = parsed.Key;
-aes.Mode = CipherMode.ECB;     // No block chaining
+aes.IV = parsed.Iv;
 aes.Padding = PaddingMode.None; // No padding
+aes.Mode = mode switch
+{
+    Mode.Ecb => CipherMode.ECB,
+    Mode.Cbc => CipherMode.CBC,
+    _ => throw new ArgumentOutOfRangeException()
+};
 using var encryptor = aes.CreateEncryptor();
 var ciphertext = encryptor.TransformFinalBlock(parsed.Data, 0, parsed.Data.Length);
 Console.WriteLine("{0} expected={1}", ciphertext.SequenceEqual(parsed.Encrypted) ? "OK" : "ERR", BitConverter.ToString(ciphertext));
@@ -25,13 +38,16 @@ return;
 
 Parsed ParseData(string[] contents) 
 {
-    var data = new List<byte>();
+    var d = new List<byte>();
     var key = new List<byte>();
+    var iv = new List<byte>();
     var encrypted = new List<byte>();
     foreach (var line in contents)
     {
         if (line == "key:")
             state = State.Key;
+        else if (line == "iv:")
+            state = State.Iv;
         else if (line == "data:")
             state = State.Data;
         else if (line == "encrypted:")
@@ -43,8 +59,11 @@ Parsed ParseData(string[] contents)
                 case State.Key:
                     ParseHex(line, key);
                     break;
+                case State.Iv:
+                    ParseHex(line, iv);
+                    break;
                 case State.Data:
-                    ParseHex(line, data);
+                    ParseHex(line, d);
                     break;
                 case State.Encrypted:
                     ParseHex(line, encrypted);
@@ -58,8 +77,9 @@ Parsed ParseData(string[] contents)
     }
     return new Parsed
     {
-        Data = data.ToArray(),
+        Data = d.ToArray(),
         Key = key.ToArray(),
+        Iv = iv.ToArray(),
         Encrypted = encrypted.ToArray()
     };
 }
@@ -74,13 +94,21 @@ internal enum State
 {
     None,
     Key,
+    Iv,
     Data,
     Encrypted
+}
+
+internal enum Mode
+{
+    Ecb,
+    Cbc
 }
 
 internal struct Parsed
 {
     internal byte[] Key;
+    internal byte[] Iv;
     internal byte[] Data;
     internal byte[] Encrypted;
 }

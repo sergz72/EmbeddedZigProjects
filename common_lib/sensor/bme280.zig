@@ -186,7 +186,7 @@ pub const BME280 = struct {
         var2 += (var1*@as(i64, self.cal.c1.p5))<<17;
         var2 += @as(i64, self.cal.c1.p4)<<35;
         var1 = ((var1 * var1 * @as(i64, self.cal.c1.p3))>>8) + ((var1 * @as(i64, self.cal.c1.p2))<<12);
-        var1 = ((1<<47)+var1)*@as(i64, self.cal.c1.p1)>>33;
+        var1 = (((1<<47)+var1)*@as(i64, self.cal.c1.p1))>>33;
 
         if (var1 == 0) {
             return 0;  // avoid exception caused by division by zero
@@ -208,12 +208,12 @@ pub const BME280 = struct {
 
         v_x1_u32r = ((((adc_h << 14) - ((@as(isize, self.cal.c2.getH4())) << 20) -
             (@as(isize, self.cal.c2.getH5()) * v_x1_u32r)) + 16384) >> 15) *
-            ((((((v_x1_u32r * ((@as(isize, self.cal.c2.h6))) >> 10) *
-            ((v_x1_u32r * @as(isize, self.cal.c2.h3) >> 11) + 32768)) >> 10) +
+            (((((((v_x1_u32r * ((@as(isize, self.cal.c2.h6)))) >> 10) *
+            (((v_x1_u32r * @as(isize, self.cal.c2.h3)) >> 11) + 32768)) >> 10) +
             2097152) * @as(isize, self.cal.c2.getH2()) + 8192) >> 14);
 
         const v15 = v_x1_u32r >> 15;
-        v_x1_u32r -= (((v15 * v15 >> 7) * @as(isize, self.cal.h1)) >> 4);
+        v_x1_u32r -= ((((v15 * v15) >> 7) * @as(isize, self.cal.h1)) >> 4);
 
         if (v_x1_u32r < 0)
             v_x1_u32r = 0;
@@ -303,6 +303,10 @@ test "sizeof test" {
 
 fn testI2cRead(reg: u8, data: []u8) bool {
     switch (reg) {
+        REGISTER_ID => {
+            data[0] = 0x60;
+            return true;
+        },
         REGISTER_CALIB => {
             @memcpy(data, &[_]u8{
                 0x70, 0x6B, 0x43, 0x67, 0x18, 0xFC, 0x7D, 0x8E,
