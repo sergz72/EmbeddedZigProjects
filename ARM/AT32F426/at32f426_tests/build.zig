@@ -82,6 +82,12 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const crc = b.addModule("crc", .{
+        .root_source_file = b.path("../lib/crc.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const system_timer = b.addModule("system_timer", .{
         .root_source_file = b.path("../../lib/system_timer.zig"),
         .target = target,
@@ -225,6 +231,16 @@ pub fn build(b: *std.Build) !void {
         }
     });
 
+    const crc_commands = b.addModule("crc_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/crc_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "utils", .module = utils }
+        }
+    });
+
     const usart_writer = b.addModule("usart_writer", .{
         .root_source_file = b.path("../../../common_lib/usart_writer.zig"),
         .target = target,
@@ -311,7 +327,9 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "system_commands", .module = system_commands },
                 .{ .name = "flash_commands", .module = flash_commands },
                 .{ .name = "aes_commands", .module = aes_commands },
+                .{ .name = "crc_commands", .module = crc_commands },
                 .{ .name = "aes128", .module = aes128 },
+                .{ .name = "crc", .module = crc },
                 .{ .name = "allocator", .module = allocator },
                 .{ .name = "usart_writer", .module = usart_writer }
             },

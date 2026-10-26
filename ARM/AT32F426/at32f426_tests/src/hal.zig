@@ -186,7 +186,7 @@ inline fn initCC1101() void {
 
 export fn SystemInit() callconv(.c) void {
     system_timer.delay_init(system_timer.init_div1);
-    const v: crm.CrmAhbEn = .{.gpioaen = true, .gpioben = true, .gpiofen = true};
+    const v: crm.CrmAhbEn = .{.gpioaen = true, .gpioben = true, .gpiofen = true, .crcen = true};
     crm.crm.ahben = v;
     const v2: crm.CrmApb1 = .{.tmr6 = true, .i2c1 = true};
     crm.crm.apb1en = v2;

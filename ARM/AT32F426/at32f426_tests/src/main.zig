@@ -13,8 +13,10 @@ const system_commands = @import("system_commands");
 const flash_commands = @import("flash_commands");
 const trng_commands = @import("trng_commands");
 const aes_commands = @import("aes_commands");
+const crc_commands = @import("crc_commands");
 const prng = @import("prng");
 const aes128 = @import("aes128");
+const crc = @import("crc");
 
 const shell_init = shell.ShellInit{
     .max_commands = 50,
@@ -38,6 +40,16 @@ const rng: trng_commands.Rng = .{
     .gen = &prng.prngGen,
     .init = &prng.prngInit
 };
+
+const crc_generators: crc_commands.Generators = .{
+    .crc8 = null,
+    .crc16 = null,
+    .crc32 = &crc32
+};
+
+fn crc32(data:[]const u8) u32 {
+    return crc.crc.crc32(data);
+}
 
 fn aesEncrypt(key: []const u8, iv: []const u8, in: []const u8, out: []u8) bool {
     @setRuntimeSafety(false);
@@ -69,6 +81,7 @@ export fn main() callconv(.c) noreturn {
     flash_commands.registerCommands(hal.sh) catch { while (true){} };
     trng_commands.registerCommands(hal.sh, &rng) catch { while (true){} };
     aes_commands.registerCommands(hal.sh, &aes_engines) catch { while (true){} };
+    crc_commands.registerCommands(hal.sh, &crc_generators) catch { while (true){} };
 
     _ = usart_writer.usart_writer.writer.write(hal.getResetCause()) catch { while (true){} };
 
