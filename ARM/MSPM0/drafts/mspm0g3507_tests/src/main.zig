@@ -13,7 +13,9 @@ const flash_commands = @import("flash_commands");
 const trng_commands = @import("trng_commands");
 const aes_commands = @import("aes_commands");
 const mathacl_commands = @import("mathacl_commands");
+const crc_commands = @import("crc_commands");
 const aes = @import("aes");
+const crcp = @import("crcp");
 
 const shell_init = shell.ShellInit{
     .max_commands = 50,
@@ -37,6 +39,20 @@ const rng: trng_commands.Rng = .{
     .gen = &trngGen,
     .init = &trngInit
 };
+
+const crc_generators: crc_commands.Generators = .{
+    .crc8 = null,
+    .crc16 = &crc16,
+    .crc32 = &crc32
+};
+
+fn crc16(data:[]const u8) u16 {
+    return crcp.crcp.crc16(data);
+}
+
+fn crc32(data:[]const u8) u32 {
+    return crcp.crcp.crc32(data);
+}
 
 inline fn timerHandler() void {
     if (!hal.timer_interrupt)
@@ -88,6 +104,7 @@ export fn main() callconv(.c) noreturn {
     trng_commands.registerCommands(hal.sh, &rng) catch { while (true){} };
     aes_commands.registerCommands(hal.sh, &aes_engines) catch { while (true){} };
     mathacl_commands.registerCommands(hal.sh) catch { while (true){} };
+    crc_commands.registerCommands(hal.sh, &crc_generators) catch { while (true){} };
 
     hal.startTimer();
 

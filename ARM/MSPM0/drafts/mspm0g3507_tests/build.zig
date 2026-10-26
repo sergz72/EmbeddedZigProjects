@@ -257,6 +257,16 @@ pub fn build(b: *std.Build) !void {
         }
     });
 
+    const crc_commands = b.addModule("crc_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/crc_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "utils", .module = utils }
+        }
+    });
+
     const usart_writer = b.addModule("usart_writer", .{
         .root_source_file = b.path("../../../common_lib/usart_writer.zig"),
         .target = target,
@@ -363,7 +373,9 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "flash_commands", .module = flash_commands },
                 .{ .name = "aes_commands", .module = aes_commands },
                 .{ .name = "mathacl_commands", .module = mathacl_commands },
+                .{ .name = "crc_commands", .module = crc_commands },
                 .{ .name = "aes", .module = aes },
+                .{ .name = "crcp", .module = crcp },
             },
         }),
     });
