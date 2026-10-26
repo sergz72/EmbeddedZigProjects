@@ -7,21 +7,21 @@ var write_buffer: [32]u8 = undefined;
 
 const flash_read_command = shell.ShellCommand{
     .name = "flash_read",
-    .help = "flash read address size",
+    .help = "flash_read address size",
     .parameter_mask = 4,
     .handler = flashReadHandler
 };
 
 const flash_sector_erase_command = shell.ShellCommand{
     .name = "flash_sector_erase",
-    .help = "flash sector_erase address",
+    .help = "flash_sector_erase address",
     .parameter_mask = 2,
     .handler = flashSectorEraseHandler
 };
 
 const flash_write_command = shell.ShellCommand{
     .name = "flash_write",
-    .help = "flash write address data",
+    .help = "flash_write address data",
     .parameter_mask = 4,
     .handler = flashWriteHandler
 };

@@ -73,8 +73,7 @@ pub const Scb = extern struct {
 
     pub fn reboot(self: *volatile Scb) void {
         asm volatile("dsb");
-        const v: ScbAircr = .{.sysresetreq = true};
-        self.aircr = v;
+        self.aircr = ScbAircr{.sysresetreq = true};
         asm volatile("dsb");
         while (true) {
             asm volatile("wfi");

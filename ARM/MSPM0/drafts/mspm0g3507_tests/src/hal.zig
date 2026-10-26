@@ -23,6 +23,7 @@ const flashctl = @import("flashctl");
 const trng = @import("trng");
 const aes = @import("aes");
 const mathacl = @import("mathacl");
+const crcp = @import("crcp");
 
 const LED_PIN = 0;
 const LED_PIN_MASK = 1 << LED_PIN;
@@ -103,6 +104,7 @@ inline fn initPower() void {
     }
     trng.trng.reset();
     aes.aes.reset();
+    crcp.crcp.reset();
     mathacl.mathacl.reset();
     LED_PORT.enablePower();
     UART_INSTANCE.enablePower();
@@ -113,6 +115,7 @@ inline fn initPower() void {
     trng.trng.enablePower();
     aes.aes.enablePower();
     mathacl.mathacl.enablePower();
+    crcp.crcp.enablePower();
     common.powerStartupDelay();
 }
 
@@ -178,10 +181,6 @@ inline fn initTrng() void {
     trng.trng.setDecimationRate(3);
 }
 
-inline fn initAes() void {
-
-}
-
 export fn SystemInit() callconv(.c) void {
     initPower();
     sysctl.sysctl.mclkcfg.flashwait = .upto48Mhz;
@@ -195,7 +194,6 @@ export fn SystemInit() callconv(.c) void {
         initI2C();
     }
     initTrng();
-    initAes();
 }
 
 pub fn usartWrite(byte: u8) void {
@@ -427,14 +425,11 @@ pub inline fn enterSleep() void {
 }
 
 pub fn flashWrite(address: usize, data: []u8) flashctl.FlashCtlError!void {
-    _ = address;
-    _ = data;
-    return flashctl.FlashCtlError.Timeout;
+    try flashctl.flashctl.write(address, data);
 }
 
 pub fn flashSectorErase(address: usize) flashctl.FlashCtlError!void {
-    _ = address;
-    return flashctl.FlashCtlError.Timeout;
+    try flashctl.flashctl.erase(.sector, address);
 }
 
 pub fn reboot() void {

@@ -22,16 +22,19 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
-    const flashctl = b.addModule("flashctl", .{
-        .root_source_file = b.path("../lib/flashctl.zig"),
-        .target = target,
-        .optimize = optimize
-    });
-
     const common = b.addModule("common", .{
         .root_source_file = b.path("../lib/common.zig"),
         .target = target,
         .optimize = optimize
+    });
+
+    const flashctl = b.addModule("flashctl", .{
+        .root_source_file = b.path("../lib/flashctl.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "common", .module = common }
+        },
     });
 
     const gpio = b.addModule("gpio", .{
@@ -78,6 +81,15 @@ pub fn build(b: *std.Build) !void {
 
     const aes = b.addModule("aes", .{
         .root_source_file = b.path("../lib/aes.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "common", .module = common }
+        },
+    });
+
+    const crcp = b.addModule("crcp", .{
+        .root_source_file = b.path("../lib/crcp.zig"),
         .target = target,
         .optimize = optimize,
         .imports = &.{
@@ -282,6 +294,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "trng", .module = trng },
             .{ .name = "aes", .module = aes },
             .{ .name = "mathacl", .module = mathacl },
+            .{ .name = "crcp", .module = crcp },
         },
     });
     hal.addOptions("config", options);
