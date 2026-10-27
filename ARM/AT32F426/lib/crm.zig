@@ -304,7 +304,19 @@ pub const Crm = extern struct {
     reserved2: [8]u32,
     misc2: CrmMisc2,
     reserved3: [4]u32,
-    piclks: CrmPiclks
+    piclks: CrmPiclks,
+
+    pub fn getResetCause(self: *volatile Crm) []const u8 {
+        const sts = self.ctrlsts;
+        self.ctrlsts.rstfc = true; // Clear reset flags after reading
+        if (sts.lprstf) return "Low Power Reset";
+        if (sts.wwdtrstf) return "WWDT Reset";
+        if (sts.wdtrstf) return "WDT Reset";
+        if (sts.swrstf) return "Software Reset";
+        if (sts.porrstf) return "POR Reset";
+        if (sts.nrstf) return "NRST Reset";
+        return "Unknown Reset Cause";
+    }
 };
 
 pub const crm: *volatile Crm = @ptrFromInt(CRM_BASE);

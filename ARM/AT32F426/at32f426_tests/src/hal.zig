@@ -379,5 +379,5 @@ pub fn wdtReset() void {
 }
 
 pub fn getResetCause() []const u8 {
-    return "Test";
+    return crm.crm.getResetCause();
 }
