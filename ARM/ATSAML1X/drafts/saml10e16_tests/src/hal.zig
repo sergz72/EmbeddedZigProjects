@@ -100,15 +100,12 @@ pub inline fn ledToggle() void {
     port.ports[0].outtgl = LED_PIN_MASK;
 }
 
-pub fn flashWrite(address: usize, data: []u8) nvmctrl.NvmctrlError!void {
-    _ = address;
-    _ = data;
-    return nvmctrl.NvmctrlError.Timeout;
+pub fn flashWrite(address: usize, data: []const u8) nvmctrl.NvmctrlError!void {
+    try nvmctrl.nvmctrl.writePage(address, data, true);
 }
 
 pub fn flashSectorErase(address: usize) nvmctrl.NvmctrlError!void {
-    _ = address;
-    return nvmctrl.NvmctrlError.Timeout;
+    try nvmctrl.nvmctrl.rowErase(address, true);
 }
 
 pub fn reboot() void {

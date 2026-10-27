@@ -1,4 +1,9 @@
+const std = @import("std");
+
 const NVMCTRL_BASE = 0x41004000;
+
+const PAGE_SIZE: usize  = 64;
+const ROW_SIZE: usize   = 256;
 
 pub const NvmCmd = enum(u7) {
     reserved = 0,
@@ -84,7 +89,12 @@ pub const NvmctrlParam = packed struct(u32) {
 };
 
 pub const NvmctrlError = error {
-    Timeout
+    Timeout,
+    InvalidAddress,
+    ProgramError,
+    LockError,
+    NvmeError,
+    NonSecureCheckError
 };
 
 pub const Nvmctrl = extern struct {
@@ -113,12 +123,77 @@ pub const Nvmctrl = extern struct {
     scfgb: u32,
     scfgad: u32,
     nonsec: u32,
-    nschk: u32
+    nschk: u32,
+
+    fn waitForReady(self: *volatile Nvmctrl) void {
+        while (!self.status.ready) {
+            asm volatile ("nop");
+        }
+    }
+
+    fn clearInterruptFlags(self: *volatile Nvmctrl) void {
+        self.intflag = NvmctrlInt{
+            .done = true,
+            .proge = true,
+            .locke = true,
+            .nvme = true,
+            .keye = true,
+            .nschk = true
+        };
+    }
+
+    fn command(self: *volatile Nvmctrl, address: usize, data_flash: bool, cmd: NvmCmd) NvmctrlError!void {
+        self.waitForReady();
+        self.clearInterruptFlags();
+        self.addr = NvmctrlAddr{.aoffset = @truncate(address), .array = if (data_flash) NvmctrlArray.data_flash else NvmctrlArray.flash};
+        self.ctrla = NvmctrlCtrlA{.cmd = cmd};
+        self.waitForReady();
+        const flags = self.intflag;
+        if (flags.proge) return NvmctrlError.ProgramError;
+        if (flags.locke) return NvmctrlError.LockError;
+        if (flags.nvme) return NvmctrlError.NvmeError;
+        if (flags.nschk) return NvmctrlError.NonSecureCheckError;
+    }
+
+    pub fn rowErase(self: *volatile Nvmctrl, address: usize, data_flash: bool) NvmctrlError!void {
+        const a = address & ~(ROW_SIZE-1);
+        try self.command(a, data_flash, .erase);
+    }
+
+    pub fn writePage(self: *volatile Nvmctrl, address: usize, data: []const u8, data_flash: bool) NvmctrlError!void {
+        if (address & (PAGE_SIZE-1) != 0) {
+            return NvmctrlError.InvalidAddress;
+        }
+
+        if (data.len == 0) {
+            return;
+        }
+
+        var p: [*]u32 = @ptrFromInt(address);
+
+        try self.command(address, data_flash, .page_buffer_clear);
+
+        var l = if (data.len > PAGE_SIZE) PAGE_SIZE else data.len;
+        var idx: usize = 0;
+        while (l >= 4) {
+            const d: u32 = std.mem.readInt(u32, data[idx..][0..4], .little);
+            p[0] = d;
+            p += 1;
+            idx += 4;
+            l -= 4;
+        }
+        if (l != 0) {
+            var v: [4]u8 = .{0xFF, 0xFF, 0xFF, 0xFF};
+            @memcpy(v[0..l], data[idx..]);
+            const d = std.mem.readInt(u32, &v, .little);
+            p[0] = d;
+        }
+        try self.command(address, data_flash, .write_page);
+    }
 };
 
 pub const nvmctrl: *volatile Nvmctrl = @ptrFromInt(NVMCTRL_BASE);
 
 test "sizeof test" {
-    const std = @import("std");
     try std.testing.expectEqual(0x48, @sizeOf(Nvmctrl));
 }
