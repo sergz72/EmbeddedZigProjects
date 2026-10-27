@@ -15,6 +15,7 @@ const scb = @import("scb");
 const wdt = @import("wdt");
 const nvmctrl = @import("nvmctrl");
 const trng = @import("trng");
+const rstc = @import("rstc");
 
 const LED_PIN = 27;
 const LED_PIN_MASK: u32 = 1 << LED_PIN;
@@ -83,6 +84,8 @@ export fn SystemInit() callconv(.c) void {
     clocksInit();
     usartInit();
     timerInit();
+    trng.trng.init();
+    wdt.wdt.init(10000);
 }
 
 pub inline fn startTimer() void {
@@ -113,9 +116,9 @@ pub fn reboot() void {
 }
 
 pub fn wdtReset() void {
-    //todo
+    wdt.wdt.reset();
 }
 
 pub fn getResetCause() []const u8 {
-    return "Unknown";
+    return rstc.rstc.getResetCause();
 }

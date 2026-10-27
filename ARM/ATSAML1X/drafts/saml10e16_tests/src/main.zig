@@ -1,3 +1,4 @@
+const std = @import("std");
 const hal = @import("hal");
 const shell = @import("shell");
 const allocator = @import("allocator");
@@ -6,6 +7,7 @@ const system_commands = @import("system_commands");
 const flash_commands = @import("flash_commands");
 const trng_commands = @import("trng_commands");
 const crc_commands = @import("crc_commands");
+const trng = @import("trng");
 
 const shell_init = shell.ShellInit{
     .max_commands = 50,
@@ -27,13 +29,12 @@ const crc_generators: crc_commands.Generators = .{
 };
 
 fn crc32(data: []const u8) u32 {
-    _ = data;
-    return 0;
+    return std.hash.crc.@"CRC-32/MPEG-2".hash(data);
 }
 
 fn trngGen(data: []u32) bool {
-    _ = data;
-    return false;
+    trng.trng.generate(data);
+    return true;
 }
 
 fn trngInit(seed: usize) void {

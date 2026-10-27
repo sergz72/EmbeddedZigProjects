@@ -57,8 +57,8 @@ pub const WdtSyncBusy = packed struct(u32) {
 };
 
 pub const Wdt = extern struct {
-    ctrla: u8,
-    config: u8,
+    ctrla: WdtCtrla,
+    config: WdtConfig,
     ewctrl: WdtEwOffset,
     reserved1: [0x01]u8,
     intenclr: u8,

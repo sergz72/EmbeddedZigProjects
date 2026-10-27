@@ -67,6 +67,12 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const rstc = b.addModule("rstc", .{
+        .root_source_file = b.path("../lib/rstc.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const trng = b.addModule("trng", .{
         .root_source_file = b.path("../lib/trng.zig"),
         .target = target,
@@ -164,6 +170,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "scb", .module = scb },
             .{ .name = "nvmctrl", .module = nvmctrl },
             .{ .name = "wdt", .module = wdt },
+            .{ .name = "rstc", .module = rstc },
             .{ .name = "trng", .module = trng },
         },
     });
@@ -202,6 +209,7 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "usart_writer", .module = usart_writer },
                 .{ .name = "shell", .module = shell },
                 .{ .name = "trng_commands", .module = trng_commands },
+                .{ .name = "trng", .module = trng },
                 .{ .name = "system_commands", .module = system_commands },
                 .{ .name = "flash_commands", .module = flash_commands },
                 .{ .name = "crc_commands", .module = crc_commands },
