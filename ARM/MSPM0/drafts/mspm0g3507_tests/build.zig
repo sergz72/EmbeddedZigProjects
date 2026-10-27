@@ -97,6 +97,15 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const wwdt = b.addModule("wwdt", .{
+        .root_source_file = b.path("../lib/wwdt.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "common", .module = common }
+        },
+    });
+
     const nvic = b.addModule("nvic", .{
         .root_source_file = b.path("../../lib/nvic.zig"),
         .target = target,
@@ -305,6 +314,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "aes", .module = aes },
             .{ .name = "mathacl", .module = mathacl },
             .{ .name = "crcp", .module = crcp },
+            .{ .name = "wwdt", .module = wwdt },
         },
     });
     hal.addOptions("config", options);
@@ -384,7 +394,7 @@ pub fn build(b: *std.Build) !void {
     exe.link_gc_sections = true;
     exe.link_function_sections = true;
     exe.link_data_sections = true;
-    exe.lto = .full;                     // Whole-program optimization & inlining
+    //exe.lto = .full;                     // Whole-program optimization & inlining
 
     exe.root_module.addCSourceFile(.{
         .file = b.path("../startup_mspm0g350x_gcc.c"),

@@ -93,23 +93,26 @@ fn aesDecrypt(key: []const u8, iv: []const u8, in: []const u8, out: []u8) bool {
 export fn main() callconv(.c) noreturn {
     const a = allocator.buildAllocator();
 
+    _ = usart_writer.usart_writer.writer.write("Test\n") catch { while (true){} };
+
     hal.sh = shell.Shell.init(&shell_init, a, &usart_writer.usart_writer.writer, hal.usartWrite) catch { while (true){} };
-    i2c_commands.registerCommands(hal.sh, hal.i2cScan) catch { while (true){} };
-    veml7700_commands.registerCommands(hal.sh, &hal.veml_device) catch { while (true){} };
-    scd4x_commands.registerCommands(hal.sh, &hal.scd_device) catch { while (true){} };
-    bme280_commands.registerCommands(hal.sh, &hal.bme_device) catch { while (true){} };
-    tsl2591_commands.registerCommands(hal.sh, &hal.tsl_device) catch { while (true){} };
+    //i2c_commands.registerCommands(hal.sh, hal.i2cScan) catch { while (true){} };
+    //veml7700_commands.registerCommands(hal.sh, &hal.veml_device) catch { while (true){} };
+    //scd4x_commands.registerCommands(hal.sh, &hal.scd_device) catch { while (true){} };
+    //bme280_commands.registerCommands(hal.sh, &hal.bme_device) catch { while (true){} };
+    //tsl2591_commands.registerCommands(hal.sh, &hal.tsl_device) catch { while (true){} };
     system_commands.registerCommands(hal.sh) catch { while (true){} };
-    flash_commands.registerCommands(hal.sh) catch { while (true){} };
-    trng_commands.registerCommands(hal.sh, &rng) catch { while (true){} };
-    aes_commands.registerCommands(hal.sh, &aes_engines) catch { while (true){} };
-    mathacl_commands.registerCommands(hal.sh) catch { while (true){} };
-    crc_commands.registerCommands(hal.sh, &crc_generators) catch { while (true){} };
+    //flash_commands.registerCommands(hal.sh) catch { while (true){} };
+    //trng_commands.registerCommands(hal.sh, &rng) catch { while (true){} };
+    //aes_commands.registerCommands(hal.sh, &aes_engines) catch { while (true){} };
+    //mathacl_commands.registerCommands(hal.sh) catch { while (true){} };
+    //crc_commands.registerCommands(hal.sh, &crc_generators) catch { while (true){} };
 
     hal.startTimer();
 
     while (true) {
         hal.enterSleep();
+        hal.wdtReset();
         hal.sh.handler() catch { while (true){} };
         timerHandler();
     }

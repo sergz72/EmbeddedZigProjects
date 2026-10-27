@@ -24,6 +24,7 @@ const trng = @import("trng");
 const aes = @import("aes");
 const mathacl = @import("mathacl");
 const crcp = @import("crcp");
+const wwdt = @import("wwdt");
 
 const LED_PIN = 0;
 const LED_PIN_MASK = 1 << LED_PIN;
@@ -106,6 +107,7 @@ inline fn initPower() void {
     aes.aes.reset();
     crcp.crcp.reset();
     mathacl.mathacl.reset();
+    //wwdt.wwdt0.reset();
     LED_PORT.enablePower();
     UART_INSTANCE.enablePower();
     TIMER_INSTANCE.enablePower();
@@ -116,6 +118,7 @@ inline fn initPower() void {
     aes.aes.enablePower();
     mathacl.mathacl.enablePower();
     crcp.crcp.enablePower();
+    //wwdt.wwdt0.enablePower();
     common.powerStartupDelay();
 }
 
@@ -194,6 +197,7 @@ export fn SystemInit() callconv(.c) void {
         initI2C();
     }
     initTrng();
+    //_ = wwdt.wwdt0.initWithPeriod(10000);
 }
 
 pub fn usartWrite(byte: u8) void {
@@ -438,4 +442,8 @@ pub fn reboot() void {
 
 pub fn trngGen(data: []u32) void {
     trng.trng.getSamples(data);
+}
+
+pub fn wdtReset() void {
+    //wwdt.wwdt0.reset();
 }
