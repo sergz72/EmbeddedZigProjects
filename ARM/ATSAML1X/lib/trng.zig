@@ -9,15 +9,28 @@ pub const TrngCtrlA = packed struct(u8) {
 };
 
 pub const Trng = extern struct {
-    trng_ctrla: TrngCtrlA,
+    ctrla: TrngCtrlA,
     reserved1: [3]u8,
-    trng_evctrl: u8,
+    evctrl: u8,
     reserved2: [3]u8,
-    trng_intenclr: u8,
-    trng_intenset: u8,
-    trng_intflag: u8,
+    intenclr: u8,
+    intenset: u8,
+    intflag: u8,
     reserved3: [0x15]u8,
-    trng_data: u32
+    data: u32,
+
+    pub fn init(self: *volatile Trng) void {
+        self.ctrla = TrngCtrlA{ .enable = true };
+    }
+
+    pub fn generate(self: *volatile Trng, data: []u32) void {
+        for (data) |*d| {
+            while (self.intflag == 0) {
+                asm volatile ("nop");
+            }
+            d.* = self.data;
+        }
+    }
 };
 
 pub const trng: *volatile Trng = @ptrFromInt(TRNG_BASE);

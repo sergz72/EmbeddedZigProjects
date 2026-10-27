@@ -83,6 +83,10 @@ pub const NvmctrlParam = packed struct(u32) {
     dflashp: u12
 };
 
+pub const NvmctrlError = error {
+    Timeout
+};
+
 pub const Nvmctrl = extern struct {
     ctrla: NvmctrlCtrlA,
     reserved1: u16,
