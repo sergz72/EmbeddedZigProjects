@@ -68,7 +68,7 @@ pub const DS3231 = struct {
             @backingInt(rtc.wday),
             generic_rtc.unpack(rtc.day),
             generic_rtc.unpack(@backingInt(rtc.month)),
-            @truncate(rtc.year - 2000)
+            generic_rtc.unpack(@truncate(rtc.year - 2000))
         };
         if (!self.i2c_write(&data)) {
             return DS3231Error.I2CErrorWriteData;

@@ -51,7 +51,7 @@ export fn main() callconv(.c) noreturn {
 
     while (true) {
         asm volatile("wfi");
-        hal.wdtReset();
+        //hal.wdtReset();
         hal.sh.handler() catch { while (true){} };
         if (hal.timer_interrupt) {
             hal.timer_interrupt = false;

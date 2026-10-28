@@ -133,9 +133,9 @@ export fn SystemInit() callconv(.c) void {
     initUsart();
     initI2C();
 
-    if (!fwdgt.fwdgt.init(10000)) {
-        while (true) {}
-    }
+    //if (!fwdgt.fwdgt.init(10000)) {
+    //    while (true) {}
+    //}
 }
 
 pub fn i2cScan(channel: usize, address: u10) [2]u8 {

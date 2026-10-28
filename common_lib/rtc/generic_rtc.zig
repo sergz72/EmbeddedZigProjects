@@ -6,27 +6,27 @@ const days_to_month_table: [13]usize = .{
 
 pub const Month = enum(u8) {
     January = 1,
-    February,
-    March,
-    April,
-    May,
-    June,
-    July,
-    August,
-    September,
-    October,
-    November,
-    December
+    February = 2,
+    March = 3,
+    April = 4,
+    May = 5,
+    June = 6,
+    July = 7,
+    August = 8,
+    September = 9,
+    October = 10,
+    November = 11,
+    December = 12
 };
 
 const WeekDay = enum(u8) {
     Sunday = 0,
-    Monday,
-    Tuesday,
-    Wednesday,
-    Thursday,
-    Friday,
-    Saturday
+    Monday = 1,
+    Tuesday = 2,
+    Wednesday = 3,
+    Thursday = 4,
+    Friday = 5,
+    Saturday = 6
 };
 
 pub const RtcDataError = error {
@@ -49,12 +49,14 @@ pub const RtcData = struct {
     year: usize,
     yday: usize,
 
-    pub fn toBinary(self: *const RtcData) usize {
+    pub fn toBinary(self: *RtcData) usize {
+        self.buildYDay();
         const iday = 365 * (self.year - 1970) + (self.yday - 1) + (self.year - 1969) / 4;
         return @as(usize, self.seconds) + 60 * @as(usize, self.minutes) + 3600 * (@as(usize, self.hours) + 24 * iday);
     }
 
     fn fromBinary(self: *RtcData, binary: usize) void {
+        @setRuntimeSafety(false);
         const whole_minutes = binary / 60;
         self.seconds = @truncate(binary - (60 * whole_minutes)); // leftover seconds
         const whole_hours = whole_minutes / 60;
@@ -93,6 +95,7 @@ pub const RtcData = struct {
     }
 
     pub fn buildYDay(self: *RtcData) void {
+        @setRuntimeSafety(false);
         const m = @backingInt(self.month);
         self.yday = days_to_month_table[m - 1] + self.day;
         if (m > 2 and (self.year & 3) == 0)
@@ -108,12 +111,14 @@ pub const RtcData = struct {
     }
 
     pub fn setMonth(self: *RtcData, month: u8) RtcDataError!void {
+        @setRuntimeSafety(false);
         if (month < 1 or month > 12)
             return RtcDataError.InvalidMonth;
         self.month = @bitCast(month);
     }
 
     pub fn setWeekDay(self: *RtcData, wday: u8) RtcDataError!void {
+        @setRuntimeSafety(false);
         if (wday < 0 or wday > 6)
             return RtcDataError.InvalidWeekDay;
         self.wday = @bitCast(wday);
@@ -130,6 +135,7 @@ pub const RtcData = struct {
             return RtcDataError.InvalidMinute;
         if (self.seconds > 59)
             return RtcDataError.InvalidSecond;
+        self.buildWDayAndYDay();
     }
 };
 
@@ -157,4 +163,7 @@ test "RtcData test" {
     try std.testing.expectEqual(rtc.yday, 301);
     const b = rtc.toBinary();
     try std.testing.expectEqual(b, 1793198726);
+    rtc.buildWDayAndYDay();
+    try std.testing.expectEqual(rtc.yday, 301);
+    try std.testing.expectEqual(rtc.wday, .Wednesday);
 }
