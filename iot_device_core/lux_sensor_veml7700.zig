@@ -13,18 +13,13 @@ pub fn init() void {
     veml7700_commands.registerCommands(hal.sh, &veml_device) catch { while (true){} };
 }
 
-pub fn measurementStart(writer: *std.Io.Writer) void {
+pub fn measure(writer: *std.Io.Writer) void {
     var result: veml.VEML7700Result = undefined;
     veml_device.measure(&result, false) catch |err| {
         writer.print("VEML7700: {s} {s}\n", .{@errorName(err), veml_device.i2c_error_name}) catch {};
         return;
     };
     hal_common.env[@backingInt(hal_common.EnvMeasurement.luminocity)] =  @intFromFloat(result.lux * 100);
-}
-
-pub fn isMeasurementFinished(writer: *std.Io.Writer) bool {
-    _ = writer;
-    return true;
 }
 
 pub fn vemlRead(reg: u8) ?u16 {

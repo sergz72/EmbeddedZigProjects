@@ -18,7 +18,7 @@ pub fn build(b: *std.Build) !void {
     });
 
     const cpu = b.addModule("cpu", .{
-        .root_source_file = b.path("../../lib/cpu2.zig"),
+        .root_source_file = b.path("../lib/cpu.zig"),
         .target = target,
         .optimize = optimize
     });
@@ -88,7 +88,13 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .optimize = optimize,
         .system_timer = system_timer,
-        .name = "iot_device_gd32e230.elf"
+        .name = "iot_device_gd32e230.elf",
+        .lux_sensor_module = "../../../iot_device_core/lux_sensor_veml7700.zig",
+        .co2_sensor_module = "../../../iot_device_core/co2_sensor_scd4x.zig",
+        .pressure_sensor_module = "../../../iot_device_core/pressure_sensor_none.zig",
+        .external_temperature_sensor_module = "../../../iot_device_core/external_temperature_sensor_none.zig",
+        .rtc_module = "../../../iot_device_core/rtc_ds3231.zig",
+        .rf_modem_module = "../../../iot_device_core/rf_modem_cc1101.zig"
     });
     build_parameters.allocator = allocator;
 

@@ -1,18 +1,15 @@
 const hal_common = @import("hal_common");
+const hal = @import("hal");
 const font8 = @import("font8");
 
 pub const Ui = struct {
-    hours: usize,
-    minutes: usize,
-    seconds: usize,
+    prev_time: usize,
 
     pub fn init(self: *Ui) void {
-        self.hours = 0;
-        self.minutes = 0;
-        self.seconds = 0;
         hal_common.lcd_device.canvas.drawChar(0, 0, 'A', &font8.courierNew8ptFontInfo, false);
         hal_common.lcd_device.update();
         hal_common.lcd_device.on();
+        self.prev_time = hal.time;
     }
 
     pub fn updateLocalData(self: *Ui) void {
@@ -25,18 +22,19 @@ pub const Ui = struct {
     }
 
     pub fn timerEvent(self: *Ui) void {
-        if (self.seconds < 59) {
-            self.seconds += 1;
-        } else {
-            self.seconds = 0;
-            if (self.minutes < 59) {
-                self.minutes += 1;
+        const diff: u8 = @truncate(hal.time -% self.prev_time);
+        self.prev_time = hal.time;
+        hal_common.rtc_data.seconds += diff;
+        if (hal_common.rtc_data.seconds > 59) {
+            hal_common.rtc_data.seconds -= 60;
+            if (hal_common.rtc_data.minutes < 59) {
+                hal_common.rtc_data.minutes += 1;
             } else {
-                self.minutes = 0;
-                if (self.hours < 23) {
-                    self.hours += 1;
+                hal_common.rtc_data.minutes = 0;
+                if (hal_common.rtc_data.hours < 23) {
+                    hal_common.rtc_data.hours += 1;
                 } else {
-                    self.hours = 0;
+                    hal_common.rtc_data.hours = 0;
                 }
                 self.updateHours();
             }

@@ -11,6 +11,7 @@ const lux_sensor = @import("lux_sensor");
 const co2_sensor = @import("co2_sensor");
 const pressure_sensor = @import("pressure_sensor");
 const external_temperature_sensor = @import("external_temperature_sensor");
+const rtc_clock = @import("rtc_clock");
 const rf_modem = @import("rf_modem");
 
 const MEASUREMENT_INTERVAL = 300;
@@ -24,7 +25,6 @@ const shell_init = shell.ShellInit{
 };
 
 var prev_measurement_time: usize = undefined;
-var measurement_started: bool = undefined;
 
 inline fn timerHandler() void {
     if (!hal.timer_interrupt)
@@ -36,24 +36,13 @@ inline fn timerHandler() void {
         if (remote_data) |rd| {
             ui.ui.updateRemoteData(rd);
         }
-        if (measurement_started) {
-            const lux_sensor_data_ready = lux_sensor.isMeasurementFinished(&usart_writer.usart_writer.writer);
-            const co2_sensor_data_ready = co2_sensor.isMeasurementFinished(&usart_writer.usart_writer.writer);
-            const pressure_sensor_data_ready = pressure_sensor.isMeasurementFinished(&usart_writer.usart_writer.writer);
-            const external_temperature_sensor_data_ready = external_temperature_sensor.isMeasurementFinished(&usart_writer.usart_writer.writer);
-            if (lux_sensor_data_ready and co2_sensor_data_ready and pressure_sensor_data_ready and external_temperature_sensor_data_ready) {
-                measurement_started = false;
-                ui.ui.updateLocalData();
-            }
-        } else {
-            if (hal.time -% prev_measurement_time >= MEASUREMENT_INTERVAL) {
-                prev_measurement_time = hal.time;
-                lux_sensor.measurementStart(&usart_writer.usart_writer.writer);
-                co2_sensor.measurementStart(&usart_writer.usart_writer.writer);
-                pressure_sensor.measurementStart(&usart_writer.usart_writer.writer);
-                external_temperature_sensor.measurementStart(&usart_writer.usart_writer.writer);
-                measurement_started = true;
-            }
+        if (hal.time -% prev_measurement_time >= MEASUREMENT_INTERVAL) {
+            prev_measurement_time = hal.time;
+            lux_sensor.measure(&usart_writer.usart_writer.writer);
+            co2_sensor.measure(&usart_writer.usart_writer.writer);
+            pressure_sensor.measure(&usart_writer.usart_writer.writer);
+            external_temperature_sensor.measure(&usart_writer.usart_writer.writer);
+            ui.ui.updateLocalData();
         }
     }
     ui.ui.timerEvent();
@@ -61,11 +50,11 @@ inline fn timerHandler() void {
 
 export fn main() callconv(.c) noreturn {
     prev_measurement_time = 0xFFFFFFFF;
-    measurement_started = false;
 
     const a = allocator.buildAllocator();
 
     hal.sh = shell.Shell.init(&shell_init, a, &usart_writer.usart_writer.writer, hal.usartWrite) catch { while (true){} };
+    rtc_clock.init() catch { while (true){} };
     i2c_commands.registerCommands(hal.sh, hal_common.i2cScan) catch { while (true){} };
     spi_commands.registerCommands(hal.sh, hal.spiSendReceive) catch { while (true){} };
     lux_sensor.init();

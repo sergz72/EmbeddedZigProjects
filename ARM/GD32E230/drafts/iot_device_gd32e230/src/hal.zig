@@ -12,6 +12,8 @@ const spi = @import("spi");
 const hal_constants = @import("hal_constants");
 const usart_writer = @import("usart_writer");
 
+pub const INIT_DEVICES = true;
+
 const LED_PIN = 13;
 const LED_PIN_MASK: u16 = 1 << LED_PIN;
 const LED_PORT = gpio.gpioc;
@@ -110,11 +112,13 @@ const GDO2_PIN_INIT: gpio.GpioInit = .{
 };
 
 pub var timer_interrupt: bool = undefined;
+pub var time: usize = undefined;
 pub var sh: *shell.Shell = undefined;
 
 export fn TIMER5_IRQHandler() callconv(.c) void {
     if (TIMER_INSTANCE.intf.upif) {
         timer_interrupt = true;
+        time += 1;
         // clear interrupt flag
         TIMER_INSTANCE.intf = timer.TimerIntf{};
     }
@@ -142,6 +146,7 @@ inline fn initClock() void {
 }
 
 inline fn initTimer() void {
+    time = 0;
     TIMER_INSTANCE.psc = @truncate(cpu.cpu.current_frequency / 10000 - 1);
     TIMER_INSTANCE.car = 1000 - 1; //0.1 second interval
     TIMER_INSTANCE.dmainten = .{.upie = true};
@@ -258,4 +263,65 @@ pub fn getGdo01(context: *anyopaque) ?bool {
 pub fn getGdo21(context: *anyopaque) ?bool {
     _ = context;
     return GDO2_PORT.istat & GDO2_PIN_MASK != 0;
+}
+
+inline fn setLcdData(data: u8) void {
+    _ = data;
+    // var out = port.ports[0].out;
+    // const mask = ~(@as(u32, 0xFF) << LCD_D0_PIN);
+    // out &= mask;
+    // out |= @as(u32, data) << LCD_D0_PIN;
+    // port.ports[0].out = out;
+}
+
+inline fn setLcdCs(cs: u2) void {
+    _ = cs;
+    // if (cs & 1 != 0) {
+    //     port.ports[0].outset = LCD_CS1_PIN_MASK;
+    // } else {
+    //     port.ports[0].outclr = LCD_CS1_PIN_MASK;
+    // }
+    // if (cs & 2 != 0) {
+    //     port.ports[0].outset = LCD_CS2_PIN_MASK;
+    // } else {
+    //     port.ports[0].outclr = LCD_CS2_PIN_MASK;
+    // }
+}
+
+inline fn setLcdDc(dc: bool) void {
+    _ = dc;
+    // if (dc) {
+    //     port.ports[0].outset = LCD_DC_PIN_MASK;
+    // } else {
+    //     port.ports[0].outclr = LCD_DC_PIN_MASK;
+    // }
+}
+
+inline fn setLcdE(e: bool) void {
+    _ = e;
+    // if (e) {
+    //     port.ports[0].outset = LCD_E_PIN_MASK;
+    // } else {
+    //     port.ports[0].outclr = LCD_E_PIN_MASK;
+    // }
+}
+
+pub fn lcdWrite(data: u8, cs: u2, dc: bool) void {
+    setLcdData(data);
+    setLcdCs(cs);
+    setLcdDc(dc);
+    setLcdE(true);
+    system_timer.delayLoopus(1);
+    setLcdE(false);
+    system_timer.delayLoopus(1);
+    setLcdCs(0);
+}
+
+pub fn lcdReset(state: bool) void {
+    _ = state;
+    //rst pin us not connected
+}
+
+pub inline fn enterSleep() void {
+    asm volatile ("wfi");
 }

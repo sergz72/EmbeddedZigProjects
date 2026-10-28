@@ -16,6 +16,7 @@ pub const BuildParameters = struct {
     co2_sensor_module: []const u8,
     pressure_sensor_module: []const u8,
     external_temperature_sensor_module: []const u8,
+    rtc_module: []const u8,
     rf_modem_module: []const u8
 };
 
@@ -28,6 +29,7 @@ pub const PreCreateParameters = struct {
     co2_sensor_module: []const u8,
     pressure_sensor_module: []const u8,
     external_temperature_sensor_module: []const u8,
+    rtc_module: []const u8,
     rf_modem_module: []const u8
 };
 
@@ -58,6 +60,7 @@ pub fn preCreateModules(b: *std.Build, parameters: PreCreateParameters) BuildPar
         .target = parameters.target,
         .optimize = parameters.optimize
     });
+
     return BuildParameters{
         .target = parameters.target,
         .optimize = parameters.optimize,
@@ -74,6 +77,7 @@ pub fn preCreateModules(b: *std.Build, parameters: PreCreateParameters) BuildPar
         .co2_sensor_module = parameters.co2_sensor_module,
         .pressure_sensor_module = parameters.pressure_sensor_module,
         .external_temperature_sensor_module = parameters.external_temperature_sensor_module,
+        .rtc_module = parameters.rtc_module,
         .rf_modem_module = parameters.rf_modem_module
     };
 }
@@ -94,6 +98,21 @@ pub fn buildExe(b: *std.Build, parameters: BuildParameters) *std.Build.Step.Comp
         .optimize = parameters.optimize,
         .imports = &.{
             .{ .name = "system_timer", .module = parameters.system_timer }
+        }
+    });
+
+    const generic_rtc = b.addModule("generic_rtc", .{
+        .root_source_file = b.path("../../../common_lib/rtc/generic_rtc.zig"),
+        .target = parameters.target,
+        .optimize = parameters.optimize
+    });
+
+    const ds3231 = b.addModule("ds3231", .{
+        .root_source_file = b.path("../../../common_lib/rtc/ds3231.zig"),
+        .target = parameters.target,
+        .optimize = parameters.optimize,
+        .imports = &.{
+            .{ .name = "generic_rtc", .module = generic_rtc }
         }
     });
 
@@ -153,6 +172,17 @@ pub fn buildExe(b: *std.Build, parameters: BuildParameters) *std.Build.Step.Comp
         }
     });
 
+    const ds3231_commands = b.addModule("ds3231_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/ds3231_commands.zig"),
+        .target = parameters.target,
+        .optimize = parameters.optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = parameters.shell },
+            .{ .name = "ds3231", .module = ds3231 },
+            .{ .name = "generic_rtc", .module = generic_rtc }
+        }
+    });
+
     const font = b.addModule("font", .{
         .root_source_file = b.path("../../../common_lib/display/font.zig"),
         .target = parameters.target,
@@ -197,7 +227,8 @@ pub fn buildExe(b: *std.Build, parameters: BuildParameters) *std.Build.Step.Comp
             .{ .name = "veml7700", .module = veml7700 },
             .{ .name = "cc1101", .module = parameters.cc1101 },
             .{ .name = "lcd", .module = lcd },
-            .{ .name = "config", .module = parameters.config }
+            .{ .name = "config", .module = parameters.config },
+            .{ .name = "generic_rtc", .module = generic_rtc },
         }
     });
 
@@ -206,6 +237,7 @@ pub fn buildExe(b: *std.Build, parameters: BuildParameters) *std.Build.Step.Comp
         .target = parameters.target,
         .optimize = parameters.optimize,
         .imports = &.{
+            .{ .name = "hal", .module = parameters.hal },
             .{ .name = "lcd", .module = lcd },
             .{ .name = "hal_common", .module = hal_common },
             .{ .name = "font8", .module = font8 }
@@ -260,6 +292,19 @@ pub fn buildExe(b: *std.Build, parameters: BuildParameters) *std.Build.Step.Comp
         }
     });
 
+    const rtc_clock = b.addModule("rtc_clock", .{
+        .root_source_file = b.path(parameters.rtc_module),
+        .target = parameters.target,
+        .optimize = parameters.optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = parameters.shell },
+            .{ .name = "hal", .module = parameters.hal },
+            .{ .name = "hal_common", .module = hal_common },
+            .{ .name = "ds3231", .module = ds3231 },
+            .{ .name = "ds3231_commands", .module = ds3231_commands },
+        }
+    });
+
     const rf_modem = b.addModule("rf_modem", .{
         .root_source_file = b.path(parameters.rf_modem_module),
         .target = parameters.target,
@@ -291,6 +336,7 @@ pub fn buildExe(b: *std.Build, parameters: BuildParameters) *std.Build.Step.Comp
                 .{ .name = "co2_sensor", .module = co2_sensor },
                 .{ .name = "pressure_sensor", .module = pressure_sensor },
                 .{ .name = "external_temperature_sensor", .module = external_temperature_sensor },
+                .{ .name = "rtc_clock", .module = rtc_clock },
                 .{ .name = "rf_modem", .module = rf_modem },
                 .{ .name = "allocator", .module = parameters.allocator },
                 .{ .name = "usart_writer", .module = parameters.usart_writer },
@@ -300,8 +346,8 @@ pub fn buildExe(b: *std.Build, parameters: BuildParameters) *std.Build.Step.Comp
     });
 
     exe.link_gc_sections = true;
-    exe.link_function_sections = true;
-    exe.link_data_sections = true;
+    exe.function_sections = true;
+    exe.data_sections = true;
 
     return exe;
 }

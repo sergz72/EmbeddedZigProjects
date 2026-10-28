@@ -1,6 +1,7 @@
 const std = @import("std");
 const hal = @import("hal");
 const lcd = @import("lcd");
+const generic_rtc = @import("generic_rtc");
 
 pub const MAX_ENV_MEASUREMENT = 6;
 pub const EnvMeasurement = enum(usize) {
@@ -19,6 +20,8 @@ pub var lcd_device: lcd.LcdKS0108 = .{
     .write = hal.lcdWrite,
     .set_reset = hal.lcdReset
 };
+
+pub var rtc_data: generic_rtc.RtcData = undefined;
 
 pub const panic = std.debug.no_panic;
 
