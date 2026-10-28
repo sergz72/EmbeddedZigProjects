@@ -12,6 +12,8 @@ const fmc = @import("fmc");
 const fwdgt = @import("fwdgt");
 const shell = @import("shell");
 const usart_writer = @import("usart_writer");
+const i2c = @import("i2c");
+const ds3231 = @import("ds3231");
 
 const LED_PIN = 13;
 const LED_PIN_MASK: u16 = 1 << LED_PIN;
@@ -44,6 +46,29 @@ const USART_RX_PIN_INIT: gpio.GpioInit = .{
 
 const TIMER_INSTANCE = timer.bctm5;
 
+const I2C_INSTANCE = i2c.i2c1;
+//--------------------------
+const I2C_PORT = gpio.gpiob;
+const I2C_SCL_PIN = 10;
+const I2C_SCL_PIN_MASK = 1 << I2C_SCL_PIN;
+const I2C_SDA_PIN = 11;
+const I2C_SDA_PIN_MASK = 1 << I2C_SDA_PIN;
+const I2C_PINS_INIT: gpio.GpioInit = .{
+    .mode = .alternate,
+    .pud = .pullup,
+    .output_speed = .high,
+    .open_drain = true,
+    .alternate = 1
+};
+//------------------------------
+const I2C_SPEED = 100000;
+const I2C_TIMEOUT = 10000;
+
+pub var ds3231_device = ds3231.DS3231{
+    .i2c_write = ds3231Write,
+    .i2c_transfer = ds3231Transfer
+};
+
 pub var timer_interrupt: bool = undefined;
 pub var sh: *shell.Shell = undefined;
 
@@ -63,6 +88,18 @@ export fn USART0_IRQHandler() callconv(.c) void {
     }
 }
 
+inline fn initClock() void {
+    rcu.rcu.ctl0.hxtalen = true;
+    while (!rcu.rcu.ctl0.hxtalstb) {
+        asm volatile ("nop");
+    }
+    rcu.rcu.cfg0.scs = .hxtal;
+    while (rcu.rcu.cfg0.scss != .hxtal) {
+        asm volatile ("nop");
+    }
+    rcu.rcu.enableIrc40k();
+}
+
 inline fn initTimer() void {
     TIMER_INSTANCE.psc = @truncate(cpu.cpu.current_frequency / 10000 - 1);
     TIMER_INSTANCE.car = 10000 - 1; //1 second interval
@@ -79,20 +116,36 @@ inline fn initUsart() void {
     usart_writer.usart_writer.writeCharFunc = usartWrite;
 }
 
+inline fn initI2C() void {
+    I2C_PORT.init(I2C_SCL_PIN_MASK|I2C_SDA_PIN_MASK, I2C_PINS_INIT);
+    I2C_INSTANCE.initMaster(I2C_SPEED);
+}
+
 export fn SystemInit() callconv(.c) void {
-    rcu.rcu.enableIrc40k();
+    initClock();
     system_timer.delay_init(system_timer.init_div1);
-    rcu.rcu.ahben = rcu.RcuAhben{.paen = true, .pcen = true, .crcen = true};
-    rcu.rcu.apb1en = rcu.RcuApb1en{.timer5en = true};
+    rcu.rcu.ahben = rcu.RcuAhben{.paen = true, .pben = true, .pcen = true, .crcen = true};
+    rcu.rcu.apb1en = rcu.RcuApb1en{.timer5en = true, .i2c1en = true};
     rcu.rcu.apb2en = rcu.RcuApb2en{.usart0en = true};
     LED_PORT.init(LED_PIN_MASK, LED_INIT);
 
     initTimer();
     initUsart();
+    initI2C();
 
     if (!fwdgt.fwdgt.init(10000)) {
         while (true) {}
     }
+}
+
+pub fn i2cScan(channel: usize, address: u10) [2]u8 {
+    if (channel != 0)
+        return [2]u8{'e', 'c'};
+    I2C_INSTANCE.scan(address, I2C_TIMEOUT) catch |err| {
+        const e: []const u8 = @errorName(err);
+        return [2]u8{e[0], e[1]};
+    };
+    return [2]u8{0,0};
 }
 
 pub fn usartWrite(byte: u8) void {
@@ -129,4 +182,20 @@ pub fn wdtReset() void {
 
 pub fn getResetCause() []const u8 {
     return rcu.rcu.getResetCause();
+}
+
+pub fn ds3231Transfer(reg: u8, data: []u8) bool {
+    I2C_INSTANCE.transfer(ds3231.DS3231_I2C_ADDRESS, &[_]u8{ reg }, data, I2C_TIMEOUT) catch |err| {
+        ds3231_device.i2c_error_name = @errorName(err);
+        return false;
+    };
+    return true;
+}
+
+pub fn ds3231Write(data: []const u8) bool {
+    I2C_INSTANCE.write(ds3231.DS3231_I2C_ADDRESS, data, I2C_TIMEOUT) catch |err| {
+        ds3231_device.i2c_error_name = @errorName(err);
+        return false;
+    };
+    return true;
 }

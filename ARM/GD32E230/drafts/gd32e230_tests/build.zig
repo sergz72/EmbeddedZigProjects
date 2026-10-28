@@ -40,6 +40,15 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const i2c = b.addModule("i2c", .{
+        .root_source_file = b.path("../lib/i2c.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "cpu", .module = cpu }
+        },
+    });
+
     const nvic = b.addModule("nvic", .{
         .root_source_file = b.path("../../lib/nvic.zig"),
         .target = target,
@@ -113,6 +122,30 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const generic_rtc = b.addModule("generic_rtc", .{
+        .root_source_file = b.path("../../../common_lib/rtc/generic_rtc.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const ds3231 = b.addModule("ds3231", .{
+        .root_source_file = b.path("../../../common_lib/rtc/ds3231.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "generic_rtc", .module = generic_rtc }
+        }
+    });
+
+    const i2c_commands = b.addModule("i2c_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/i2c_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell }
+        }
+    });
+
     const trng_commands = b.addModule("trng_commands", .{
         .root_source_file = b.path("../../../common_lib/shell_commands/trng_commands.zig"),
         .target = target,
@@ -129,6 +162,17 @@ pub fn build(b: *std.Build) !void {
         .imports = &.{
             .{ .name = "shell", .module = shell },
             .{ .name = "utils", .module = utils }
+        }
+    });
+
+    const ds3231_commands = b.addModule("ds3231_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/ds3231_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "ds3231", .module = ds3231 },
+            .{ .name = "generic_rtc", .module = generic_rtc }
         }
     });
 
@@ -155,7 +199,9 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "shell", .module = shell },
             .{ .name = "scb", .module = scb },
             .{ .name = "fwdgt", .module = fwdgt },
-            .{ .name = "fmc", .module = fmc }
+            .{ .name = "i2c", .module = i2c },
+            .{ .name = "fmc", .module = fmc },
+            .{ .name = "ds3231", .module = ds3231 }
         },
     });
 
@@ -196,6 +242,8 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "system_commands", .module = system_commands },
                 .{ .name = "flash_commands", .module = flash_commands },
                 .{ .name = "crc_commands", .module = crc_commands },
+                .{ .name = "i2c_commands", .module = i2c_commands },
+                .{ .name = "ds3231_commands", .module = ds3231_commands },
                 .{ .name = "crc", .module = crc },
                 .{ .name = "allocator", .module = allocator },
                 .{ .name = "usart_writer", .module = usart_writer }

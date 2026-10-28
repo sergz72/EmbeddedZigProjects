@@ -6,6 +6,8 @@ const system_commands = @import("system_commands");
 const flash_commands = @import("flash_commands");
 const trng_commands = @import("trng_commands");
 const crc_commands = @import("crc_commands");
+const i2c_commands = @import("i2c_commands");
+const ds3231_commands = @import("ds3231_commands");
 const prng = @import("prng");
 const crc = @import("crc");
 
@@ -40,6 +42,8 @@ export fn main() callconv(.c) noreturn {
     flash_commands.registerCommands(hal.sh) catch { while (true){} };
     trng_commands.registerCommands(hal.sh, &rng) catch { while (true){} };
     crc_commands.registerCommands(hal.sh, &crc_generators) catch { while (true){} };
+    i2c_commands.registerCommands(hal.sh, hal.i2cScan) catch { while (true){} };
+    ds3231_commands.registerCommands(hal.sh, &hal.ds3231_device) catch { while (true){} };
 
     _ = usart_writer.usart_writer.writer.write(hal.getResetCause()) catch { while (true){} };
 
