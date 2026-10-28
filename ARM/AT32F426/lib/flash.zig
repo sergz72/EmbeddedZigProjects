@@ -218,7 +218,7 @@ pub const Flash = extern struct {
         }
     }
 
-    pub fn write(self: *volatile Flash, address: usize, data: []u8) FlashError!void {
+    pub fn write(self: *volatile Flash, address: usize, data: []const u8) FlashError!void {
         var a = address;
         var l = data.len;
         var idx: usize = 0;

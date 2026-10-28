@@ -170,6 +170,21 @@ pub const RcuCtl1 = packed struct(u32) {
     reserved2: u16 = 0
 };
 
+pub const RcuRstsck = packed struct(u32) {
+    irc40ken: bool = false,
+    irc40kstb: bool = false,
+    reserved: u21 = 0,
+    v12rstf: bool = false,
+    rstfc: bool = false,
+    oblrstf: bool = false,
+    eprstf: bool = false,
+    porrstf: bool = false,
+    swrstf: bool = false,
+    fwdgtrstf: bool = false,
+    wwdgtrstf: bool = false,
+    lprstf: bool = false
+};
+
 pub const Rcu = extern struct {
     ctl0: RcuCtl0,
     cfg0: RcuCfg0,
@@ -180,7 +195,7 @@ pub const Rcu = extern struct {
     apb2en: RcuApb2en,
     apb1en: RcuApb1en,
     bdctl: RcuBdctl,
-    rstsck: u32,
+    rstsck: RcuRstsck,
     ahbrst: u32,
     cfg1: RcuCfg1,
     cfg2: RcuCfg2,
@@ -191,7 +206,28 @@ pub const Rcu = extern struct {
     vkey: u32,
     reserved4: [12]u32,
     //0x134
-    dsv: u32
+    dsv: u32,
+
+    pub fn enableIrc40k(self: *volatile Rcu) void {
+        self.rstsck.irc40ken = true;
+        while (!self.rstsck.irc40kstb) {
+            asm volatile("nop");
+        }
+    }
+
+    pub fn getResetCause(self: *volatile Rcu) []const u8 {
+        const rstsck = self.rstsck;
+        self.rstsck.rstfc = true; // Clear reset flags after reading
+        if (rstsck.v12rstf) return "V12 domain Reset";
+        if (rstsck.oblrstf) return "Option byte loader Reset";
+        if (rstsck.eprstf) return "External pin Reset";
+        if (rstsck.porrstf) return "POR Reset";
+        if (rstsck.swrstf) return "Software Reset";
+        if (rstsck.fwdgtrstf) return "FWDT Reset";
+        if (rstsck.wwdgtrstf) return "WWDG Reset";
+        if (rstsck.lprstf) return "Low Power Reset";
+        return "Unknown Reset Cause";
+    }
 };
 
 pub const rcu: *volatile Rcu = @ptrFromInt(RCU_BASE);

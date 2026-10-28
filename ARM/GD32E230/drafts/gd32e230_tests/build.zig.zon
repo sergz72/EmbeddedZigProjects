@@ -1,0 +1,14 @@
+.{
+    .name = .gd32e230_tests,
+    .version = "0.0.1",
+    .fingerprint = 0x58e29d02d7614112, // Changing this has security and trust implications.
+    .minimum_zig_version = "0.17.0-dev.2131+d08989840",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        // For example...
+        //"LICENSE",
+        //"README.md",
+    },
+}
