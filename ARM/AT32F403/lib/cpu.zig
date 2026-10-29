@@ -14,7 +14,7 @@ pub const Cpu = struct {
 };
 
 pub var cpu = Cpu{
-    .current_frequency = 48000000,
-    .apb1_frequency = 48000000,
-    .apb2_frequency = 48000000
+    .current_frequency = 8000000,
+    .apb1_frequency = 8000000,
+    .apb2_frequency = 8000000
 };
