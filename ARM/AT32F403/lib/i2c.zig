@@ -1,5 +1,3 @@
-const cpu = @import("cpu");
-
 pub const I2C1_BASE = 0x40005400;
 pub const I2C2_BASE = 0x40005800;
 pub const I2C3_BASE = 0x40015C00;
@@ -120,25 +118,25 @@ pub const I2c = extern struct {
         self.ctrl1.i2cen = false;
     }
 
-    pub fn initMaster(self: *volatile I2c, speed: usize) void {
-        const v: I2cCtrl2 = .{ .clkfreq = @truncate(cpu.cpu.apb1_frequency / 1000000) };
+    pub fn initMaster(self: *volatile I2c, speed: usize, i2c_clock_frequency: usize) void {
+        const v: I2cCtrl2 = .{ .clkfreq = @truncate(i2c_clock_frequency / 1000000) };
         self.ctrl2 = v;
         if (speed > 100000) {
-            var ccr: u12 = @truncate(cpu.cpu.apb1_frequency / (speed * 3));
+            var ccr: u12 = @truncate(i2c_clock_frequency / (speed * 3));
             if (ccr < 4) {
                 ccr = 4;
             }
             const v2: I2cClkctrl = .{ .speed = ccr, .speedmode = true };
             self.clkctrl = v2;
         } else {
-            var ccr: u12 = @truncate(cpu.cpu.apb1_frequency / (speed * 2));
+            var ccr: u12 = @truncate(i2c_clock_frequency / (speed * 2));
             if (ccr < 4) {
                 ccr = 4;
             }
             const v2: I2cClkctrl = .{ .speed = ccr };
             self.clkctrl = v2;
         }
-        self.tmrise = @truncate((cpu.cpu.apb1_frequency / 1000000) + 1);
+        self.tmrise = @truncate((i2c_clock_frequency / 1000000) + 1);
     }
 
     fn generateStop(self: *volatile I2c) void {

@@ -16,9 +16,9 @@ const LED_INIT: gpio.GpioInit = .{
     .mode = .output
 };
 
-const USART_INSTANCE = usart.uart5;
+const USART_INSTANCE = usart.usart1;
 
-const USART_TX_PIN = 9;
+const USART_TX_PIN = 6;
 const USART_TX_PIN_MASK: u16 = 1 << USART_TX_PIN;
 const USART_TX_PORT = gpio.gpiob;
 const USART_TX_PIN_INIT: gpio.GpioInit = .{
@@ -26,7 +26,7 @@ const USART_TX_PIN_INIT: gpio.GpioInit = .{
     .mode = .output
 };
 
-const USART_RX_PIN = 8;
+const USART_RX_PIN = 7;
 const USART_RX_PIN_MASK: u16 = 1 << USART_RX_PIN;
 const USART_RX_PORT = gpio.gpiob;
 const USART_RX_PIN_INIT: gpio.GpioInit = .{
@@ -46,7 +46,7 @@ export fn TMR6_GLOBAL_IRQHandler() callconv(.c) void {
     }
 }
 
-export fn UART5_IRQHandler() callconv(.c) void {
+export fn USART1_IRQHandler() callconv(.c) void {
     if (USART_INSTANCE.sts.rdbf) {
         const data = USART_INSTANCE.dt;
         USART_INSTANCE.dt = data;
@@ -66,15 +66,15 @@ inline fn initUsart() void {
     USART_RX_PORT.setPins(USART_RX_PIN_MASK);
     USART_RX_PORT.init(USART_RX_PIN_MASK, USART_RX_PIN_INIT);
     USART_INSTANCE.init(115200, cpu.cpu.current_frequency);
-    nvic.nvic.enableInterrupt(interrupts.Interrupt.UART5.toU8());
+    nvic.nvic.enableInterrupt(interrupts.Interrupt.USART1.toU8());
 }
 
 export fn SystemInit() callconv(.c) void {
     led_state = false;
     system_timer.delay_init(system_timer.init_div8);
-    crm.crm.apb1en = crm.CrmApb1{.tmr6 = true, .uart5 = true};
-    crm.crm.apb2en = crm.CrmApb2{.iomux = true, .gpioc = true, .gpiob = true};
-    iomux.iomux.remap5 = iomux.IomuxRemap5{.usart5_gmux = 1};
+    crm.crm.apb1en = crm.CrmApb1{.tmr6 = true};
+    crm.crm.apb2en = crm.CrmApb2{.iomux = true, .gpioc = true, .gpiob = true, .usart1 = true};
+    iomux.iomux.remap = iomux.IomuxRemap{.usart1_mux = true};
     LED_PORT.init(LED_PIN_MASK, LED_INIT);
     initTimer();
     initUsart();
