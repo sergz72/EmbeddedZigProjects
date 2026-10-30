@@ -189,6 +189,7 @@ inline fn initCC1101() void {
 }
 
 export fn SystemInit() callconv(.c) void {
+    crm.crm.setSystemClockTo48MHz();
     led_state = false;
     system_timer.delay_init(system_timer.init_div8);
     crm.crm.ahben = crm.CrmAhbEn{.crcen = true};

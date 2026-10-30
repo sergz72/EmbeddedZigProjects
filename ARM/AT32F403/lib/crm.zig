@@ -1,3 +1,5 @@
+pub const cpu = @import("cpu");
+
 pub const CRM_BASE = 0x40021000;
 
 pub const CrmCtrl = packed struct(u32) {
@@ -56,7 +58,7 @@ pub const CrmCfg = packed struct(u32) {
     usbdiv_h: u1 = 0,
     adcdiv_h: u1 = 0,
     pllmult_h: u2 = 0,
-    reserved3: u1 = 0
+    pllrange: bool = false
 };
 
 pub const CrmClkInt = packed struct(u32) {
@@ -296,6 +298,84 @@ pub const Crm = extern struct {
         }
         self.bpdc.rtcsel = .lext;
         self.bpdc.rtcen = true;
+    }
+
+    pub fn usbFsClkConfig(self: *volatile Crm) bool {
+        switch (cpu.cpu.current_frequency) {
+            192000000 => {
+                self.cfg.usbdiv_h = 1;
+                self.cfg.usbdiv_l = 2;
+                return true;
+            },
+            168000000 => {
+                self.cfg.usbdiv_h = 1;
+                self.cfg.usbdiv_l = 0;
+                return true;
+            },
+            144000000 => {
+                self.cfg.usbdiv_h = 1;
+                self.cfg.usbdiv_l = 1;
+                return true;
+            },
+            120000000 => {
+                self.cfg.usbdiv_h = 0;
+                self.cfg.usbdiv_l = 2;
+                return true;
+            },
+            96000000 => {
+                self.cfg.usbdiv_h = 0;
+                self.cfg.usbdiv_l = 3;
+                return true;
+            },
+            72000000 => {
+                self.cfg.usbdiv_h = 0;
+                self.cfg.usbdiv_l = 0;
+                return true;
+            },
+            48000000 => {
+                self.cfg.usbdiv_h = 0;
+                self.cfg.usbdiv_l = 1;
+                return true;
+            },
+            else => return false
+        }
+    }
+
+    fn hextOn(self: *volatile Crm) void {
+        self.ctrl.hexten = true;
+        while (!self.ctrl.hextstbl) {
+            asm volatile ("nop");
+        }
+    }
+
+    fn pllOn(self: *volatile Crm) void {
+        self.ctrl.pllen = true;
+        while (!self.ctrl.pllstbl) {
+            asm volatile ("nop");
+        }
+        self.cfg.sclksel = .pll;
+        while (self.cfg.sclksts != .pll) {
+            asm volatile ("nop");
+        }
+    }
+
+    pub fn setSystemClockToHSE(self: *volatile Crm) void {
+        self.hextOn();
+        self.cfg.sclksel = .hse;
+        while (self.cfg.sclksts != .hse) {
+            asm volatile ("nop");
+        }
+    }
+
+    pub fn setSystemClockTo48MHz(self: *volatile Crm) void {
+        self.hextOn();
+        self.cfg.pllhextdiv = false;
+        self.cfg.pllrcs = true;
+        self.cfg.pllrange = false;
+        self.cfg.pllmult_h = 0;
+        self.cfg.pllmult_l = 4; // MUL6 - 8MHz * 6 = 48MHz
+        self.pllOn();
+        cpu.cpu.setAll(48000000);
     }
 };
 
