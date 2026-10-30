@@ -14,6 +14,7 @@ const flash_commands = @import("flash_commands");
 const trng_commands = @import("trng_commands");
 const aes_commands = @import("aes_commands");
 const crc_commands = @import("crc_commands");
+const rtc_commands = @import("rtc_commands");
 const prng = @import("prng");
 const aes128 = @import("aes128");
 const crc = @import("crc");
@@ -82,6 +83,7 @@ export fn main() callconv(.c) noreturn {
     trng_commands.registerCommands(hal.sh, &rng) catch { while (true){} };
     aes_commands.registerCommands(hal.sh, &aes_engines) catch { while (true){} };
     crc_commands.registerCommands(hal.sh, &crc_generators) catch { while (true){} };
+    rtc_commands.registerCommands(hal.sh) catch { while (true){} };
 
     _ = usart_writer.usart_writer.writer.write(hal.getResetCause()) catch { while (true){} };
 

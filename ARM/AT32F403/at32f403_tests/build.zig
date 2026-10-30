@@ -91,6 +91,42 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const bpr = b.addModule("bpr", .{
+        .root_source_file = b.path("../lib/bpr.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "crm", .module = crm }
+        },
+    });
+
+    const pwc = b.addModule("pwc", .{
+        .root_source_file = b.path("../lib/pwc.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "crm", .module = crm }
+        },
+    });
+
+    const generic_rtc = b.addModule("generic_rtc", .{
+        .root_source_file = b.path("../../../common_lib/rtc/generic_rtc.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const rtc = b.addModule("rtc", .{
+        .root_source_file = b.path("../lib/rtc.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "crm", .module = crm },
+            .{ .name = "bpr", .module = bpr },
+            .{ .name = "pwc", .module = pwc },
+            .{ .name = "generic_rtc", .module = generic_rtc }
+        },
+    });
+
     const system_timer = b.addModule("system_timer", .{
         .root_source_file = b.path("../../lib/system_timer.zig"),
         .target = target,
@@ -244,6 +280,17 @@ pub fn build(b: *std.Build) !void {
         }
     });
 
+    const rtc_commands = b.addModule("rtc_commands", .{
+        .root_source_file = b.path("../lib/shell_commands/rtc_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "generic_rtc", .module = generic_rtc },
+            .{ .name = "rtc", .module = rtc }
+        }
+    });
+
     const usart_writer = b.addModule("usart_writer", .{
         .root_source_file = b.path("../../../common_lib/usart_writer.zig"),
         .target = target,
@@ -274,7 +321,8 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "tsl2591", .module = tsl2591 },
             .{ .name = "shell", .module = shell },
             .{ .name = "scb", .module = scb },
-            .{ .name = "wdt", .module = wdt }
+            .{ .name = "wdt", .module = wdt },
+            .{ .name = "rtc", .module = rtc }
         },
     });
 
@@ -332,6 +380,7 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "flash_commands", .module = flash_commands },
                 .{ .name = "aes_commands", .module = aes_commands },
                 .{ .name = "crc_commands", .module = crc_commands },
+                .{ .name = "rtc_commands", .module = rtc_commands },
                 .{ .name = "aes128", .module = aes128 },
                 .{ .name = "crc", .module = crc },
                 .{ .name = "allocator", .module = allocator },

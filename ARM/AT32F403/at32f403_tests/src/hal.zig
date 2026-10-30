@@ -19,6 +19,7 @@ const tsl = @import("tsl2591");
 const scb = @import("scb");
 const wdt = @import("wdt");
 const iomux = @import("iomux");
+const rtc = @import("rtc");
 
 const LED_PIN = 13;
 const LED_PIN_MASK: u16 = 1 << LED_PIN;
@@ -200,6 +201,7 @@ export fn SystemInit() callconv(.c) void {
     initI2c();
     initSpi();
     initCC1101();
+    rtc.rtc.init();
     if (!wdt.wdt.init(10000)) {
         while (true) {}
     }

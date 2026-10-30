@@ -1,6 +1,6 @@
 // this array represents the number of days in one non-leap year at
 // the beginning of each month
-const days_to_month_table: [13]usize = .{
+const days_to_month_table: [13]u32 = .{
   0,31,59,90,120,151,181,212,243,273,304,334,365
 };
 
@@ -46,16 +46,16 @@ pub const RtcData = struct {
     minutes: u8,
     seconds: u8,
     wday: WeekDay,
-    year: usize,
-    yday: usize,
+    year: u32,
+    yday: u32,
 
-    pub fn toBinary(self: *RtcData) usize {
+    pub fn toBinary(self: *RtcData) u64 {
         self.buildYDay();
         const iday = 365 * (self.year - 1970) + (self.yday - 1) + (self.year - 1969) / 4;
-        return @as(usize, self.seconds) + 60 * @as(usize, self.minutes) + 3600 * (@as(usize, self.hours) + 24 * iday);
+        return @as(u64, self.seconds) + 60 * @as(u64, self.minutes) + 3600 * (@as(u64, self.hours) + 24 * @as(u64, iday));
     }
 
-    fn fromBinary(self: *RtcData, binary: usize) void {
+    pub fn fromBinary(self: *RtcData, binary: u64) void {
         @setRuntimeSafety(false);
         const whole_minutes = binary / 60;
         self.seconds = @truncate(binary - (60 * whole_minutes)); // leftover seconds
@@ -89,9 +89,9 @@ pub const RtcData = struct {
         const wd: u8 = @truncate((whole_days + 4) % 7);
         self.wday = @bitCast(wd);
 
-        self.yday    = days_since_first_of_year + 1; // days since January 1 - [0,365]
+        self.yday    = @truncate(days_since_first_of_year + 1); // days since January 1 - [0,365]
         self.month   = @bitCast(month); // month - [1,12]
-        self.year    = year + 1900; // years
+        self.year    = @truncate(year + 1900); // years
     }
 
     pub fn buildYDay(self: *RtcData) void {

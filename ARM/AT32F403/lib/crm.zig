@@ -137,7 +137,7 @@ pub const CrmApb1 = packed struct(u32) {
     reserved3: u1 = 0,
     can1: bool = false,
     can2: bool = false,
-    bprr: bool = false,
+    bpr: bool = false,
     pwc: bool = false,
     dac: bool = false,
     reserved10: u2 = 0
@@ -165,12 +165,19 @@ pub const CrmAhbEn = packed struct(u32) {
     reserved7: u3 = 0
 };
 
+pub const CrmRtcsel = enum(u2) {
+    no_clock = 0,
+    lext = 1,
+    lick = 2,
+    hext_div128 = 3
+};
+
 pub const CrmBpdc = packed struct(u32) {
     lexten: bool = false,
     lextstbl: bool = false,
     lextbyps: bool = false,
     reserved1: u5 = 0,
-    rtcsel: u2 = 0,
+    rtcsel: CrmRtcsel = .no_clock,
     reserved2: u5 = 0,
     rtcen: bool = false,
     bpdrst: bool = false,
@@ -280,6 +287,15 @@ pub const Crm = extern struct {
         if (sts.porrstf) return "POR Reset";
         if (sts.nrstf) return "NRST Reset";
         return "Unknown Reset Cause";
+    }
+
+    pub fn rtcEnable(self: *volatile Crm) void {
+        self.bpdc.lexten = true;
+        while (!self.bpdc.lextstbl) {
+            asm volatile ("nop");
+        }
+        self.bpdc.rtcsel = .lext;
+        self.bpdc.rtcen = true;
     }
 };
 
