@@ -177,7 +177,7 @@ inline fn initSpi() void {
     SPI_PORT.init(SPI_TX_PIN_MASK|SPI_CLK_PIN_MASK, SPI_OUT_PINS_INIT);
     SPI_PORT.setPins(SPI_RX_PIN_MASK);
     SPI_PORT.init(SPI_RX_PIN_MASK, SPI_RX_PIN_INIT);
-    SPI_INSTANCE.initMasterSoftwareCs(SPI_BAUD, cpu.cpu.apb2_frequency);
+    SPI_INSTANCE.initMasterSoftwareCs(SPI_BAUD, cpu.cpu.apb1_frequency);
     SPI_CS_PORT.setPins(SPI_CS_PIN_MASK); // cs is 1
     SPI_CS_PORT.init(SPI_CS_PIN_MASK, SPI_CS_PIN_INIT);
 }
@@ -192,8 +192,8 @@ export fn SystemInit() callconv(.c) void {
     led_state = false;
     system_timer.delay_init(system_timer.init_div8);
     crm.crm.ahben = crm.CrmAhbEn{.crcen = true};
-    crm.crm.apb1en = crm.CrmApb1{.tmr6 = true, .uart5 = true, .i2c1 = true};
-    crm.crm.apb2en = crm.CrmApb2{.iomux = true, .gpioc = true, .gpiob = true, .spi1 = true, .usart1 = true};
+    crm.crm.apb1en = crm.CrmApb1{.tmr6 = true, .uart5 = true, .i2c1 = true, .spi2 = true};
+    crm.crm.apb2en = crm.CrmApb2{.iomux = true, .gpioc = true, .gpiob = true, .usart1 = true};
     iomux.iomux.remap = iomux.IomuxRemap{.usart1_mux = true, .i2c1_mux = true};
     LED_PORT.init(LED_PIN_MASK, LED_INIT);
     initTimer();
