@@ -195,12 +195,26 @@ pub const RccCfgrBdctlr = packed struct(u32) {
     lseon: bool = false,
     lserdy: bool = false,
     lsebyp: bool = false,
-    reserved: u4 = 0,
-    rtcsel: RccCfgrRtcsel,
+    reserved: u5 = 0,
+    rtcsel: RccCfgrRtcsel = .off,
     reserved2: u5 = 0,
     rtcen: bool = false,
     bdrst: bool = false,
     reserved3: u15 = 0,
+};
+
+pub const RccRstsckr = packed struct(u32) {
+    lsion: bool = false,
+    lsirdy: bool = false,
+    reserved1: u22 = 0,
+    rmvf: bool = false,
+    reserved2: u1 = 0,
+    pinrstf: bool = true,
+    porrstf: bool = true,
+    sftrstf: bool = false,
+    iwdgrstf: bool = false,
+    wwdgrstf: bool = false,
+    reserved: u1 = 0
 };
 
 pub const Rcc = extern struct {
@@ -212,10 +226,26 @@ pub const Rcc = extern struct {
     ahbpcenr: RccCfgrAhbpcEnr,
     apb2pcenr: RccCfgrApb2pcEnr,
     apb1pcenr: RccCfgrApb1pcEnr,
-    bdctlr: u32,
-    rstsckr: u32,
+    bdctlr: RccCfgrBdctlr,
+    rstsckr: RccRstsckr,
     ahbrstr: u32,
     cfgr2: RccCfgr2,
+
+    pub fn enableLsi(self: *volatile Rcc) void {
+        self.rstsckr.lsion = true;
+        while (!self.rstsckr.lsirdy) {
+            asm volatile("nop");
+        }
+    }
+
+    pub fn rtcEnable(self: *volatile Rcc) void {
+        self.bdctlr.lseon = true;
+        while (!self.bdctlr.lserdy) {
+            asm volatile ("nop");
+        }
+        self.bdctlr.rtcsel = .lse;
+        self.bdctlr.rtcen = true;
+    }
 
     pub fn usbFsClkConfig(self: *volatile Rcc) bool {
         switch (cpu.cpu.current_frequency) {
@@ -267,6 +297,17 @@ pub const Rcc = extern struct {
         self.cfgr0.pllmul = 4; // MUL6 - 8MHz * 6 = 48MHz
         self.pllOn();
         cpu.cpu.setAll(48000000);
+    }
+
+    pub fn getResetCause(self: *volatile Rcc) []const u8 {
+        const sts = self.rstsckr;
+        self.rstsckr.rmvf = true; // Clear reset flags after reading
+        if (sts.wwdgrstf) return "WWDG Reset";
+        if (sts.iwdgrstf) return "IWDG Reset";
+        if (sts.sftrstf) return "Software Reset";
+        if (sts.porrstf) return "POR Reset";
+        if (sts.pinrstf) return "NRST Reset";
+        return "Unknown Reset Cause";
     }
 };
 

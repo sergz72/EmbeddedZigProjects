@@ -1,3 +1,4 @@
+const std = @import("std");
 const rcc = @import("rcc");
 const gpio = @import("gpio");
 const afio = @import("afio");
@@ -9,10 +10,16 @@ const interrupts = @import("interrupts");
 const usart_writer = @import("usart_writer");
 const timer = @import("timer");
 const shell = @import("shell");
+const iwdg = @import("iwdg");
+const flash = @import("flash");
+const rng = @import("rng");
+const rtc = @import("rtc");
 
 const LED_PIN = 2;
 const LED_PIN_MASK: u16 = 1 << LED_PIN;
 const LED_PORT = gpio.gpiob;
+
+pub const panic = std.debug.no_panic;
 
 const USART_INSTANCE = usart.usart1;
 
@@ -79,21 +86,27 @@ inline fn initTimer() void {
     timer_interrupt = false;
 }
 
-inline fn initUsb() void {
-
+inline fn initClock() void {
+    rcc.rcc.setSystemClockTo48MHz();
+    rcc.rcc.enableLsi();
 }
 
 export fn SystemInit() callconv(.c) void {
     led_status = false;
-    rcc.rcc.setSystemClockTo48MHz();
+    initClock();
     system_timer.delayInit();
+    rcc.rcc.ahbpcenr = rcc.RccCfgrAhbpcEnr{.crcen = true};
     rcc.rcc.apb2pcenr = rcc.RccCfgrApb2pcEnr{.iopben = true, .afioen = true, .usart1en = true};
     rcc.rcc.apb1pcenr = rcc.RccCfgrApb1pcEnr{.tim4en = true};
     afio.afio.pcfr1 = afio.AfioPcfr1{.usart1_rm = true};
     LED_PORT.init(LED_PIN_MASK, gpio.GpioModeOutputSlowSpeed | gpio.GpioCnfOutputPushPull);
     initUsart();
     initTimer();
-    initUsb();
+    rtc.rtc.init();
+    rng.rng.init();
+    if (!iwdg.iwdg.init(10000)) {
+        while (true) {}
+    }
 }
 
 pub fn usartWrite(byte: u8) void {
@@ -119,4 +132,28 @@ pub fn ledToggle() void {
     } else {
         LED_PORT.bcr = LED_PIN_MASK;
     }
+}
+
+pub fn flashWrite(address: usize, data: []const u8) flash.FlashError!void {
+    flash.flash.flashUnlock();
+    defer flash.flash.flashLock();
+    try flash.flash.write(address, data);
+}
+
+pub fn flashSectorErase(address: usize) flash.FlashError!void {
+    flash.flash.flashUnlock();
+    defer flash.flash.flashLock();
+    try flash.flash.pageErase(address);
+}
+
+pub fn reboot() void {
+    pfic.pfic.systemReset();
+}
+
+pub fn wdtReset() void {
+    iwdg.iwdg.reload();
+}
+
+pub fn getResetCause() []const u8 {
+    return rcc.rcc.getResetCause();
 }

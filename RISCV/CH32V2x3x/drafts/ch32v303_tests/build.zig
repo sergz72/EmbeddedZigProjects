@@ -10,7 +10,6 @@ pub fn build(b: *std.Build) !void {
     riscv_features_add.addFeature(@intFromEnum(riscv_features.c));     // Compressed Instructions
     riscv_features_add.addFeature(@intFromEnum(riscv_features.f));
     riscv_features_add.addFeature(@intFromEnum(riscv_features.zicsr));
-    riscv_features_add.addFeature(@intFromEnum(riscv_features.relax));
 
     var riscv_features_sub = std.Target.Cpu.Feature.Set.empty;
     riscv_features_sub.addFeature(@intFromEnum(riscv_features.d));
@@ -27,7 +26,7 @@ pub fn build(b: *std.Build) !void {
     const optimize = b.standardOptimizeOption(.{});
 
     const cpu = b.addModule("cpu", .{
-        .root_source_file = b.path("../../ch32lib/cpu.zig"),
+        .root_source_file = b.path("../lib/cpu.zig"),
         .target = target,
         .optimize = optimize
     });
@@ -96,24 +95,70 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
-    const usb_device = b.addModule("usb_device", .{
-        .root_source_file = b.path("../../../common_lib/usb/usb_device.zig"),
+    const rng = b.addModule("rng", .{
+        .root_source_file = b.path("../lib/rng.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "rcc", .module = rcc }
+        },
+    });
+
+    const crc = b.addModule("crc", .{
+        .root_source_file = b.path("../lib/crc.zig"),
         .target = target,
         .optimize = optimize
     });
 
-    const usbfs = b.addModule("usbfs", .{
-        .root_source_file = b.path("../lib/usbfs.zig"),
+    const iwdg = b.addModule("iwdg", .{
+        .root_source_file = b.path("../lib/iwdg.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "cpu", .module = cpu }
+        },
+    });
+
+    const flash = b.addModule("flash", .{
+        .root_source_file = b.path("../lib/flash.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const bkp = b.addModule("bkp", .{
+        .root_source_file = b.path("../lib/bkp.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "rcc", .module = rcc }
+        },
+    });
+
+    const pwr = b.addModule("pwr", .{
+        .root_source_file = b.path("../lib/pwr.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "rcc", .module = rcc }
+        },
+    });
+
+    const generic_rtc = b.addModule("generic_rtc", .{
+        .root_source_file = b.path("../../../common_lib/rtc/generic_rtc.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const rtc = b.addModule("rtc", .{
+        .root_source_file = b.path("../lib/rtc.zig"),
         .target = target,
         .optimize = optimize,
         .imports = &.{
             .{ .name = "rcc", .module = rcc },
-            .{ .name = "gpio", .module = gpio },
-            .{ .name = "system_timer", .module = system_timer },
-            .{ .name = "pfic", .module = pfic },
-            .{ .name = "interrupts", .module = interrupts },
-            .{ .name = "usb_device", .module = usb_device }
-        }
+            .{ .name = "bkp", .module = bkp },
+            .{ .name = "pwr", .module = pwr },
+            .{ .name = "generic_rtc", .module = generic_rtc }
+        },
     });
 
     const usart_writer = b.addModule("usart_writer", .{
@@ -134,26 +179,42 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
-    const usb_cdc = b.addModule("usb_cdc", .{
-        .root_source_file = b.path("../../../common_lib/usb/usb_cdc.zig"),
+    const utils = b.addModule("utils", .{
+        .root_source_file = b.path("../../../common_lib/utils.zig"),
         .target = target,
-        .optimize = optimize,
-        .imports = &.{
-            .{ .name = "usb_device", .module = usb_device }
-        },
+        .optimize = optimize
     });
 
-    const usb_cdc_impl = b.addModule("usb_cdc_impl", .{
-        .root_source_file = b.path("../lib/usb/usb_cdc_impl.zig"),
+    const trng_commands = b.addModule("trng_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/trng_commands.zig"),
         .target = target,
         .optimize = optimize,
         .imports = &.{
-            .{ .name = "usbfs", .module = usbfs },
-            .{ .name = "usb_device", .module = usb_device },
-            .{ .name = "usb_cdc", .module = usb_cdc },
-            .{ .name = "system_timer", .module = system_timer }
-        },
+            .{ .name = "shell", .module = shell }
+        }
     });
+
+    const crc_commands = b.addModule("crc_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/crc_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "utils", .module = utils }
+        }
+    });
+
+    const rtc_commands = b.addModule("rtc_commands", .{
+        .root_source_file = b.path("../lib/shell_commands/rtc_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "generic_rtc", .module = generic_rtc },
+            .{ .name = "rtc", .module = rtc }
+        }
+    });
+
 
     const hal = b.addModule("hal", .{
         .root_source_file = b.path("src/hal.zig"),
@@ -168,11 +229,38 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "usart", .module = usart },
             .{ .name = "cpu", .module = cpu },
             .{ .name = "pfic", .module = pfic },
-            .{ .name = "usbfs", .module = usbfs },
             .{ .name = "interrupts", .module = interrupts },
             .{ .name = "usart_writer", .module = usart_writer },
-            .{ .name = "shell", .module = shell }
+            .{ .name = "shell", .module = shell },
+            .{ .name = "rng", .module = rng },
+            .{ .name = "crc", .module = crc },
+            .{ .name = "flash", .module = flash },
+            .{ .name = "iwdg", .module = iwdg },
+            .{ .name = "rtc", .module = rtc }
         },
+    });
+
+    const system_commands = b.addModule("system_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/system_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "allocator", .module = allocator },
+            .{ .name = "hal", .module = hal },
+            .{ .name = "system_timer", .module = system_timer },
+        }
+    });
+
+    const flash_commands = b.addModule("flash_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/flash_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "hal", .module = hal },
+            .{ .name = "utils", .module = utils },
+        }
     });
 
     const riscv_exe = b.addExecutable(.{
@@ -186,14 +274,21 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "shell", .module = shell },
                 .{ .name = "allocator", .module = allocator },
                 .{ .name = "usart_writer", .module = usart_writer },
-                .{ .name = "usb_cdc_impl", .module = usb_cdc_impl }
+                .{ .name = "trng_commands", .module = trng_commands },
+                .{ .name = "rng", .module = rng },
+                .{ .name = "crc", .module = crc },
+                .{ .name = "system_commands", .module = system_commands },
+                .{ .name = "flash_commands", .module = flash_commands },
+                .{ .name = "crc_commands", .module = crc_commands },
+                .{ .name = "rtc_commands", .module = rtc_commands }
             },
         }),
     });
 
     riscv_exe.link_gc_sections = true;
-    riscv_exe.link_function_sections = true;
-    riscv_exe.link_data_sections = true;
+    riscv_exe.function_sections = true;
+    riscv_exe.data_sections = true;
+    riscv_exe.link_gc_sections = true;
     //riscv_exe.lto = .full;                     // Whole-program optimization & inlining
 
     riscv_exe.root_module.addAssemblyFile(b.path("../startup_ch32v30x_D8.S"));
