@@ -1,4 +1,26 @@
+const pwr = @import("pwr");
+const flash = @import("flash");
+const icache = @import("icache");
+
 const RCC_BASE = 0x44020C00;
+
+const PLL_MEDIUM_MIN_FREQUENCY = 150000000;
+const PLL_MEDIUM_MAX_FREQUENCY = 420000000;
+
+pub const PllCharacteristics = struct {
+    wide_min_frequency: usize,
+    wide_max_frequency: usize
+};
+
+pub const PllCharacteristicsH503 = PllCharacteristics{
+    .wide_min_frequency = 128000000,
+    .wide_max_frequency = 560000000
+};
+
+pub const PllCharacteristicsH563 = PllCharacteristics{
+    .wide_min_frequency = 192000000,
+    .wide_max_frequency = 836000000
+};
 
 pub const RccHsiDiv = enum(u2) {
     div1 = 0,
@@ -110,7 +132,21 @@ pub const RccCfgrPre = enum(u4) {
     div64 = 12,
     div128 = 13,
     div256 = 14,
-    div512 = 15
+    div512 = 15,
+
+    pub fn toInt(self: RccCfgrPre) usize {
+        return switch (self) {
+            .off => 1,
+            .div2 => 2,
+            .div4 => 4,
+            .div8 => 8,
+            .div16 => 16,
+            .div64 => 64,
+            .div128 => 128,
+            .div256 => 256,
+            .div512 => 512
+        };
+    }
 };
 
 pub const RccCfgrPpre = enum(u3) {
@@ -118,7 +154,17 @@ pub const RccCfgrPpre = enum(u3) {
     div2 = 4,
     div4 = 5,
     div8 = 6,
-    div16 = 7
+    div16 = 7,
+
+    pub fn toInt(self: RccCfgrPpre) usize {
+        return switch (self) {
+            .off => 1,
+            .div2 => 2,
+            .div4 => 4,
+            .div8 => 8,
+            .div16 => 16,
+        };
+    }
 };
 
 pub const RccCfgr2 = packed struct(u32) {
@@ -756,6 +802,25 @@ pub const RccCcipr5 = packed struct(u32) {
     ckpersel: CkPerSel = .hsi_ker
 };
 
+pub const RccInit = struct {
+    hse_frequency: usize = 8000000,
+    pllm: u6 = 1,
+    hsebypass: bool = false,
+    pllp_frequency: usize = 48000000,
+    pllq_frequency: usize = 48000000,
+    hpre: RccCfgrPre = .div1,
+    ppre1: RccCfgrPpre = .div1,
+    ppre2: RccCfgrPpre = .div1,
+    ppre3: RccCfgrPpre = .div1,
+    pll_characteristics: PllCharacteristics
+};
+
+pub const RccError = error{
+    InvalidConfig,
+    InvalidPllm,
+    PllFrequencyError
+};
+
 pub const Rcc = extern struct {
     cr: RccCr,
     reserved1: [3]u32,
@@ -795,7 +860,149 @@ pub const Rcc = extern struct {
     reserved20: [6]u32,
     seccfgr: RccSeccfgr,
     privcfgr: RccPrivcfgr,
+
+    pub fn hseOn(self: *volatile Rcc, hsebyp: bool) void {
+        self.cr.hsebyp = hsebyp;
+        self.cr.hseon = true;
+        while (!self.cr.hserdy) {
+            asm volatile ("nop");
+        }
+    }
+
+    pub fn pllOn(self: *volatile Rcc) void {
+        self.cr.pllon = true;
+        while (!self.cr.pllrdy) {
+            asm volatile ("nop");
+        }
+    }
+
+    pub fn clockSwitch(self: *volatile Rcc, sw: RccCfgrSw) void {
+        self.cfgr1.sclksel = sw;
+        while (self.cfgr1.sclksts != sw) {
+            asm volatile ("nop");
+        }
+    }
+
+    pub fn init(self: *Rcc, config: *const RccInit) RccError!void {
+        if (config.hse_frequency == 0 or config.pllm == 0 or config.pllp_frequency == 0)
+            return RccError.InvalidConfig;
+        const refclk = config.hse_frequency / config.pllm;
+        if (refclk < 1000000 or refclk > 16000000)
+            return RccError.InvalidPllm;
+
+        const medium_vco_frequency_range = refclk < 2000000;
+
+        var pll_min_frequency: usize = undefined;
+        var pll_max_frequency: usize = undefined;
+        if (medium_vco_frequency_range) {
+            pll_min_frequency = PLL_MEDIUM_MIN_FREQUENCY;
+            pll_max_frequency = PLL_MEDIUM_MAX_FREQUENCY;
+        }
+        else {
+            pll_min_frequency = config.pll_characteristics.wide_min_frequency;
+            pll_max_frequency = config.pll_characteristics.wide_max_frequency;
+        }
+
+        var plln = pll_min_frequency / refclk + 1;
+        var pll_frequency = refclk * plln;
+        var pllp: usize = 0;
+        var pllq: usize = 1;
+        while (pll_frequency <= pll_max_frequency) {
+            if (pll_frequency % config.pllp_frequency == 0 and (config.pllq_frequency == 0 or pll_frequency % config.pllq_frequency == 0)) {
+                if (config.pllq_frequency != 0)
+                    pllq = pll_frequency / config.pllq_frequency;
+                pllp = pll_frequency / config.pllp_frequency;
+                if (pllp != 0 and pllp & 1 == 0)
+                    break;
+            }
+            pll_frequency += refclk;
+            plln += 1;
+        }
+        if (pll_frequency > pll_max_frequency)
+            return RccError.PllFrequencyError;
+
+        self.hseOn(config.hsebypass);
+
+        const hclk_frequency = config.pllp_frequency / config.hpre.toInt();
+
+        var flash_latency: u4 = 0;
+        if (hclk_frequency > 100000000)
+        {
+            if (hclk_frequency <= 150000000) {
+                pwr.setVos(.scale2);
+                flash_latency = calculateFlashLatencyVos2(hclk_frequency);
+            }
+            else if (hclk_frequency <= 200000000) {
+                pwr.setVos(.scale1);
+                flash_latency = calculateFlashLatencyVos1(hclk_frequency);
+            }
+            else {
+                pwr.setVos(.scale0);
+                flash_latency = calculateFlashLatencyVos0(hclk_frequency);
+            }
+        }
+        else {
+            pwr.setVos(.scale3);
+            flash_latency = calculateFlashLatencyVos3(hclk_frequency);
+        }
+
+        self.cfgr2 = RccCfgr2{
+            .hpre = config.hpre,
+            .ppre1 = config.ppre1,
+            .ppre2 = config.ppre2,
+            .ppre3 = config.ppre3
+        };
+
+        var pll_clock_range: RccPllRge = undefined;
+        if (refclk < 2000000) {
+            pll_clock_range = ._1to2;
+        } else if (refclk < 4000000) {
+            pll_clock_range = ._2to4;
+        } else if (refclk < 8000000) {
+            pll_clock_range = ._4to8;
+        } else {
+            pll_clock_range = ._8to16;
+        }
+
+        self.pllcfgr[0] = RccPllCfgr{
+            .src = .hse,
+            .pen = true,
+            .qen = config.pllq_frequency != 0,
+            .vcosel = medium_vco_frequency_range,
+            .rge = pll_clock_range,
+            .m = config.pllm
+        };
+
+        self.pllOn();
+
+        const wrhighfreq: u2 = @truncate(flash_latency / 2);
+        flash.flash.acr = flash.FlashAcr{
+            .prften = true,
+            .wrhighfreq = wrhighfreq,
+            .latency = flash_latency
+        };
+
+        icache.icache.enable();
+
+        clockSwitch(.pll);
+    }
 };
+
+fn calculateFlashLatencyVos3(hclk: usize) u4 {
+  return @truncate((hclk - 1) / 20000000);
+}
+
+fn calculateFlashLatencyVos2(hclk: usize) u4 {
+  return @truncate((hclk - 1) / 30000000);
+}
+
+fn calculateFlashLatencyVos1(hclk: usize) u4 {
+  return @truncate((hclk - 1) / 34000000);
+}
+
+fn calculateFlashLatencyVos0(hclk: usize) u4 {
+  return @truncate((hclk - 1) / 42000000);
+}
 
 pub const rcc: *volatile Rcc = @ptrFromInt(RCC_BASE);
 
