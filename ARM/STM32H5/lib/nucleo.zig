@@ -143,12 +143,11 @@ pub fn initUsbGpio() void {
 }
 
 export fn USART3_IRQHandler() callconv(.c) void {
-    const sr = USART_INSTANCE.isr;
-    if (sr.ore) {
+    if (USART_INSTANCE.isr.ore) {
         _ = USART_INSTANCE.rdr;
         return;
     }
-    if (sr.rxfne) {
+    while (USART_INSTANCE.isr.rxfne) {
         usart_callback(@truncate(USART_INSTANCE.rdr));
     }
 }

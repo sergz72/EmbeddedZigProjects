@@ -63,6 +63,12 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const tim = b.addModule("tim", .{
+        .root_source_file = b.path("../lib/tim.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const interrupts = b.addModule("interrupts", .{
         .root_source_file = b.path("../lib/interrupts.zig"),
         .target = target,
@@ -111,6 +117,10 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "system_timer", .module = system_timer },
                 .{ .name = "board", .module = board },
                 .{ .name = "rcc", .module = rcc },
+                .{ .name = "tim", .module = tim },
+                .{ .name = "cpu", .module = cpu },
+                .{ .name = "nvic", .module = nvic },
+                .{ .name = "interrupts", .module = interrupts },
             },
         }),
     });
