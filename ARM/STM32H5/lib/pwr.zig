@@ -252,8 +252,8 @@ pub const Pwr = extern struct {
     seccfgr: PwrSeccfgr,
     privcfgr: PwrPrivcfgr,
 
-    pub fn setVos(self: *volatile Pwr, value: PwrVoscr) void {
-        self.voscr = value;
+    pub fn setVos(self: *volatile Pwr, value: Vos) void {
+        self.voscr = PwrVoscr{.vos = value};
     }
 };
 

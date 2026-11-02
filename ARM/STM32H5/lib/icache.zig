@@ -1,3 +1,5 @@
+const ICACHE_BASE = 0x40030400;
+
 pub const IcacheCr = packed struct(u32) {
     en: bool = false, // [0]  enable
     cacheinv: bool = false, // [1]  invalidate (self-clears)
@@ -56,9 +58,17 @@ pub const Icache = extern struct {
 
     pub fn enable(self: *volatile Icache) void {
         self.cr = IcacheCr{.cacheinv = true};
-        while (!self.sr.busyendf) {
+        while (!self.sr.bsyendf) {
             asm volatile ("nop");
         }
         self.cr = IcacheCr{.en = true};
     }
 };
+
+pub const icache: *volatile Icache = @ptrFromInt(ICACHE_BASE);
+
+test "sizeof test" {
+    const std = @import("std");
+    try std.testing.expectEqual(0x30, @sizeOf(Icache));
+
+}

@@ -3,6 +3,10 @@ const rcc = @import("rcc");
 const system_timer = @import("system_timer");
 const cpu = @import("cpu");
 const flash = @import("flash");
+const usart = @import("usart");
+const nvic = @import("nvic");
+const interrupts = @import("interrupts");
+const usart_writer = @import("usart_writer");
 
 const LED_GREEN_PB0_PIN = 0;
 const LED_GREEN_PB0_PIN_MASK: u16 = 1 << LED_GREEN_PB0_PIN;
@@ -24,7 +28,18 @@ const BUTTON_PIN = 13;
 const BUTTON_PIN_MASK: u16 = 1 << BUTTON_PIN;
 const BUTTON_PORT = gpio.gpioc;
 
+const USART_PORT = gpio.gpiod;
+pub const USART_INSTANCE = usart.usart3;
+//--------------------------------
+const USART_TX_PIN = 8;
+const USART_TX_PIN_MASK: u16 = 1 << USART_TX_PIN;
+//--------------------------------
+const USART_RX_PIN = 9;
+const USART_RX_PIN_MASK: u16 = 1 << USART_RX_PIN;
+
 var led_green_alternate: bool = undefined;
+var rcc_init = rcc.RccInit{};
+var usart_callback: *const fn(u8) void = undefined;
 
 pub inline fn ledGreenOn() void {
     if (led_green_alternate) {
@@ -58,43 +73,18 @@ pub inline fn ledRedOff() void {
     LED_RED_PORT.clearPins(LED_RED_PIN_MASK);
 }
 
-pub fn initClock() void {
-    rcc.rcc.cr.hsebyp = true;
-    rcc.rcc.cr.hseon = true;
-    while (!rcc.rcc.cr.hserdy) {
-        asm volatile ("nop");
-    } 
-
-    rcc.rcc.pllcfgr = .{
-        // 8 mhz input clock
-        .pllm = 8,
-        // PLL frequency is 192 MHz
-        .plln = 192,
-        .pllq = 4, // 48 MHz for USB
-        .pllp = .div4,
-        .pllsrc = true
+pub fn initClock(cpu_frequency: usize, pll_characteristics: rcc.PllCharacteristics) void {
+    rcc_init.pll1_init.pllp_frequency = cpu_frequency;
+    rcc_init.pll1_init.pll_characteristics = pll_characteristics;
+    rcc.rcc.init(&rcc_init) catch {
+        while (true) {}
     };
-    rcc.rcc.cr.pllon = true;
-    while (!rcc.rcc.cr.pllrdy) {
-        asm volatile ("nop");
-    }
-
-    flash.flash.acr = .{.dcrst = true, .icrst = true, .prften = true, .latency = 1};
-    flash.flash.acr = .{.prften = true, .latency = 1};
-    flash.flash.acr = .{.dcen = true, .icen = true, .prften = true, .latency = 1};
-
-    rcc.rcc.cfgr = .{.ppre1 = .div2, .ppre2 = .off};
-    rcc.rcc.cfgr.sw = .pll;
-    while (rcc.rcc.cfgr.sws != .pll) {
-        asm volatile ("nop");
-    }
-
-    cpu.cpu.current_frequency = 48000000;
-    cpu.cpu.apb1_frequency = 24000000;
-    cpu.cpu.apb2_frequency = 48000000;
+    cpu.cpu.current_frequency = cpu_frequency;
+    cpu.cpu.pclk1_frequency = cpu_frequency;
+    cpu.cpu.pclk2_frequency = cpu_frequency;
 }
 
-pub fn init_leds(led_green_pa5: bool) void {
+pub fn initLeds(led_green_pa5: bool) void {
     if (led_green_pa5) {
         rcc.rcc.hpenr.ahb2.gpioaen = true;
     } else {
@@ -120,17 +110,49 @@ pub fn initButton() void {
     BUTTON_PORT.init(BUTTON_PIN_MASK, init_data);
 }
 
-pub fn init(led_green_pa5: bool) void {
-    //initClock();
+pub fn initUsart(baud: u32, callback: *const fn(u8) void) void {
+    usart_callback = callback;
+    rcc.rcc.hpenr.ahb2.gpioden = true;
+    rcc.rcc.hpenr.apb1l.usart3en = true;
+    var init_data: gpio.GpioInit = .{
+        .mode = .alternate,
+        .speed = .very_high,
+        .alternate = 7
+    };
+    USART_PORT.init(USART_TX_PIN_MASK, init_data); // TX
+    init_data.pull = .pullup;
+    USART_PORT.init(USART_RX_PIN_MASK, init_data); // RX
+    USART_INSTANCE.init(baud, cpu.cpu.pclk1_frequency);
+    nvic.nvic.enableInterrupt(interrupts.Interrupt.USART3.toU8());
+    usart_writer.usart_writer.writeCharFunc = usartWrite;
+}
+
+pub fn init(led_green_pa5: bool, cpu_frequency: usize, pll_characteristics: rcc.PllCharacteristics) void {
+    initClock(cpu_frequency, pll_characteristics);
     system_timer.delay_init(system_timer.init_div8);
-    init_leds(led_green_pa5);
+    initLeds(led_green_pa5);
     initButton();
 }
 
-pub fn init_ethernet_gpio() void {
+pub fn initEthernetGpio() void {
     //todo
 }
 
-pub fn init_usb_gpio() void {
+pub fn initUsbGpio() void {
     //todo
+}
+
+export fn USART3_IRQHandler() callconv(.c) void {
+    const sr = USART_INSTANCE.isr;
+    if (sr.ore) {
+        _ = USART_INSTANCE.rdr;
+        return;
+    }
+    if (sr.rxfne) {
+        usart_callback(@truncate(USART_INSTANCE.rdr));
+    }
+}
+
+pub fn usartWrite(byte: u8) void {
+    USART_INSTANCE.write(byte);
 }

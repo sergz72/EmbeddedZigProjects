@@ -1,8 +1,14 @@
 const system_timer = @import("system_timer");
 const board = @import("board");
+const rcc = @import("rcc");
+
+fn usart_callback(data: u8) void {
+    board.USART_INSTANCE.tdr = data;
+}
 
 export fn SystemInit() callconv(.c) void {
-    board.init(false);
+    board.init(false, 48000000, rcc.PllCharacteristicsH563);
+    board.initUsart(115200, &usart_callback);
 }
 
 export fn main() callconv(.c) noreturn {

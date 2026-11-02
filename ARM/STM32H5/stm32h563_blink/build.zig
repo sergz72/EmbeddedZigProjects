@@ -22,20 +22,37 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
-    const rcc = b.addModule("rcc", .{
-        .root_source_file = b.path("../lib/rcc.zig"),
+    const pwr = b.addModule("pwr", .{
+        .root_source_file = b.path("../lib/pwr.zig"),
         .target = target,
         .optimize = optimize
     });
 
-    const nvic = b.addModule("nvic", .{
-        .root_source_file = b.path("../../lib/nvic.zig"),
+    const icache = b.addModule("icache", .{
+        .root_source_file = b.path("../lib/icache.zig"),
         .target = target,
         .optimize = optimize
     });
 
     const flash = b.addModule("flash", .{
         .root_source_file = b.path("../lib/flash.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const rcc = b.addModule("rcc", .{
+        .root_source_file = b.path("../lib/rcc.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "pwr", .module = pwr },
+            .{ .name = "flash", .module = flash },
+            .{ .name = "icache", .module = icache },
+        },
+    });
+
+    const nvic = b.addModule("nvic", .{
+        .root_source_file = b.path("../../lib/nvic.zig"),
         .target = target,
         .optimize = optimize
     });
@@ -61,6 +78,12 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const usart_writer = b.addModule("usart_writer", .{
+        .root_source_file = b.path("../../../common_lib/usart_writer.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const board = b.addModule("board", .{
         .root_source_file = b.path("../lib/nucleo.zig"),
         .target = target,
@@ -70,7 +93,11 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "rcc", .module = rcc },
             .{ .name = "gpio", .module = gpio },
             .{ .name = "flash", .module = flash },
-            .{ .name = "system_timer", .module = system_timer }
+            .{ .name = "system_timer", .module = system_timer },
+            .{ .name = "usart_writer", .module = usart_writer },
+            .{ .name = "nvic", .module = nvic },
+            .{ .name = "usart", .module = usart },
+            .{ .name = "interrupts", .module = interrupts },
         },
     });
 
@@ -82,10 +109,8 @@ pub fn build(b: *std.Build) !void {
             .optimize = optimize,
             .imports = &.{
                 .{ .name = "system_timer", .module = system_timer },
-                .{ .name = "nvic", .module = nvic },
-                .{ .name = "usart", .module = usart },
-                .{ .name = "interrupts", .module = interrupts },
-                .{ .name = "board", .module = board }
+                .{ .name = "board", .module = board },
+                .{ .name = "rcc", .module = rcc },
             },
         }),
     });

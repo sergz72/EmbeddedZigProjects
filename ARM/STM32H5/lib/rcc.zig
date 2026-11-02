@@ -802,23 +802,37 @@ pub const RccCcipr5 = packed struct(u32) {
     ckpersel: CkPerSel = .hsi_ker
 };
 
-pub const RccInit = struct {
+pub const PllInit = struct {
     hse_frequency: usize = 8000000,
     pllm: u6 = 1,
+    pllp_frequency: usize = 0,
+    pllq_frequency: usize = 0,
+    pllr_frequency: usize = 0,
+    pll_characteristics: PllCharacteristics = PllCharacteristicsH563
+};
+
+pub const RccInit = struct {
+    pll1_init: PllInit = .{
+        .pllp_frequency = 48000000,
+        .pllq_frequency = 48000000
+    },
     hsebypass: bool = false,
-    pllp_frequency: usize = 48000000,
-    pllq_frequency: usize = 48000000,
-    hpre: RccCfgrPre = .div1,
-    ppre1: RccCfgrPpre = .div1,
-    ppre2: RccCfgrPpre = .div1,
-    ppre3: RccCfgrPpre = .div1,
-    pll_characteristics: PllCharacteristics
+    hpre: RccCfgrPre = .off,
+    ppre1: RccCfgrPpre = .off,
+    ppre2: RccCfgrPpre = .off,
+    ppre3: RccCfgrPpre = .off
 };
 
 pub const RccError = error{
     InvalidConfig,
     InvalidPllm,
     PllFrequencyError
+};
+
+pub const RccPll = enum(usize) {
+    pll1 = 0,
+    pll2 = 1,
+    pll3 = 2
 };
 
 pub const Rcc = extern struct {
@@ -869,23 +883,41 @@ pub const Rcc = extern struct {
         }
     }
 
-    pub fn pllOn(self: *volatile Rcc) void {
-        self.cr.pllon = true;
-        while (!self.cr.pllrdy) {
-            asm volatile ("nop");
+    pub fn pllOn(self: *volatile Rcc, pll: RccPll) void {
+        switch (pll) {
+            .pll1 => {
+                self.cr.pll1on = true;
+                while (!self.cr.pll1rdy) {
+                    asm volatile ("nop");
+                }
+            },
+            .pll2 => {
+                self.cr.pll2on = true;
+                while (!self.cr.pll2rdy) {
+                    asm volatile ("nop");
+                }
+            },
+            .pll3 => {
+                self.cr.pll3on = true;
+                while (!self.cr.pll3rdy) {
+                    asm volatile ("nop");
+                }
+            }
         }
     }
 
     pub fn clockSwitch(self: *volatile Rcc, sw: RccCfgrSw) void {
-        self.cfgr1.sclksel = sw;
-        while (self.cfgr1.sclksts != sw) {
+        self.cfgr1.sw = sw;
+        while (self.cfgr1.sws != sw) {
             asm volatile ("nop");
         }
     }
 
-    pub fn init(self: *Rcc, config: *const RccInit) RccError!void {
-        if (config.hse_frequency == 0 or config.pllm == 0 or config.pllp_frequency == 0)
+    pub fn pllInit(self: *volatile Rcc, pll: RccPll, config: *const PllInit) RccError!void {
+        if (config.hse_frequency == 0 or config.pllm == 0 or
+            (config.pllp_frequency == 0 and config.pllq_frequency == 0 and config.pllr_frequency == 0))
             return RccError.InvalidConfig;
+
         const refclk = config.hse_frequency / config.pllm;
         if (refclk < 1000000 or refclk > 16000000)
             return RccError.InvalidPllm;
@@ -905,53 +937,30 @@ pub const Rcc = extern struct {
 
         var plln = pll_min_frequency / refclk + 1;
         var pll_frequency = refclk * plln;
-        var pllp: usize = 0;
+        var pllp: usize = 1;
         var pllq: usize = 1;
+        var pllr: usize = 1;
         while (pll_frequency <= pll_max_frequency) {
-            if (pll_frequency % config.pllp_frequency == 0 and (config.pllq_frequency == 0 or pll_frequency % config.pllq_frequency == 0)) {
+            if ((config.pllp_frequency == 0 or pll_frequency % config.pllp_frequency == 0) and
+                (config.pllq_frequency == 0 or pll_frequency % config.pllq_frequency == 0) and
+                (config.pllr_frequency == 0 or pll_frequency % config.pllr_frequency == 0)) {
                 if (config.pllq_frequency != 0)
                     pllq = pll_frequency / config.pllq_frequency;
-                pllp = pll_frequency / config.pllp_frequency;
-                if (pllp != 0 and pllp & 1 == 0)
+                if (config.pllr_frequency != 0)
+                    pllr = pll_frequency / config.pllr_frequency;
+                if (config.pllp_frequency != 0) {
+                    pllp = pll_frequency / config.pllp_frequency;
+                    if (pllp != 0 and pllp & 1 == 0)
+                        break;
+                } else {
                     break;
+                }
             }
             pll_frequency += refclk;
             plln += 1;
         }
         if (pll_frequency > pll_max_frequency)
             return RccError.PllFrequencyError;
-
-        self.hseOn(config.hsebypass);
-
-        const hclk_frequency = config.pllp_frequency / config.hpre.toInt();
-
-        var flash_latency: u4 = 0;
-        if (hclk_frequency > 100000000)
-        {
-            if (hclk_frequency <= 150000000) {
-                pwr.setVos(.scale2);
-                flash_latency = calculateFlashLatencyVos2(hclk_frequency);
-            }
-            else if (hclk_frequency <= 200000000) {
-                pwr.setVos(.scale1);
-                flash_latency = calculateFlashLatencyVos1(hclk_frequency);
-            }
-            else {
-                pwr.setVos(.scale0);
-                flash_latency = calculateFlashLatencyVos0(hclk_frequency);
-            }
-        }
-        else {
-            pwr.setVos(.scale3);
-            flash_latency = calculateFlashLatencyVos3(hclk_frequency);
-        }
-
-        self.cfgr2 = RccCfgr2{
-            .hpre = config.hpre,
-            .ppre1 = config.ppre1,
-            .ppre2 = config.ppre2,
-            .ppre3 = config.ppre3
-        };
 
         var pll_clock_range: RccPllRge = undefined;
         if (refclk < 2000000) {
@@ -964,16 +973,64 @@ pub const Rcc = extern struct {
             pll_clock_range = ._8to16;
         }
 
-        self.pllcfgr[0] = RccPllCfgr{
+        const pllno = @backingInt(pll);
+        self.pllcfgr[pllno] = RccPllCfgr{
             .src = .hse,
-            .pen = true,
+            .pen = config.pllp_frequency != 0,
             .qen = config.pllq_frequency != 0,
+            .ren = config.pllr_frequency != 0,
             .vcosel = medium_vco_frequency_range,
             .rge = pll_clock_range,
             .m = config.pllm
         };
 
-        self.pllOn();
+        self.plldiv[pllno].divr = RccPllDivr{
+            .divn = @truncate(plln - 1),
+            .divp = @truncate(pllp - 1),
+            .divq = @truncate(pllq - 1),
+            .divr = @truncate(pllr - 1)
+        };
+
+        self.pllOn(pll);
+    }
+
+    pub fn init(self: *volatile Rcc, config: *const RccInit) RccError!void {
+        if (config.pll1_init.hse_frequency == 0 or config.pll1_init.pllm == 0 or config.pll1_init.pllp_frequency == 0)
+            return RccError.InvalidConfig;
+
+        self.hseOn(config.hsebypass);
+
+        const hclk_frequency = config.pll1_init.pllp_frequency / config.hpre.toInt();
+
+        var flash_latency: u4 = 0;
+        if (hclk_frequency > 100000000)
+        {
+            if (hclk_frequency <= 150000000) {
+                pwr.pwr.setVos(.scale2);
+                flash_latency = calculateFlashLatencyVos2(hclk_frequency);
+            }
+            else if (hclk_frequency <= 200000000) {
+                pwr.pwr.setVos(.scale1);
+                flash_latency = calculateFlashLatencyVos1(hclk_frequency);
+            }
+            else {
+                pwr.pwr.setVos(.scale0);
+                flash_latency = calculateFlashLatencyVos0(hclk_frequency);
+            }
+        }
+        else {
+            pwr.pwr.setVos(.scale3);
+            flash_latency = calculateFlashLatencyVos3(hclk_frequency);
+        }
+
+        self.cfgr2 = RccCfgr2{
+            .hpre = config.hpre,
+            .ppre1 = config.ppre1,
+            .ppre2 = config.ppre2,
+            .ppre3 = config.ppre3
+        };
+
+        try self.pllInit(.pll1, &config.pll1_init);
 
         const wrhighfreq: u2 = @truncate(flash_latency / 2);
         flash.flash.acr = flash.FlashAcr{
@@ -984,7 +1041,7 @@ pub const Rcc = extern struct {
 
         icache.icache.enable();
 
-        clockSwitch(.pll);
+        self.clockSwitch(.pll1);
     }
 };
 
