@@ -219,12 +219,11 @@ pub const Usart = extern struct {
 
     pub fn init(self: *volatile Usart, baud_rate: u32, apbclock: u32) void {
         self.brr = apbclock / baud_rate;
-        self.cr3 = UsartCr3{.txftcfg = ._0p875};
         self.cr1 = UsartCr1{.ue = true, .te = true, .re = true, .rxfneie = true, .fifoen = true};
     }
 
     pub fn write(self: *volatile Usart, byte: u8) void {
-        while (self.isr.txft) {
+        while (!self.isr.txfnf) { // TX fifo not full flag
             asm volatile ("nop");
         }
         self.tdr = byte;

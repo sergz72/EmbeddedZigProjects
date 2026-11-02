@@ -1043,6 +1043,18 @@ pub const Rcc = extern struct {
 
         self.clockSwitch(.pll1);
     }
+
+    pub fn getResetCause(self: *volatile Rcc) []const u8 {
+        const rsr = self.rsr;
+        self.rsr.rmvf = true; // Clear reset flags after reading
+        if (rsr.lpwrrstf) return "Low Power Reset";
+        if (rsr.wwdgrstf) return "WWDG Reset";
+        if (rsr.iwdgrstf) return "IWDG Reset";
+        if (rsr.sftrstf) return "Software Reset";
+        if (rsr.borrstf) return "BOR Reset";
+        if (rsr.pinrstf) return "PIN Reset";
+        return "Unknown Reset Cause";
+    }
 };
 
 fn calculateFlashLatencyVos3(hclk: usize) u4 {
