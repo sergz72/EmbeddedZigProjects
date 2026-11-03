@@ -120,7 +120,7 @@ pub fn initButton() void {
 pub fn usartDmaInit(buffer_size: usize, allocator: std.mem.Allocator) error{OutOfMemory}!void {
     try dma_sender_instance.init(buffer_size, allocator);
     rcc.rcc.hpenr.ahb1.gpdma1en = true;
-    gpdma.gpdma1.channels[0].initMemoryToPeripheral8(@intFromPtr(&USART_INSTANCE.tdr), 26);
+    gpdma.gpdma1.channels[0].initMemoryToPeripheral8(@intFromPtr(&USART_INSTANCE.tdr), .usart3_tx);
     nvic.nvic.enableInterrupt(interrupts.Interrupt.GPDMA1_Channel0.toU8());
 }
 
