@@ -69,6 +69,12 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const gpdma = b.addModule("gpdma", .{
+        .root_source_file = b.path("../lib/gpdma.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const scb = b.addModule("scb", .{
         .root_source_file = b.path("../../lib/scb.zig"),
         .target = target,
@@ -114,6 +120,12 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const dma_sender = b.addModule("dma_sender", .{
+        .root_source_file = b.path("../../../common_lib/dma_sender.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const board = b.addModule("board", .{
         .root_source_file = b.path("../lib/nucleo.zig"),
         .target = target,
@@ -128,6 +140,8 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "nvic", .module = nvic },
             .{ .name = "usart", .module = usart },
             .{ .name = "interrupts", .module = interrupts },
+            .{ .name = "dma_sender", .module = dma_sender },
+            .{ .name = "gpdma", .module = gpdma },
         },
     });
 

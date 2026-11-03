@@ -44,7 +44,7 @@ pub inline fn startTimer() void {
 export fn SystemInit() callconv(.c) void {
     led_status = false;
     board.init(false, 48000000, rcc.PllCharacteristicsH563);
-    board.initUsart(115200, &usartCallback);
+    board.initUsart(115200, &usartCallback, true);
     initTimer();
 }
 

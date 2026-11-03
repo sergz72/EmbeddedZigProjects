@@ -272,6 +272,10 @@ pub const FlashEccdetr = packed struct(u32) {
     eccd: bool = false,
 };
 
+pub const FlashError = error {
+    Timeout
+};
+
 pub const Flash = extern struct {
     acr: FlashAcr,
     nskeyr: u32,

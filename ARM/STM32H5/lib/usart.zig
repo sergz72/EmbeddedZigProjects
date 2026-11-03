@@ -222,6 +222,11 @@ pub const Usart = extern struct {
         self.cr1 = UsartCr1{.ue = true, .te = true, .re = true, .rxfneie = true, .fifoen = true};
     }
 
+    pub fn initDma(self: *volatile Usart, baud_rate: u32, apbclock: u32) void {
+        self.init(baud_rate, apbclock);
+        self.cr3 = UsartCr3{.dmat = true};
+    }
+
     pub fn write(self: *volatile Usart, byte: u8) void {
         while (!self.isr.txfnf) { // TX fifo not full flag
             asm volatile ("nop");

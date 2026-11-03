@@ -4,6 +4,9 @@ fn dummyWrite(byte: u8) void {
     _ = byte;
 }
 
+fn dummyFlush() void {
+}
+
 fn usartWriteByte(byte: u8) void {
     if (byte == '\n') {
         usart_writer.writeCharFunc('\r');
@@ -23,11 +26,13 @@ fn drain(w: *std.Io.Writer, data: []const []const u8, splat: usize) std.Io.Write
         for (last) |b| usartWriteByte(b);
         n += last.len;
     }
+    usart_writer.writeFlushFunc();
     return n;
 }
 
 pub const UsartWriter = struct {
     writeCharFunc: *const fn (u8) void,
+    writeFlushFunc: *const fn () void,
     writer: std.Io.Writer
 };
 
@@ -36,5 +41,6 @@ pub var usart_writer = UsartWriter{
         .vtable = &.{ .drain = drain },
         .buffer = &.{}
     },
-    .writeCharFunc = dummyWrite
+    .writeCharFunc = dummyWrite,
+    .writeFlushFunc = dummyFlush
 };

@@ -1,3 +1,4 @@
+const std = @import("std");
 const gpio = @import("gpio");
 const rcc = @import("rcc");
 const system_timer = @import("system_timer");
@@ -7,6 +8,8 @@ const usart = @import("usart");
 const nvic = @import("nvic");
 const interrupts = @import("interrupts");
 const usart_writer = @import("usart_writer");
+const dma_sender = @import("dma_sender");
+const gpdma = @import("gpdma");
 
 const LED_GREEN_PB0_PIN = 0;
 const LED_GREEN_PB0_PIN_MASK: u16 = 1 << LED_GREEN_PB0_PIN;
@@ -40,6 +43,10 @@ const USART_RX_PIN_MASK: u16 = 1 << USART_RX_PIN;
 var led_green_alternate: bool = undefined;
 var rcc_init = rcc.RccInit{};
 var usart_callback: *const fn(u8) void = undefined;
+var dma_sender_instance = dma_sender.DmaSender {
+    .dma_start = &usartDmaStart,
+    .delayms = system_timer.delayms,
+};
 
 pub inline fn ledGreenOn() void {
     if (led_green_alternate) {
@@ -110,7 +117,14 @@ pub fn initButton() void {
     BUTTON_PORT.init(BUTTON_PIN_MASK, init_data);
 }
 
-pub fn initUsart(baud: u32, callback: *const fn(u8) void) void {
+pub fn usartDmaInit(buffer_size: usize, allocator: std.mem.Allocator) error{OutOfMemory}!void {
+    try dma_sender_instance.init(buffer_size, allocator);
+    rcc.rcc.hpenr.ahb1.gpdma1en = true;
+    gpdma.gpdma1.channels[0].initMemoryToPeripheral8(@intFromPtr(&USART_INSTANCE.tdr), 26);
+    nvic.nvic.enableInterrupt(interrupts.Interrupt.GPDMA1_Channel0.toU8());
+}
+
+pub fn initUsart(baud: u32, callback: *const fn(u8) void, use_dma: bool) void {
     usart_callback = callback;
     rcc.rcc.hpenr.ahb2.gpioden = true;
     rcc.rcc.hpenr.apb1l.usart3en = true;
@@ -122,9 +136,15 @@ pub fn initUsart(baud: u32, callback: *const fn(u8) void) void {
     USART_PORT.init(USART_TX_PIN_MASK, init_data); // TX
     init_data.pull = .pullup;
     USART_PORT.init(USART_RX_PIN_MASK, init_data); // RX
-    USART_INSTANCE.init(baud, cpu.cpu.pclk1_frequency);
+    if (use_dma) {
+        USART_INSTANCE.initDma(baud, cpu.cpu.pclk1_frequency);
+        usart_writer.usart_writer.writeCharFunc = usartWriteDma;
+        usart_writer.usart_writer.writeFlushFunc = usartFlushDma;
+    } else {
+        USART_INSTANCE.init(baud, cpu.cpu.pclk1_frequency);
+        usart_writer.usart_writer.writeCharFunc = usartWrite;
+    }
     nvic.nvic.enableInterrupt(interrupts.Interrupt.USART3.toU8());
-    usart_writer.usart_writer.writeCharFunc = usartWrite;
 }
 
 pub fn init(led_green_pa5: bool, cpu_frequency: usize, pll_characteristics: rcc.PllCharacteristics) void {
@@ -154,4 +174,26 @@ export fn USART3_IRQHandler() callconv(.c) void {
 
 pub fn usartWrite(byte: u8) void {
     USART_INSTANCE.write(byte);
+}
+
+pub fn shellWriteCharDma(byte: u8) void {
+    usartWriteDma(byte);
+    usartFlushDma();
+}
+
+pub fn usartWriteDma(byte: u8) void {
+    dma_sender_instance.sendChar(byte);
+}
+
+pub fn usartFlushDma() void {
+    dma_sender_instance.start();
+}
+
+fn usartDmaStart(data: []const u8) void {
+    gpdma.gpdma1.channels[0].startTransferMemoryToPeripheral8(data);
+}
+
+export fn GPDMA1_Channel0_IRQHandler() callconv(.c) void {
+    gpdma.gpdma1.channels[0].clearInterruptFlags();
+    dma_sender_instance.dmaDone();
 }
