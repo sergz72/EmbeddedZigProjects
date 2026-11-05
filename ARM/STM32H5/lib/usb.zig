@@ -1,4 +1,17 @@
+const usb_device = @import("usb_device");
+const gpio = @import("gpio");
+const rcc = @import("rcc");
+const nvic = @import("nvic");
+const interrupts = @import("interrupts");
+const pwr = @import("pwr");
+
 const USB_BASE = 0x40016000;
+
+const USB_PORT = gpio.gpioa;
+const USB_DM_PIN = 11;
+const USB_DM_PIN_MASK: u16 = 1 << USB_DM_PIN;
+const USB_DP_PIN = 12;
+const USB_DP_PIN_MASK: u16 = 1 << USB_DP_PIN;
 
 pub const UsbDeviceEndpointStatus = enum(u2) {
     disabled = 0,
@@ -7,13 +20,20 @@ pub const UsbDeviceEndpointStatus = enum(u2) {
     valid = 3
 };
 
+pub const UsbUsageType = enum(u2) {
+    bulk = 0,
+    control = 1,
+    iso = 2,
+    interrupt = 3
+};
+
 pub const UsbChepr = packed struct(u32) {
     ea: u4 = 0,
     stattx: u2 = 0,
     dtogtx: bool = false,
     vttx: bool = false,
     epkind: bool = false,
-    utype: u2 = 0,
+    utype: UsbUsageType = .bulk,
     setup: bool = false,
     statrx: u2 = 0,
     dtogrx: bool = false,
@@ -140,10 +160,111 @@ pub const Usb = extern struct {
     bcdr: UsbBcdr,
     reserved: [233]u32,
     chep: [8]UsbChep,
-    sram: [496]u32
+    sram: [496]u32,
+
+    pub inline fn ep0Reset(self: *volatile Usb) void {
+        const chepr = self.chepr[0];
+        self.chepr[0] = UsbChepr{
+            .utype = UsbUsageType.control,
+            .stattx = chepr.stattx ^ @backingInt(UsbDeviceEndpointStatus.nak),
+            .statrx = chepr.statrx ^ @backingInt(UsbDeviceEndpointStatus.valid)};
+    }
+
+    pub inline fn setAddress(self: *volatile Usb, address: u7) void {
+        self.daddr = UsbDaddr{.add = address, .ef = true};
+    }
+
+    pub fn enableEndpoint(self: *volatile Usb, ep_no: u3, rx_enable: bool, tx_enable: bool) void {
+        _ = self;
+        _ = ep_no;
+        _ = rx_enable;
+        _ = tx_enable;
+    }
+
+    pub fn setEndpointTxLength(self: *volatile Usb, ep_no: u3, length: u16) void {
+        self.chep[ep_no].tx.count_tx = @truncate(length);
+    }
+
+    pub fn setEndpointTxStatus(self: *volatile Usb, ep_no: u3, status: UsbDeviceEndpointStatus) void {
+        var chepr = self.chepr[ep_no];
+        chepr.stattx ^= @backingInt(status);
+        chepr.statrx = 0;
+        chepr.dtogrx = false;
+        chepr.dtogrx = false;
+        self.chepr[ep_no] = chepr;
+    }
+
+    pub fn setEndpointRxStatus(self: *volatile Usb, ep_no: u3, status: UsbDeviceEndpointStatus) void {
+        var chepr = self.chepr[ep_no];
+        chepr.stattx = 0;
+        chepr.statrx ^= @backingInt(status);
+        chepr.dtogrx = false;
+        chepr.dtogrx = false;
+        self.chepr[ep_no] = chepr;
+    }
+
+    pub fn getEndpointTxStatus(self: *volatile Usb, ep_no: u3) usb_device.EndpointStatus {
+        return if (self.chepr[ep_no].stattx == @backingInt(UsbDeviceEndpointStatus.stall)) .stall else .ok;
+    }
+
+    pub fn getEndpointRxStatus(self: *volatile Usb, ep_no: u3) usb_device.EndpointStatus {
+        return if (self.chepr[ep_no].statrx == @backingInt(UsbDeviceEndpointStatus.stall)) .stall else .ok;
+    }
+
+    pub inline fn haltEndpointTx(self: *volatile Usb, ep_no: u3, halt: bool) void {
+        self.setEndpointTxStatus(ep_no, if (halt) .stall else .nak);
+    }
+
+    pub inline fn haltEndpointRx(self: *volatile Usb, ep_no: u3, halt: bool) void {
+        self.setEndpointRxStatus(ep_no, if (halt) .stall else .valid);
+    }
+
+    pub fn devicePreinit(self: *volatile Usb, usb_clock_source: rcc.UsbfsSel) bool {
+        rcc.rcc.hpenr.ahb2.gpioaen = true;
+        pwr.pwr.enableUsbPower();
+        const init_data: gpio.GpioInit = .{
+            .mode = .alternate,
+            .speed = .very_high,
+            .alternate = 10
+        };
+        USB_PORT.init(USB_DP_PIN_MASK | USB_DM_PIN_MASK, init_data);
+        rcc.rcc.enableUsbClock(usb_clock_source);
+        nvic.nvic.enableInterrupt(interrupts.Interrupt.USB_DRD_FS.toU8());
+
+        self.cntr = UsbCntr{
+            .errm = true,
+            .pmaovrm = true,
+            .ctrm = true,
+            .thr512m = true,
+            .suspm = true,
+            .wkupm = true,
+            .rst_dconm = true,
+            .usbrst = false,
+            .pdwn = false
+        };
+        return true;
+    }
+
+    pub fn deviceInit(self: *volatile Usb) void {
+        self.daddr = UsbDaddr{.ef = true};
+        self.bcdr = UsbBcdr{.dppu_dpd = true};
+    }
+
+    pub fn tx(self: *volatile Usb, ep_no: u3, data: []const u8) void {
+        usb_device.copyToPMA32(pma_buffers[ep_no], data.ptr, data.len);
+        self.setEndpointTxLength(ep_no, @truncate(data.len));
+        self.setEndpointTxStatus(ep_no, .valid);
+    }
+
+    pub fn txZeroPacket(self: *volatile Usb, ep_no: u3) void {
+        self.setEndpointTxLength(ep_no, 0);
+        self.setEndpointTxStatus(ep_no, .valid);
+    }
 };
 
 pub const usb: *volatile Usb = @ptrFromInt(USB_BASE);
+pub var ep0_buffer: [usb_device.USB_FS_MAX_PACKET_SIZE]u8 align(4) = undefined;
+pub var pma_buffers: [8][*]u32 = undefined;
 
 test "sizeof test" {
     const std = @import("std");

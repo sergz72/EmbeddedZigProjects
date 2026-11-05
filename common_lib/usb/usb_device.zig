@@ -93,13 +93,12 @@ pub const SetupPacket = extern struct {
 
 pub const SetupResult = struct {
     tx: ?[]const u8 = null,
-    invalid_request: bool = false,
-    receive_start: bool = false
+    invalid_request: bool = false
 };
 
 pub const InResult = struct {
     tx: ?[]const u8 = null,
-    r_tog_and_ack: bool = false,
+    start_rx: bool = false,
     set_address: u7 = 0
 };
 
@@ -329,7 +328,7 @@ pub const Device = struct {
     pub fn inPacket(self: *Device) InResult {
         @setRuntimeSafety(if (builtin.is_test) true else false);
         if (self.next_transfer.len == 0) {
-            return InResult{.r_tog_and_ack = true};
+            return InResult{.start_rx = true};
         } else {
             switch (self.setup_packet.request) {
                 @intFromEnum(Request.get_descriptor) => {
@@ -337,7 +336,7 @@ pub const Device = struct {
                     return InResult{.tx = data};
                 },
                 @intFromEnum(Request.set_address) => {
-                    return InResult{.set_address = self.address, .r_tog_and_ack = true};
+                    return InResult{.set_address = self.address, .start_rx = true};
                 },
                 else => {
                     return InResult{};
@@ -481,6 +480,22 @@ pub fn buildClassInterfaceDescriptor4(subtype: u8, data1: u8) []const u8 {
     }
 }
 
+pub extern fn copyFromPMA32(dest: [*]align(4) u8, src: [*]const u32, len: usize) callconv(.c) void;
+pub extern fn copyToPMA32(dest: [*]u32, src: [*]const u8, len: usize) callconv(.c) void;
+pub extern fn copyFromPMA16(dest: [*]align(4) u8, src: [*]const u32, len: usize) callconv(.c) void;
+pub extern fn copyToPMA16(dest: [*]u32, src: [*]const u8, len: usize) callconv(.c) void;
+
+fn testEndpointStatus(ep: u8) EndpointStatus {
+    _ = ep;
+    return .ok;
+}
+
+fn testHaltEndpoint(ep: u8, halt: bool) bool {
+    _ = ep;
+    _ = halt;
+    return true;
+}
+
 test "config test" {
     const manufacturer = comptime buildStringDescriptor("test inc");
     const product = comptime buildStringDescriptor("test product");
@@ -571,7 +586,9 @@ test "config test" {
         .manufacturer = &manufacturer,
         .product = &product,
         .serial_number = &serial_number,
-        .max_transfer_size = USB_FS_MAX_PACKET_SIZE
+        .max_transfer_size = USB_FS_MAX_PACKET_SIZE,
+        .endpoint_status = &testEndpointStatus,
+        .halt_ep = &testHaltEndpoint,
     };
 
     var device: Device = .{
@@ -593,7 +610,6 @@ fn deviceDescriptorTests(device: *Device, descriptor: []const u8) !void {
     try std.testing.expect(result1.tx != null);
     try std.testing.expectEqual(result1.tx.?.len, 18);
     try std.testing.expectEqual(result1.tx.?, descriptor);
-    try std.testing.expectEqual(result1.receive_start, false);
     try std.testing.expectEqual(result1.invalid_request, false);
     const result_in1 = device.inPacket();
     try std.testing.expectEqual(result_in1.r_tog_and_ack, true);
@@ -613,7 +629,6 @@ fn configDescriptorTests(device: *Device, config: []const u8) !void {
     try std.testing.expect(result2.tx != null);
     try std.testing.expectEqual(result2.tx.?.len, 9);
     try std.testing.expectEqual(result2.tx.?, config[0..9]);
-    try std.testing.expectEqual(result2.receive_start, false);
     try std.testing.expectEqual(result2.invalid_request, false);
     const result_in2 = device.inPacket();
     try std.testing.expectEqual(result_in2.r_tog_and_ack, true);
@@ -631,7 +646,6 @@ fn configDescriptorTests(device: *Device, config: []const u8) !void {
     try std.testing.expect(result3.tx != null);
     try std.testing.expectEqual(result3.tx.?.len, 64);
     try std.testing.expectEqual(result3.tx.?, config[0..64]);
-    try std.testing.expectEqual(result3.receive_start, false);
     try std.testing.expectEqual(result3.invalid_request, false);
     const result_in3 = device.inPacket();
     try std.testing.expectEqual(result_in3.r_tog_and_ack, false);

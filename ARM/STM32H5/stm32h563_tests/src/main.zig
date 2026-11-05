@@ -6,6 +6,8 @@ const usart_writer = @import("usart_writer");
 const system_commands = @import("system_commands");
 const flash_commands = @import("flash_commands");
 const board = @import("board");
+const usb_cdc_impl = @import("usb_cdc_impl");
+const rcc = @import("rcc");
 
 const shell_init = shell.ShellInit{
     .max_commands = 50,
@@ -17,6 +19,10 @@ const shell_init = shell.ShellInit{
 
 export fn main() callconv(.c) noreturn {
     const a = allocator.buildAllocator();
+
+    if (!usb_cdc_impl.init(.pll1q)) {
+        while (true){}
+    }
 
     board.usartDmaInit(10*1024, a) catch { while (true){} };
 

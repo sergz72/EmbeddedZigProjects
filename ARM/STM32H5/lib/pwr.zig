@@ -1,3 +1,5 @@
+const dbgmcu = @import("dbgmcu");
+
 const PWR_BASE = 0x44020800;
 
 pub const Svos = enum(u2) {
@@ -254,6 +256,15 @@ pub const Pwr = extern struct {
 
     pub fn setVos(self: *volatile Pwr, value: Vos) void {
         self.voscr = PwrVoscr{.vos = value};
+    }
+
+    pub fn enableUsbPower(self: *volatile Pwr) void {
+        if (dbgmcu.dbgmcu.idcode.dev_id == .h562_563_573) {
+            self.usbscr = PwrUsbscr{.usb33den = true, .usb33sv = true};
+            while (!self.vmsr.usb33rdy) {
+                asm volatile ("nop");
+            }
+        }
     }
 };
 

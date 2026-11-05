@@ -1055,6 +1055,11 @@ pub const Rcc = extern struct {
         if (rsr.pinrstf) return "PIN Reset";
         return "Unknown Reset Cause";
     }
+
+    pub fn enableUsbClock(self: *volatile Rcc, source: UsbfsSel) void {
+        self.ccipr4.usbfssel = source;
+        self.hpenr.apb2.usbfsen = true;
+    }
 };
 
 fn calculateFlashLatencyVos3(hclk: usize) u4 {

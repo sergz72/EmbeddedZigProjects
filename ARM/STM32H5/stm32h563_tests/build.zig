@@ -22,10 +22,19 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const dbgmcu = b.addModule("dbgmcu", .{
+        .root_source_file = b.path("../lib/dbgmcu.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const pwr = b.addModule("pwr", .{
         .root_source_file = b.path("../lib/pwr.zig"),
         .target = target,
-        .optimize = optimize
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "dbgmcu", .module = dbgmcu }
+        },
     });
 
     const icache = b.addModule("icache", .{
@@ -75,14 +84,55 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
-    const scb = b.addModule("scb", .{
-        .root_source_file = b.path("../../lib/scb.zig"),
+    const usb_device = b.addModule("usb_device", .{
+        .root_source_file = b.path("../../../common_lib/usb/usb_device.zig"),
         .target = target,
         .optimize = optimize
     });
 
     const interrupts = b.addModule("interrupts", .{
         .root_source_file = b.path("../lib/interrupts.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const usb = b.addModule("usb", .{
+        .root_source_file = b.path("../lib/usb.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "usb_device", .module = usb_device },
+            .{ .name = "gpio", .module = gpio },
+            .{ .name = "rcc", .module = rcc },
+            .{ .name = "nvic", .module = nvic },
+            .{ .name = "interrupts", .module = interrupts },
+            .{ .name = "pwr", .module = pwr }
+        },
+    });
+
+    const usb_cdc = b.addModule("usb_cdc", .{
+        .root_source_file = b.path("../../../common_lib/usb/usb_cdc.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "usb_device", .module = usb_device }
+        },
+    });
+
+    const usb_cdc_impl = b.addModule("usb_cdc_impl", .{
+        .root_source_file = b.path("../lib/usb/usb_cdc_impl.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "usb", .module = usb },
+            .{ .name = "usb_device", .module = usb_device },
+            .{ .name = "usb_cdc", .module = usb_cdc },
+            .{ .name = "rcc", .module = rcc },
+        },
+    });
+
+    const scb = b.addModule("scb", .{
+        .root_source_file = b.path("../../lib/scb.zig"),
         .target = target,
         .optimize = optimize
     });
@@ -201,6 +251,8 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "usart_writer", .module = usart_writer },
                 .{ .name = "system_commands", .module = system_commands },
                 .{ .name = "flash_commands", .module = flash_commands },
+                .{ .name = "usb_cdc_impl", .module = usb_cdc_impl },
+                .{ .name = "rcc", .module = rcc },
             },
         }),
     });
@@ -212,6 +264,7 @@ pub fn build(b: *std.Build) !void {
     //exe.lto = .full;                     // Whole-program optimization & inlining
 
     exe.root_module.addAssemblyFile(b.path("../startup_stm32h563xx.s"));
+    exe.root_module.addAssemblyFile(b.path("../../lib/usb_utils.s"));
 
     exe.setLinkerScript(b.path("../STM32H563xx_FLASH.ld"));
 

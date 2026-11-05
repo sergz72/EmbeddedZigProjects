@@ -154,14 +154,6 @@ pub fn init(led_green_pa5: bool, cpu_frequency: usize, pll_characteristics: rcc.
     initButton();
 }
 
-pub fn initEthernetGpio() void {
-    //todo
-}
-
-pub fn initUsbGpio() void {
-    //todo
-}
-
 export fn USART3_IRQHandler() callconv(.c) void {
     if (USART_INSTANCE.isr.ore) {
         _ = USART_INSTANCE.rdr;
