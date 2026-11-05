@@ -73,13 +73,15 @@ export fn USB_DRD_FS_IRQHandler() callconv(.c) void {
                 // OUT or SETUP packet received
                 chepr.vtrx = false;
                 if (chepr.setup) {
-                    usb_device.copyFromPMA32(@ptrCast(&usb.ep0_buffer), usb.pma_buffers[endpoint], 8);
+                    usb_device.copyFromPMA32(@ptrCast(&usb.ep0_buffer), usb.pma_buffers_rx[0], 8);
                     const result = device.setup(@ptrCast(&usb.ep0_buffer));
                     if (result.tx) |tx| {
                         usb.usb.tx(0, tx);
                     }
                     else if (result.invalid_request) {
                         usb.usb.setEndpointTxStatus(0, .stall);
+                    } else {
+                        usb.usb.setEndpointRxStatus(0, .valid);
                     }
                 } else {
                     switch (endpoint) {
@@ -89,7 +91,10 @@ export fn USB_DRD_FS_IRQHandler() callconv(.c) void {
                             }
                         },
                         2 => {
-
+                            const rx_length = usb.usb.getEndpointRxLength(2);
+                            usb_device.copyFromPMA32(@ptrCast(&ep2_buffer), usb.pma_buffers_rx[2], rx_length);
+                            cdcRx(ep2_buffer[0..rx_length]);
+                            usb.usb.setEndpointRxStatus(2, .valid);
                         },
                         else => {}
                     }

@@ -132,15 +132,15 @@ pub const UsbBcdr = packed struct(u32) {
 
 pub const UsbChepTx = packed struct(u32) {
     addr_tx: u16,
-    count_tx: u10,
-    reserved0: u6
+    count_tx: u10 = 0,
+    reserved0: u6 = 0
 };
 
 pub const UsbChepRx = packed struct(u32) {
     addr_rx: u16,
-    count_rx: u10,
-    num_block: u5,
-    blsize: bool
+    count_rx: u10 = 0,
+    num_block: u5 = 0,
+    blsize: bool = false
 };
 
 pub const UsbChep = extern struct {
@@ -175,10 +175,21 @@ pub const Usb = extern struct {
     }
 
     pub fn enableEndpoint(self: *volatile Usb, ep_no: u3, rx_enable: bool, tx_enable: bool) void {
-        _ = self;
-        _ = ep_no;
-        _ = rx_enable;
-        _ = tx_enable;
+        if (rx_enable) {
+            const pma_offset = allocatePMABuffer(usb_device.USB_FS_MAX_PACKET_SIZE);
+            pma_buffers_rx[ep_no] = @ptrCast(&self.sram[pma_offset]);
+            // 2 blocks of 32 bytes each
+            self.chep[ep_no].rx = UsbChepRx{.addr_rx =  @truncate(pma_offset+64), .num_block = 2, .blsize = true};
+        }
+        if (tx_enable) {
+            const pma_offset = allocatePMABuffer(usb_device.USB_FS_MAX_PACKET_SIZE);
+            pma_buffers_tx[ep_no] = @ptrCast(&self.sram[pma_offset]);
+            self.chep[ep_no].tx = UsbChepTx{.addr_tx = @truncate(pma_offset+64)};
+        }
+    }
+
+    pub fn getEndpointRxLength(self: *volatile Usb, ep_no: u3) u10 {
+        return self.chep[ep_no].rx.count_rx;
     }
 
     pub fn setEndpointTxLength(self: *volatile Usb, ep_no: u3, length: u16) void {
@@ -242,6 +253,9 @@ pub const Usb = extern struct {
             .usbrst = false,
             .pdwn = false
         };
+        sram_pointer = 0;
+        self.enableEndpoint(0, true, true);
+        self.ep0Reset();
         return true;
     }
 
@@ -251,7 +265,7 @@ pub const Usb = extern struct {
     }
 
     pub fn tx(self: *volatile Usb, ep_no: u3, data: []const u8) void {
-        usb_device.copyToPMA32(pma_buffers[ep_no], data.ptr, data.len);
+        usb_device.copyToPMA32(pma_buffers_tx[ep_no], data.ptr, data.len);
         self.setEndpointTxLength(ep_no, @truncate(data.len));
         self.setEndpointTxStatus(ep_no, .valid);
     }
@@ -262,9 +276,17 @@ pub const Usb = extern struct {
     }
 };
 
+fn allocatePMABuffer(size: usize) usize {
+    const current_pointer = sram_pointer;
+    sram_pointer += size;
+    return current_pointer;
+}
+
 pub const usb: *volatile Usb = @ptrFromInt(USB_BASE);
 pub var ep0_buffer: [usb_device.USB_FS_MAX_PACKET_SIZE]u8 align(4) = undefined;
-pub var pma_buffers: [8][*]u32 = undefined;
+pub var pma_buffers_rx: [8][*]volatile u32 = undefined;
+pub var pma_buffers_tx: [8][*]volatile u32 = undefined;
+var sram_pointer: usize = undefined;
 
 test "sizeof test" {
     const std = @import("std");
