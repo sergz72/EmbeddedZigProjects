@@ -34,10 +34,10 @@ fn haltEp(endpoint: u8, halt: bool) bool {
 }
 
 fn epReset() void {
-    usb.usb.setEndpointRxStatus(2, .valid);
-    usb.usb.setEndpointTxStatus(1, .nak);
+    usb.usb.epReset(2, .valid, .disabled, .bulk);
+    usb.usb.epReset(1, .disabled, .nak, .interrupt);
     usb.usb.setEndpointTxLength(1, 0);
-    usb.usb.setEndpointTxStatus(3, .nak);
+    usb.usb.epReset(3, .disabled, .nak, .bulk);
     usb.usb.setEndpointTxLength(3, 0);
     cdc_tx_in_progress = false;
     //todo: CDC_Init()
@@ -68,19 +68,21 @@ export fn USB_DRD_FS_IRQHandler() callconv(.c) void {
     if (istr.ctr) {
         const endpoint = istr.idn;
         if (endpoint < 8) {
-            const chepr = &usb.usb.chepr[endpoint];
+            const chepr = usb.usb.chepr[endpoint];
+            const chp: u32 = @bitCast(chepr);
+            usb.usb.chepr[endpoint] = @bitCast(chp & 0xFFFF_0F0F);
             if (chepr.vtrx) {
                 // OUT or SETUP packet received
-                chepr.vtrx = false;
                 if (chepr.setup) {
                     usb_device.copyFromPMA32(@ptrCast(&usb.ep0_buffer), usb.pma_buffers_rx[0], 8);
                     const result = device.setup(@ptrCast(&usb.ep0_buffer));
                     if (result.tx) |tx| {
                         usb.usb.tx(0, tx);
                     }
-                    else if (result.invalid_request) {
+                    if (result.invalid_request) {
                         usb.usb.setEndpointTxStatus(0, .stall);
-                    } else {
+                    }
+                    if (result.start_rx) {
                         usb.usb.setEndpointRxStatus(0, .valid);
                     }
                 } else {
@@ -102,7 +104,6 @@ export fn USB_DRD_FS_IRQHandler() callconv(.c) void {
             }
             if (chepr.vttx) {
                 //IN packet sent
-                chepr.vttx = false;
                 switch (endpoint) {
                     0 => {
                         const result = device.inPacket();
@@ -112,8 +113,9 @@ export fn USB_DRD_FS_IRQHandler() callconv(.c) void {
                         if (result.start_rx) {
                             usb.usb.setEndpointRxStatus(0, .valid);
                         }
-                        if (result.set_address != 0)
+                        if (result.set_address != 0) {
                             usb.usb.setAddress(result.set_address);
+                        }
                     },
                     3 => {
                         cdc_tx_in_progress = false;

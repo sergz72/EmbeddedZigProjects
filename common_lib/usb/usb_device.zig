@@ -93,7 +93,8 @@ pub const SetupPacket = extern struct {
 
 pub const SetupResult = struct {
     tx: ?[]const u8 = null,
-    invalid_request: bool = false
+    invalid_request: bool = false,
+    start_rx: bool = false
 };
 
 pub const InResult = struct {
@@ -227,13 +228,13 @@ pub const Device = struct {
                 switch (request.request_type.recipient) {
                     .device => {
                         self.current_status[0] = if (self.sleep_status.sleep_allowed) 2 else 0;
-                        return SetupResult{.tx = &self.current_status};
+                        return SetupResult{.tx = &self.current_status, .start_rx = true};
                     },
                     .endpoint => {
                         const status = self.init.endpoint_status(@truncate(request.index));
                         if  (status != .invalid_request) {
                             self.current_status[0] = if (status == .stall) 1 else 0;
-                            return SetupResult{.tx = &self.current_status};
+                            return SetupResult{.tx = &self.current_status, .start_rx = true};
                         }
                     },
                     else => {}
@@ -244,13 +245,13 @@ pub const Device = struct {
                     .device => {
                         if (request.value.value.lo == 1)  {// remote wakeup
                             self.sleep_status.sleep_allowed = false;
-                            return .{.tx = &.{}};
+                            return .{.tx = &.{}, .start_rx = true};
                         }
                     },
                     .endpoint => {
                         if (request.value.value.lo == 0)  {// endpoint halt
                             if (self.init.halt_ep(@truncate(request.index), false)) {
-                                return .{.tx = &.{}};
+                                return .{.tx = &.{}, .start_rx = true};
                             }
                         }
                     },
@@ -262,13 +263,13 @@ pub const Device = struct {
                     .device => {
                         if (request.value.value.lo == 1)  {// remote wakeup
                             self.sleep_status.sleep_allowed = true;
-                            return .{.tx = &.{}};
+                            return .{.tx = &.{}, .start_rx = true};
                         }
                     },
                     .endpoint => {
                         if (request.value.value.lo == 0)  {// endpoint halt
                             if (self.init.halt_ep(@truncate(request.index), true)) {
-                                return .{.tx = &.{}};
+                                return .{.tx = &.{}, .start_rx = true};
                             }
                         }
                     },
@@ -281,7 +282,7 @@ pub const Device = struct {
             @intFromEnum(Request.get_descriptor) => {
                 switch (request.value.value.hi) {
                     @intFromEnum(DescriptorType.device) =>  {
-                        return SetupResult{.tx = self.init.descriptor};
+                        return SetupResult{.tx = self.init.descriptor, .start_rx = true};
                     },
                     @intFromEnum(DescriptorType.configuration) =>  {
                         //todo
@@ -290,16 +291,16 @@ pub const Device = struct {
                     @intFromEnum(DescriptorType.string) =>  {
                         switch (request.value.value.lo) {
                             0 => {
-                                return SetupResult{.tx = &self.init.lang};
+                                return SetupResult{.tx = &self.init.lang, .start_rx = true};
                             },
                             1 => {
-                                return SetupResult{.tx = self.init.manufacturer};
+                                return SetupResult{.tx = self.init.manufacturer, .start_rx = true};
                             },
                             2 => {
-                                return SetupResult{.tx = self.init.product};
+                                return SetupResult{.tx = self.init.product, .start_rx = true};
                             },
                             3 => {
-                                return SetupResult{.tx = self.init.serial_number};
+                                return SetupResult{.tx = self.init.serial_number, .start_rx = true};
                             },
                             else => {}
                         }
@@ -308,17 +309,17 @@ pub const Device = struct {
                 }
             },
             @intFromEnum(Request.get_configuration) => {
-                return SetupResult{.tx = &self.current_config};
+                return SetupResult{.tx = &self.current_config, .start_rx = true};
             },
             @intFromEnum(Request.set_configuration) => {
                 self.current_config[0] = request.value.value.lo;
-                return SetupResult{.tx = &.{}};
+                return SetupResult{.tx = &.{}, .start_rx = true};
             },
             @intFromEnum(Request.get_interface) => {
-                return SetupResult{.tx = &self.current_interface};
+                return SetupResult{.tx = &self.current_interface, .start_rx = true};
             },
             @intFromEnum(Request.set_interface) => {
-                return SetupResult{.tx = &.{}};
+                return SetupResult{.tx = &.{}, .start_rx = true};
             },
             else => {}
         }
