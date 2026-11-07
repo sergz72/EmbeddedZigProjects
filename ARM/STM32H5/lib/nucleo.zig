@@ -181,8 +181,9 @@ pub fn usartFlushDma() void {
     dma_sender_instance.start();
 }
 
-fn usartDmaStart(data: []const u8) void {
+fn usartDmaStart(data: []const u8) usize {
     gpdma.gpdma1.channels[0].startTransferMemoryToPeripheral8(data);
+    return data.len;
 }
 
 export fn GPDMA1_Channel0_IRQHandler() callconv(.c) void {

@@ -1,5 +1,10 @@
 const usb_device = @import("usb_device");
 
+pub const CONTROL_ENDPOINT = 0;
+pub const INTERRUPT_ENDPOINT = 1;
+pub const DATA_IN_ENDPOINT = 2;
+pub const DATA_OUT_ENDPOINT = 3;
+
 pub const ComConfig = extern struct {
     baudrate: u32 = 115200,
     stopbit: u8 = 0,
