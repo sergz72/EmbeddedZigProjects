@@ -119,6 +119,21 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const system_timer = b.addModule("system_timer", .{
+        .root_source_file = b.path("../../lib/system_timer.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "cpu", .module = cpu }
+        },
+    });
+
+    const dma_sender = b.addModule("dma_sender", .{
+        .root_source_file = b.path("../../../common_lib/dma_sender.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const usb_cdc_impl = b.addModule("usb_cdc_impl", .{
         .root_source_file = b.path("../lib/usb/usb_cdc_impl.zig"),
         .target = target,
@@ -128,6 +143,8 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "usb_device", .module = usb_device },
             .{ .name = "usb_cdc", .module = usb_cdc },
             .{ .name = "rcc", .module = rcc },
+            .{ .name = "system_timer", .module = system_timer },
+            .{ .name = "dma_sender", .module = dma_sender },
         },
     });
 
@@ -135,15 +152,6 @@ pub fn build(b: *std.Build) !void {
         .root_source_file = b.path("../../lib/scb.zig"),
         .target = target,
         .optimize = optimize
-    });
-
-    const system_timer = b.addModule("system_timer", .{
-        .root_source_file = b.path("../../lib/system_timer.zig"),
-        .target = target,
-        .optimize = optimize,
-        .imports = &.{
-            .{ .name = "cpu", .module = cpu }
-        },
     });
 
     const usart_writer = b.addModule("usart_writer", .{
@@ -166,12 +174,6 @@ pub fn build(b: *std.Build) !void {
 
     const utils = b.addModule("utils", .{
         .root_source_file = b.path("../../../common_lib/utils.zig"),
-        .target = target,
-        .optimize = optimize
-    });
-
-    const dma_sender = b.addModule("dma_sender", .{
-        .root_source_file = b.path("../../../common_lib/dma_sender.zig"),
         .target = target,
         .optimize = optimize
     });

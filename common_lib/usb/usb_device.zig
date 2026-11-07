@@ -93,13 +93,11 @@ pub const SetupPacket = extern struct {
 
 pub const SetupResult = struct {
     tx: ?[]const u8 = null,
-    invalid_request: bool = false,
-    start_rx: bool = false
+    invalid_request: bool = false
 };
 
 pub const InResult = struct {
     tx: ?[]const u8 = null,
-    start_rx: bool = false,
     set_address: u7 = 0
 };
 
@@ -228,13 +226,13 @@ pub const Device = struct {
                 switch (request.request_type.recipient) {
                     .device => {
                         self.current_status[0] = if (self.sleep_status.sleep_allowed) 2 else 0;
-                        return SetupResult{.tx = &self.current_status, .start_rx = true};
+                        return SetupResult{.tx = &self.current_status};
                     },
                     .endpoint => {
                         const status = self.init.endpoint_status(@truncate(request.index));
                         if  (status != .invalid_request) {
                             self.current_status[0] = if (status == .stall) 1 else 0;
-                            return SetupResult{.tx = &self.current_status, .start_rx = true};
+                            return SetupResult{.tx = &self.current_status};
                         }
                     },
                     else => {}
@@ -245,13 +243,13 @@ pub const Device = struct {
                     .device => {
                         if (request.value.value.lo == 1)  {// remote wakeup
                             self.sleep_status.sleep_allowed = false;
-                            return .{.tx = &.{}, .start_rx = true};
+                            return .{.tx = &.{}};
                         }
                     },
                     .endpoint => {
                         if (request.value.value.lo == 0)  {// endpoint halt
                             if (self.init.halt_ep(@truncate(request.index), false)) {
-                                return .{.tx = &.{}, .start_rx = true};
+                                return .{.tx = &.{}};
                             }
                         }
                     },
@@ -263,13 +261,13 @@ pub const Device = struct {
                     .device => {
                         if (request.value.value.lo == 1)  {// remote wakeup
                             self.sleep_status.sleep_allowed = true;
-                            return .{.tx = &.{}, .start_rx = true};
+                            return .{.tx = &.{}};
                         }
                     },
                     .endpoint => {
                         if (request.value.value.lo == 0)  {// endpoint halt
                             if (self.init.halt_ep(@truncate(request.index), true)) {
-                                return .{.tx = &.{}, .start_rx = true};
+                                return .{.tx = &.{}};
                             }
                         }
                     },
@@ -278,11 +276,12 @@ pub const Device = struct {
             },
             @intFromEnum(Request.set_address) => {
                 self.address = @truncate(request.value.value.lo);
+                return .{.tx = &.{}};
             },
             @intFromEnum(Request.get_descriptor) => {
                 switch (request.value.value.hi) {
                     @intFromEnum(DescriptorType.device) =>  {
-                        return SetupResult{.tx = self.init.descriptor, .start_rx = true};
+                        return SetupResult{.tx = self.init.descriptor};
                     },
                     @intFromEnum(DescriptorType.configuration) =>  {
                         //todo
@@ -291,16 +290,16 @@ pub const Device = struct {
                     @intFromEnum(DescriptorType.string) =>  {
                         switch (request.value.value.lo) {
                             0 => {
-                                return SetupResult{.tx = &self.init.lang, .start_rx = true};
+                                return SetupResult{.tx = &self.init.lang};
                             },
                             1 => {
-                                return SetupResult{.tx = self.init.manufacturer, .start_rx = true};
+                                return SetupResult{.tx = self.init.manufacturer};
                             },
                             2 => {
-                                return SetupResult{.tx = self.init.product, .start_rx = true};
+                                return SetupResult{.tx = self.init.product};
                             },
                             3 => {
-                                return SetupResult{.tx = self.init.serial_number, .start_rx = true};
+                                return SetupResult{.tx = self.init.serial_number};
                             },
                             else => {}
                         }
@@ -309,17 +308,17 @@ pub const Device = struct {
                 }
             },
             @intFromEnum(Request.get_configuration) => {
-                return SetupResult{.tx = &self.current_config, .start_rx = true};
+                return SetupResult{.tx = &self.current_config};
             },
             @intFromEnum(Request.set_configuration) => {
                 self.current_config[0] = request.value.value.lo;
-                return SetupResult{.tx = &.{}, .start_rx = true};
+                return SetupResult{.tx = &.{}};
             },
             @intFromEnum(Request.get_interface) => {
-                return SetupResult{.tx = &self.current_interface, .start_rx = true};
+                return SetupResult{.tx = &self.current_interface};
             },
             @intFromEnum(Request.set_interface) => {
-                return SetupResult{.tx = &.{}, .start_rx = true};
+                return SetupResult{.tx = &.{}};
             },
             else => {}
         }
@@ -328,20 +327,16 @@ pub const Device = struct {
 
     pub fn inPacket(self: *Device) InResult {
         @setRuntimeSafety(if (builtin.is_test) true else false);
-        if (self.next_transfer.len == 0) {
-            return InResult{.start_rx = true};
-        } else {
-            switch (self.setup_packet.request) {
-                @intFromEnum(Request.get_descriptor) => {
-                    const data = self.continueTransfer();
-                    return InResult{.tx = data};
-                },
-                @intFromEnum(Request.set_address) => {
-                    return InResult{.set_address = self.address, .start_rx = true};
-                },
-                else => {
-                    return InResult{};
-                }
+        switch (self.setup_packet.request) {
+            @intFromEnum(Request.get_descriptor) => {
+                const data = self.continueTransfer();
+                return InResult{.tx = data};
+            },
+            @intFromEnum(Request.set_address) => {
+                return InResult{.set_address = self.address};
+            },
+            else => {
+                return InResult{};
             }
         }
     }
@@ -371,8 +366,11 @@ pub fn buildStringDescriptor(comptime str: []const u8) [2 * str.len + 2]u8 {
         buffer[0] = @truncate(total_size);
         buffer[1] = 3;
 
-        var offset = 0;
+        var offset = 2;
         for (str) |char| {
+            if (char == 0) {
+                break;
+            }
             buffer[offset] = char;
             offset += 1;
             buffer[offset] = 0;

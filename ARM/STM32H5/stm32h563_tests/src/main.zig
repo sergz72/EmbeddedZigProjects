@@ -17,12 +17,14 @@ const shell_init = shell.ShellInit{
     .history_length = 20
 };
 
+fn cdc_rx_callback(data: []const u8) void {
+    usb_cdc_impl.tx(data);
+}
+
 export fn main() callconv(.c) noreturn {
     const a = allocator.buildAllocator();
 
-    if (!usb_cdc_impl.init(.pll1q)) {
-        while (true){}
-    }
+    usb_cdc_impl.init(.pll1q, &cdc_rx_callback, 10240, a) catch { while (true){} };
 
     board.usartDmaInit(10*1024, a) catch { while (true){} };
 

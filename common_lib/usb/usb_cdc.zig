@@ -22,7 +22,7 @@ const config = usb_device.buildConfigDescriptor(.{
     .num_interfaces = 2,
     .self_powered = false,
     .remote_wakeup = false,
-    .max_power_ma = 510
+    .max_power_ma = 100
 }, &.{
     //cdc control interface
     usb_device.buildInterfaceDescriptor(.{

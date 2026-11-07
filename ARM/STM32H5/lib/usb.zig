@@ -231,7 +231,7 @@ pub const Usb = extern struct {
         self.setEndpointRxStatus(ep_no, if (halt) .stall else .valid);
     }
 
-    pub fn devicePreinit(self: *volatile Usb, usb_clock_source: rcc.UsbfsSel) bool {
+    pub fn devicePreinit(self: *volatile Usb, usb_clock_source: rcc.UsbfsSel) void {
         rcc.rcc.hpenr.ahb2.gpioaen = true;
         pwr.pwr.enableUsbPower();
         const init_data: gpio.GpioInit = .{
@@ -257,7 +257,6 @@ pub const Usb = extern struct {
         sram_pointer = 0;
         self.enableEndpoint(0, true, true);
         self.ep0Reset();
-        return true;
     }
 
     pub fn deviceInit(self: *volatile Usb) void {
