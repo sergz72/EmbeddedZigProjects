@@ -18,6 +18,7 @@ const rtc_commands = @import("rtc_commands");
 const prng = @import("prng");
 const aes128 = @import("aes128");
 const crc = @import("crc");
+const usb_cdc_impl = @import("usb_cdc_impl");
 
 const shell_init = shell.ShellInit{
     .max_commands = 50,
@@ -68,8 +69,17 @@ fn aesDecrypt(key: []const u8, iv: []const u8, in: []const u8, out: []u8) bool {
     return aes.decryptCbc(iv[0..16], in, out);
 }
 
+fn cdc_rx_callback(data: []const u8) void {
+    usb_cdc_impl.tx(data);
+}
+
 export fn main() callconv(.c) noreturn {
     const a = allocator.buildAllocator();
+
+    const ok = usb_cdc_impl.init(&cdc_rx_callback, 10240, a) catch { while (true){} };
+    if (!ok) {
+        while (true){}
+    }
 
     hal.sh = shell.Shell.init(&shell_init, a, &usart_writer.usart_writer.writer, hal.usartWrite) catch { while (true){} };
     i2c_commands.registerCommands(hal.sh, hal.i2cScan) catch { while (true){} };

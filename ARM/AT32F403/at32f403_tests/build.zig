@@ -31,7 +31,10 @@ pub fn build(b: *std.Build) !void {
     const crm = b.addModule("crm", .{
         .root_source_file = b.path("../lib/crm.zig"),
         .target = target,
-        .optimize = optimize
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "cpu", .module = cpu }
+        },
     });
 
     const nvic = b.addModule("nvic", .{
@@ -133,6 +136,52 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
         .imports = &.{
             .{ .name = "cpu", .module = cpu }
+        },
+    });
+
+    const usb_device = b.addModule("usb_device", .{
+        .root_source_file = b.path("../../../common_lib/usb/usb_device.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const usbfs = b.addModule("usbfs", .{
+        .root_source_file = b.path("../lib/usbfs.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "usb_device", .module = usb_device },
+            .{ .name = "crm", .module = crm },
+            .{ .name = "nvic", .module = nvic },
+            .{ .name = "interrupts", .module = interrupts },
+        },
+    });
+
+    const usb_cdc = b.addModule("usb_cdc", .{
+        .root_source_file = b.path("../../../common_lib/usb/usb_cdc.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "usb_device", .module = usb_device }
+        },
+    });
+
+    const dma_sender = b.addModule("dma_sender", .{
+        .root_source_file = b.path("../../../common_lib/dma_sender.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const usb_cdc_impl = b.addModule("usb_cdc_impl", .{
+        .root_source_file = b.path("../lib/usb/usb_cdc_impl.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "usbfs", .module = usbfs },
+            .{ .name = "usb_device", .module = usb_device },
+            .{ .name = "usb_cdc", .module = usb_cdc },
+            .{ .name = "system_timer", .module = system_timer },
+            .{ .name = "dma_sender", .module = dma_sender },
         },
     });
 
@@ -384,7 +433,8 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "aes128", .module = aes128 },
                 .{ .name = "crc", .module = crc },
                 .{ .name = "allocator", .module = allocator },
-                .{ .name = "usart_writer", .module = usart_writer }
+                .{ .name = "usart_writer", .module = usart_writer },
+                .{ .name = "usb_cdc_impl", .module = usb_cdc_impl }
             },
         }),
     });
@@ -397,6 +447,7 @@ pub fn build(b: *std.Build) !void {
     //exe.lto = .full;                     // Whole-program optimization & inlining
 
     exe.root_module.addAssemblyFile(b.path("../startup_at32f403a_407.s"));
+    exe.root_module.addAssemblyFile(b.path("../../lib/usb_utils.s"));
 
     exe.setLinkerScript(b.path("../AT32F403AxG_FLASH.ld"));
 
