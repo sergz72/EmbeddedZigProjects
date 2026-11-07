@@ -5,9 +5,9 @@ const usb_device = @import("usb_device");
 
 const USBFS_BASE = 0x40005C00;
 const USBFS_BUFFER_BASE_EX = 0x40007800;
-const USBFS_BUFFER_SIZE_EX = 1280;
+const USBFS_BUFFER_SIZE_EX = 1280*2;
 const USBFS_BUFFER_BASE = 0x40006000;
-const USBFS_BUFFER_SIZE = 512;
+const USBFS_BUFFER_SIZE = 512*2;
 
 pub const UsbfsEptSts = enum(u2) {
     disabled = 0,
@@ -116,20 +116,20 @@ pub const UsbfsEptBufferInfo = extern struct {
 
 pub const UsbfsBuffer = extern struct {
     info: [8]UsbfsEptBufferInfo,
-    buffers: [USBFS_BUFFER_SIZE_EX/2]u16,
+    buffers: [(USBFS_BUFFER_SIZE_EX-128)/4]u32,
 
     pub fn enableEndpoint(self: *volatile UsbfsBuffer, ep_no: u3, rx_enable: bool, tx_enable: bool) void {
         if (rx_enable) {
             const pma_offset = allocatePMABuffer(usb_device.USB_FS_MAX_PACKET_SIZE);
             pma_buffers_rx[ep_no] = @ptrCast(&self.buffers[pma_offset]);
             // 2 blocks of 32 bytes each
-            self.info[ep_no].raddr = @truncate(pma_offset*2+128);
+            self.info[ep_no].raddr = @truncate(pma_offset*2+64);
             self.info[ep_no].rlen =  UsbfsRlen{.len = 0, .nblk = 2, .bsize = true};
         }
         if (tx_enable) {
             const pma_offset = allocatePMABuffer(usb_device.USB_FS_MAX_PACKET_SIZE);
             pma_buffers_tx[ep_no] = @ptrCast(&self.buffers[pma_offset]);
-            self.info[ep_no].taddr = @truncate(pma_offset*2+128);
+            self.info[ep_no].taddr = @truncate(pma_offset*2+64);
         }
     }
 
@@ -235,7 +235,7 @@ pub const Usbfs = extern struct {
     }
 
     pub fn tx(self: *volatile Usbfs, ep_no: u3, data: []const u8) void {
-        usb_device.copyToPMA16(pma_buffers_tx[ep_no], data.ptr, data.len);
+        usb_device.copyToPMA1632(pma_buffers_tx[ep_no], data.ptr, data.len);
         usbfs_buffer.setEndpointTxLength(ep_no, @truncate(data.len));
         self.setEndpointTxStatus(ep_no, UsbfsEptSts.valid);
     }
@@ -257,8 +257,8 @@ const usbfs_buffer_ex: *volatile UsbfsBuffer = @ptrFromInt(USBFS_BUFFER_BASE_EX)
 const usbfs_buffer_nex: *volatile UsbfsBuffer = @ptrFromInt(USBFS_BUFFER_BASE);
 pub var usbfs_buffer = usbfs_buffer_nex;
 var sram_pointer: usize = undefined;
-pub var pma_buffers_rx: [8][*]volatile u16 = undefined;
-pub var pma_buffers_tx: [8][*]volatile u16 = undefined;
+pub var pma_buffers_rx: [8][*]volatile u32 = undefined;
+pub var pma_buffers_tx: [8][*]volatile u32 = undefined;
 pub var ep0_buffer: [usb_device.USB_FS_MAX_PACKET_SIZE]u8 align(4) = undefined;
 
 test "sizeof test" {

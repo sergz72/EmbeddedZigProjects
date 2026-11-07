@@ -21,13 +21,29 @@ copyFromPMA32: // dest = r0, src = r1, length = r2
 2:
     bx lr
 
-    .section .text.copyFromPMA16,"ax",%progbits
-    .global copyFromPMA16
-    .global copyToPMA16
-    .type   copyFromPMA16, %function
+    .section .text.copyFromPMA1632,"ax",%progbits
+    .global copyFromPMA1632
+    .type   copyFromPMA1632, %function
     .thumb_func
-copyToPMA16:
-copyFromPMA16: // dest = r0, src = r1, length = r2
+copyFromPMA1632: // dest = r0, src = r1, length = r2
+    cbz r2, 2f
+    lsr r12, r2, #1   // Divide length by 2 to get number of 16-bit words
+    tst r2, #1
+    beq 1f
+    add r12, r12, #1
+1:
+    ldrh r3, [r1], #4   // Load 16-bit word, post-index increment src by 4
+    strh r3, [r0], #2   // Store 16-bit word, post-index increment dest by 2
+    subs r12, r12, #1
+    bne 1b
+2:
+    bx lr
+
+    .section .text.copyToPMA1632,"ax",%progbits
+    .global copyToPMA1632
+    .type   copyToPMA1632, %function
+    .thumb_func
+copyToPMA1632: // dest = r0, src = r1, length = r2
     cbz r2, 2f
     lsr r12, r2, #1   // Divide length by 2 to get number of 16-bit words
     tst r2, #1
@@ -35,7 +51,7 @@ copyFromPMA16: // dest = r0, src = r1, length = r2
     add r12, r12, #1
 1:
     ldrh r3, [r1], #2   // Load 16-bit word, post-index increment src by 2
-    strh r3, [r0], #2   // Store 16-bit word, post-index increment dest by 2
+    strh r3, [r0], #4   // Store 16-bit word, post-index increment dest by 4
     subs r12, r12, #1
     bne 1b
 2:

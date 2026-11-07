@@ -90,7 +90,7 @@ export fn USBFS_L_CAN1_RX0_IRQHandler() callconv(.c) void {
             if (chepr.rxtc) {
                 // OUT or SETUP packet received
                 if (chepr.setuptc) {
-                    usb_device.copyFromPMA16(@ptrCast(&usbfs.ep0_buffer), usbfs.pma_buffers_rx[0], 8);
+                    usb_device.copyFromPMA1632(@ptrCast(&usbfs.ep0_buffer), usbfs.pma_buffers_rx[0], 8);
                     const result = device.setup(@ptrCast(&usbfs.ep0_buffer));
                     if (result.tx) |tx_data| {
                         usbfs.usbfs.tx(usb_cdc.CONTROL_ENDPOINT, tx_data);
@@ -108,7 +108,7 @@ export fn USBFS_L_CAN1_RX0_IRQHandler() callconv(.c) void {
                         },
                         usb_cdc.DATA_IN_ENDPOINT => {
                             const rx_length = usbfs.usbfs_buffer.getEndpointRxLength(usb_cdc.DATA_IN_ENDPOINT);
-                            usb_device.copyFromPMA16(@ptrCast(&in_buffer), usbfs.pma_buffers_rx[usb_cdc.DATA_IN_ENDPOINT], rx_length);
+                            usb_device.copyFromPMA1632(@ptrCast(&in_buffer), usbfs.pma_buffers_rx[usb_cdc.DATA_IN_ENDPOINT], rx_length);
                             rx_callback(in_buffer[0..rx_length]);
                             usbfs.usbfs.setEndpointRxStatus(usb_cdc.DATA_IN_ENDPOINT, .valid);
                         },

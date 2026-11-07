@@ -481,8 +481,8 @@ pub fn buildClassInterfaceDescriptor4(subtype: u8, data1: u8) []const u8 {
 
 pub extern fn copyFromPMA32(dest: [*]align(4) u8, src: [*]const volatile u32, len: usize) callconv(.c) void;
 pub extern fn copyToPMA32(dest: [*]volatile u32, src: [*]const u8, len: usize) callconv(.c) void;
-pub extern fn copyFromPMA16(dest: [*]align(4) u8, src: [*]const volatile u16, len: usize) callconv(.c) void;
-pub extern fn copyToPMA16(dest: [*]volatile u16, src: [*]const u8, len: usize) callconv(.c) void;
+pub extern fn copyFromPMA1632(dest: [*]align(4) u8, src: [*]const volatile u32, len: usize) callconv(.c) void;
+pub extern fn copyToPMA1632(dest: [*]volatile u32, src: [*]const u8, len: usize) callconv(.c) void;
 
 fn testEndpointStatus(ep: u8) EndpointStatus {
     _ = ep;
