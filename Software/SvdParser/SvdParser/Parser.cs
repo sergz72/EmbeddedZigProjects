@@ -98,8 +98,12 @@ public sealed class HexUInt : IXmlSerializable
         {
             s = s.Replace("#", "");
             s = s.Replace("x", "");
+            Value = Convert.ToUInt32(s, 16);
         }
-        Value = Convert.ToUInt32(s, 16);
+        else if (s.StartsWith("0x") || s.StartsWith("0X"))
+            Value = Convert.ToUInt32(s, 16);
+        else
+            Value = Convert.ToUInt32(s, 10);
     }
  
     public void WriteXml(XmlWriter writer) => throw new NotImplementedException();
