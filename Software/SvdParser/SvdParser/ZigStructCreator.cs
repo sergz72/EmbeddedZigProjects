@@ -24,7 +24,7 @@ public static class ZigStructCreator
         var lines = new List<string>();
         lines.Add($"const {peripheral.Name.ToUpper()}_BASE = 0x{peripheral.BaseAddress.Value:X};");
         lines.Add("");
-        if (peripheral.Registers == null)
+        if (peripheral.Registers == null || peripheral.Registers.Value.Registers == null)
             return lines;
         var peripheralLines = new List<string>();
         peripheralLines.Add($"pub const {peripheral.Name} = extern struct {{");
@@ -35,7 +35,7 @@ public static class ZigStructCreator
             var regLines = new List<string>();
             var rw = register.Access != "read-only";
             var rName = ToCamelCase(register.Name);
-            var pfName = register.Name.Split('_')[1].ToLower();
+            var pfName = register.Name.Contains('_') ? register.Name.Split('_')[1].ToLower() : register.Name.ToLower();
             var diff = register.AddressOffset.Value - offset; 
             if (diff != 0)
             {
@@ -47,23 +47,30 @@ public static class ZigStructCreator
             regLines.Add($"pub const {rName} = packed struct(u{register.Size.Value}) {{");
             uint nextBit = 0;
             _reservedIdx = 0;
-            foreach (var field in register.Fields.Fields.OrderBy(a => a.BitOffset))
+            if (register.Fields != null && register.Fields.Value.Fields != null)
             {
-                var fname = field.Name.ToLower();
-                if (field.BitOffset > nextBit)
-                    regLines.Add(BuildReserved(register.ResetValue.Value, field.BitOffset, field.BitOffset - nextBit, rw));
+                foreach (var field in register.Fields.Value.Fields.OrderBy(a => a.BitOffset))
+                {
+                    var fname = field.Name.ToLower();
+                    if (field.BitOffset > nextBit)
+                        regLines.Add(BuildReserved(register.ResetValue.Value, field.BitOffset,
+                            field.BitOffset - nextBit, rw));
 
-                if (field.BitWidth == 1)
-                {
-                    var iv = rw ? BuildInitValue(register.ResetValue.Value, field.BitOffset, field.BitWidth, true) : "";
-                    regLines.Add($"    {fname}: bool{iv},");
+                    if (field.BitWidth == 1)
+                    {
+                        var iv = rw
+                            ? BuildInitValue(register.ResetValue.Value, field.BitOffset, field.BitWidth, true)
+                            : "";
+                        regLines.Add($"    {fname}: bool{iv},");
+                    }
+                    else
+                    {
+                        var v = BuildFieldStruct(lines, field, register.ResetValue.Value, rw);
+                        regLines.Add($"    {fname}: {v},");
+                    }
+
+                    nextBit = field.BitOffset + field.BitWidth;
                 }
-                else
-                {
-                    var v = BuildFieldStruct(lines, field, register.ResetValue.Value, rw);
-                    regLines.Add($"    {fname}: {v},");
-                }
-                nextBit = field.BitOffset + field.BitWidth;
             }
             if (nextBit < register.Size.Value)
                 regLines.Add(BuildReserved(register.ResetValue.Value, nextBit, register.Size.Value - nextBit, rw));

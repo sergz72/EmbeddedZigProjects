@@ -55,6 +55,42 @@ pub const ScbCfsr = extern union {
     parts: ScbCfsrParts
 };
 
+pub const ScbAccess = enum(u2) {
+    no_access = 0,
+    privileged_only = 1,
+    full_access = 3
+};
+
+pub const ScbCpacr = packed struct(u32) {
+    cp0: ScbAccess = .no_access,
+    cp1: ScbAccess = .no_access,
+    cp2: ScbAccess = .no_access,
+    cp3: ScbAccess = .no_access,
+    cp4: ScbAccess = .no_access,
+    cp5: ScbAccess = .no_access,
+    cp6: ScbAccess = .no_access,
+    cp7: ScbAccess = .no_access,
+    reserved: u4 = 0,
+    cp10: ScbAccess = .no_access,
+    cp11: ScbAccess = .no_access,
+    reserved2: u8 = 0
+};
+
+pub const ScbNsacr = packed struct(u32) {
+    cp0: bool,
+    cp1: bool,
+    cp2: bool,
+    cp3: bool,
+    cp4: bool,
+    cp5: bool,
+    cp6: bool,
+    cp7: bool,
+    reserved: u2,
+    cp10: bool,
+    cp11: bool,
+    reserved2: u20
+};
+
 pub const Scb = extern struct {
     cpuid: ScbCpuId,
     icsr: ScbIcsr,
@@ -70,6 +106,9 @@ pub const Scb = extern struct {
     mmar: u32,
     bfar: u32,
     afsr: u32,
+    reserved2: [18]u32,
+    cpacr: ScbCpacr,
+    nsacr: ScbNsacr,
 
     pub fn reboot(self: *volatile Scb) void {
         asm volatile("dsb");
@@ -85,5 +124,5 @@ pub const scb: *volatile Scb = @ptrFromInt(SCB_BASE);
 
 test "sizeof test" {
     const std = @import("std");
-    try std.testing.expectEqual(0x40, @sizeOf(Scb));
+    try std.testing.expectEqual(0x90, @sizeOf(Scb));
 }

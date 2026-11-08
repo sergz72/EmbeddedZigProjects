@@ -31,7 +31,7 @@ public struct Register
     [XmlElement("size")] public HexUInt Size;
     [XmlElement("access")] public string Access;
     [XmlElement("resetValue")] public HexUInt ResetValue;
-    [XmlElement("fields")] public FieldList Fields;
+    [XmlElement("fields")] public FieldList? Fields;
 }
 
 public struct Field
@@ -93,7 +93,13 @@ public sealed class HexUInt : IXmlSerializable
  
     public void ReadXml(XmlReader reader)
     {
-        Value = Convert.ToUInt32(reader.ReadElementContentAsString(), 16);
+        var s = reader.ReadElementContentAsString();
+        if (s.StartsWith('#'))
+        {
+            s = s.Replace("#", "");
+            s = s.Replace("x", "");
+        }
+        Value = Convert.ToUInt32(s, 16);
     }
  
     public void WriteXml(XmlWriter writer) => throw new NotImplementedException();
