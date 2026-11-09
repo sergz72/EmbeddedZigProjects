@@ -1,4 +1,11 @@
+const syscon = @import("syscon");
+
 const SCG0_BASE = 0x40044000;
+
+const PLL_VCO_MIN_FREQUENCY = 275000000;
+const PLL_VCO_MAX_FREQUENCY = 550000000;
+const PLL_IN_MIN_FREQUENCY = 5000000;
+const PLL_IN_MAX_FREQUENCY = 50000000;
 
 pub const Param = packed struct(u32) {
     reserved0: u1,
@@ -31,9 +38,9 @@ pub const Scs = enum(u4) {
 };
 
 pub const Csr = packed struct(u32) {
-    reserved0: u24,
+    reserved0: u24 = 0,
     scs: Scs = .firc,
-    reserved1: u4,
+    reserved1: u4 = 0,
 };
 
 pub const Sosccsr = packed struct(u32) {
@@ -406,7 +413,7 @@ pub const Ldocsr = packed struct(u32) {
 pub const Scg = extern struct {
     verid: u32,
     param: Param,
-    lock: TrimLock,
+    trim_lock: TrimLock,
     reserved0: u32,
     csr: Csr,
     rccr: Csr,
@@ -464,21 +471,29 @@ pub const Scg = extern struct {
     reserved17: [63]u32,
     ldocsr: Ldocsr,
 
+    pub fn enable() void {
+        syscon.syscon0.ahbclkctrlset2 = syscon.Ahbclkctrl2{.scg = true};
+    }
+
     pub fn enableXosc(self: *volatile Scg, frequency: usize) void {
         if (frequency <= 20000000) {
             self.sosccfg = Sosccfg{
+                .erefs = true,
                 .range = ._16to20mhz
             };
         } else if (frequency <= 30000000) {
             self.sosccfg = Sosccfg{
+                .erefs = true,
                 .range = ._20to30mhz
             };
         } else if (frequency <= 50000000) {
             self.sosccfg = Sosccfg{
+                .erefs = true,
                 .range = ._30to50mhz
             };
         } else {
             self.sosccfg = Sosccfg{
+                .erefs = true,
                 .range = ._50to66mhz
             };
         }
@@ -488,6 +503,76 @@ pub const Scg = extern struct {
         while (!self.sosccsr.soscvld) {
             asm volatile ("nop");
         }
+    }
+
+    pub fn switchMainClockTo(self: *volatile Scg, source: Scs) void {
+        self.rccr = Csr{
+            .scs = source
+        };
+        while (self.csr.scs != source) {
+            asm volatile ("nop");
+        }
+    }
+
+    pub fn spllInit(self: *volatile Scg, source: Source, source_frequency: usize, output_frequency: usize) bool {
+        const fi = source_frequency / 2;
+        var m: usize = PLL_VCO_MIN_FREQUENCY / fi;
+        if (PLL_VCO_MIN_FREQUENCY % fi != 0) {
+            m += 1;
+        }
+        var f: usize = fi * m;
+        while (f <= PLL_VCO_MAX_FREQUENCY) : (f += fi) {
+            if (f % output_frequency == 0 and (f / output_frequency) & 1 == 0) {
+                const selp = m / 4 + 1;
+                const seli = 2 * (m / 4) + 3;
+                self.spllctrl = Spllctrl{.source = source, .seli = @truncate(seli), .selp = @truncate(selp)};
+                self.spllndiv = Spllndiv{.ndiv = 2};
+                self.spllmdiv = Spllmdiv{.mdiv = @truncate(m)};
+                self.spllpdiv = Spllpdiv{.pdiv = @truncate(f / output_frequency / 2)};
+                self.spllcsr = Spllcsr{
+                    .spllpwren = true,
+                    .spllclken = true
+                };
+                while (!self.spllcsr.spll_lock) {
+                    asm volatile ("nop");
+                }
+                return true;
+            }
+            m += 1;
+        }
+        return false;
+    }
+
+    pub fn apllInit(self: *volatile Scg, source: Source, source_frequency: usize, output_frequency: usize) bool {
+        const fi = source_frequency / 2;
+        var m: usize = PLL_VCO_MIN_FREQUENCY / fi;
+        if (PLL_VCO_MIN_FREQUENCY % fi != 0) {
+            m += 1;
+        }
+        var f: usize = fi * m;
+        while (f <= PLL_VCO_MAX_FREQUENCY) : (f += fi) {
+            if (f % output_frequency == 0 and (f / output_frequency) & 1 == 0) {
+                const selp = m / 4 + 1;
+                const seli = 2 * (m / 4) + 3;
+                self.apllctrl = Apllctrl{.source = source, .seli = @truncate(seli), .selp = @truncate(selp)};
+                self.apllndiv = Apllndiv{.ndiv = 2};
+                self.apllmdiv = Apllmdiv{.mdiv = @truncate(m)};
+                self.apllpdiv = Apllpdiv{.pdiv = @truncate(f / output_frequency / 2)};
+                //self.trim_lock = TrimLock{.trim_unlock = true, .ifr_disable = false, .trim_lock_key = 0x5A5A};
+                //todo
+                //self.appl_lock_cnfg = AplllockCnfg{.lock_time = 0};
+                self.apllcsr = Apllcsr{
+                    .apllpwren = true,
+                    .apllclken = true
+                };
+                while (!self.apllcsr.apll_lock) {
+                    asm volatile ("nop");
+                }
+                return true;
+            }
+            m += 1;
+        }
+        return false;
     }
 };
 

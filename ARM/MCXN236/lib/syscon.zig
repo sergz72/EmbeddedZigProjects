@@ -738,9 +738,10 @@ pub const Syscon = extern struct {
     dieid: Dieid,
 
     pub fn initSystemTimer(self: * volatile Syscon) void {
-        self.systickclkdiv0 = Clkdiv{.halt = false, .div = 7};
-        self.systickclksel0 = .ckclkdiv0;
-        system_timer.delay_init(system_timer.init_div8);
+        _ = self;
+        //self.systickclkdiv0 = Clkdiv{.halt = false, .div = 7};
+        //self.systickclksel0 = .ckclkdiv0;
+        system_timer.delay_init(system_timer.init_div1);
     }
 };
 

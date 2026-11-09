@@ -73,7 +73,10 @@ pub fn build(b: *std.Build) !void {
     const scg = b.addModule("scg", .{
         .root_source_file = b.path("../lib/scg.zig"),
         .target = target,
-        .optimize = optimize
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "syscon", .module = syscon }
+        },
     });
 
     const vbat = b.addModule("vbat", .{
@@ -94,7 +97,8 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "interrupts", .module = interrupts },
             .{ .name = "lpuart", .module = lpuart },
             .{ .name = "scg", .module = scg },
-            .{ .name = "vbat", .module = vbat }
+            .{ .name = "vbat", .module = vbat },
+            .{ .name = "cpu", .module = cpu }
         },
     });
 

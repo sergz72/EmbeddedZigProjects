@@ -3,6 +3,7 @@ const gpio = @import("gpio");
 const syscon = @import("syscon");
 const scg = @import("scg");
 const vbat = @import("vbat");
+const cpu = @import("cpu");
 
 const LED_GPIO = gpio.gpio4;
 const LED_RED_GPIO_PIN = 18;
@@ -15,6 +16,12 @@ const LED_GREEN_GPIO_PIN_MASK = 1 << LED_GREEN_GPIO_PIN;
 const SW_GPIO = gpio.gpio0;
 const SW2_GPIO_PIN = 20;
 const SW3_GPIO_PIN = 6;
+
+const UART_GPIO = gpio.gpio1;
+const UART_RX_PIN = 8;
+const UART_RX_PIN_MASK = 1 << UART_RX_PIN;
+const UART_TX_PIN = 9;
+const UART_TX_PIN_MASK = 1 << UART_TX_PIN;
 
 pub const panic = std.debug.no_panic;
 
@@ -53,8 +60,14 @@ pub fn getSW3() bool {
 }
 
 pub fn initClock() void {
-    //scg.scg0.enableXosc(24000000);
+    scg.Scg.enable();
+    scg.scg0.enableXosc(24000000);
     vbat.vbat0.enableOsc32k();
+    if (!scg.scg0.apllInit(.sosc, 24000000, 48000000)) {
+        ledRedOn();
+        while (true) {}
+    }
+    scg.scg0.switchMainClockTo(.apll);
     syscon.syscon0.initSystemTimer();
 }
 
@@ -69,12 +82,20 @@ pub fn initGpio() void {
 }
 
 pub fn initUart(baud: usize) void {
+    syscon.syscon0.ahbclkctrlset0 = syscon.Ahbclkctrl0{
+        .port1 = true
+    };
+    syscon.syscon0.ahbclkctrlset1 = syscon.Ahbclkctrl1{
+        .fc4 = true
+    };
+    syscon.syscon0.fccclksel[4] = .pll_div;
+
     _ = baud;
     // Initialize UART with the given baud rate
 }
 
 export fn SystemInit() callconv(.c) void {
     SystemPreInit();
-    initClock();
     initGpio();
+    initClock();
 }
