@@ -1,5 +1,3 @@
-const system_timer = @import("system_timer");
-
 const SYSCON0_BASE = 0x40000000;
 
 
@@ -736,13 +734,6 @@ pub const Syscon = extern struct {
     device_type: u32,
     device_id0: DeviceId0,
     dieid: Dieid,
-
-    pub fn initSystemTimer(self: * volatile Syscon) void {
-        _ = self;
-        //self.systickclkdiv0 = Clkdiv{.halt = false, .div = 7};
-        //self.systickclksel0 = .ckclkdiv0;
-        system_timer.delay_init(system_timer.init_div1);
-    }
 };
 
 pub const syscon0: *volatile Syscon = @ptrFromInt(SYSCON0_BASE);

@@ -3,7 +3,7 @@ const gpio = @import("gpio");
 const syscon = @import("syscon");
 const scg = @import("scg");
 const vbat = @import("vbat");
-const cpu = @import("cpu");
+const system_timer = @import("system_timer");
 
 const LED_GPIO = gpio.gpio4;
 const LED_RED_GPIO_PIN = 18;
@@ -68,7 +68,7 @@ pub fn initClock() void {
         while (true) {}
     }
     scg.scg0.switchMainClockTo(.apll);
-    syscon.syscon0.initSystemTimer();
+    system_timer.delay_init(system_timer.init_div1);
 }
 
 pub fn initGpio() void {
