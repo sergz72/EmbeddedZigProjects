@@ -117,7 +117,7 @@ pub const Gpio = extern struct {
     isfr: [2]u32,
 
     pub inline fn setPins(self: *volatile Gpio, pins: u32) void {
-        self.pdor = pins;
+        self.psor = pins;
     }
 
     pub inline fn clearPins(self: *volatile Gpio, pins: u32) void {

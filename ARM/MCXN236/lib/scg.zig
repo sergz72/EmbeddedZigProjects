@@ -463,6 +463,32 @@ pub const Scg = extern struct {
     upllcsr: Upllcsr,
     reserved17: [63]u32,
     ldocsr: Ldocsr,
+
+    pub fn enableXosc(self: *volatile Scg, frequency: usize) void {
+        if (frequency <= 20000000) {
+            self.sosccfg = Sosccfg{
+                .range = ._16to20mhz
+            };
+        } else if (frequency <= 30000000) {
+            self.sosccfg = Sosccfg{
+                .range = ._20to30mhz
+            };
+        } else if (frequency <= 50000000) {
+            self.sosccfg = Sosccfg{
+                .range = ._30to50mhz
+            };
+        } else {
+            self.sosccfg = Sosccfg{
+                .range = ._50to66mhz
+            };
+        }
+        self.sosccsr = Sosccsr{
+            .soscen = true,
+        };
+        while (!self.sosccsr.soscvld) {
+            asm volatile ("nop");
+        }
+    }
 };
 
 pub const scg0: *volatile Scg = @ptrFromInt(SCG0_BASE);

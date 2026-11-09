@@ -70,6 +70,18 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const scg = b.addModule("scg", .{
+        .root_source_file = b.path("../lib/scg.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const vbat = b.addModule("vbat", .{
+        .root_source_file = b.path("../lib/vbat.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const board = b.addModule("board", .{
         .root_source_file = b.path("../lib/FRDM_MCXN236.zig"),
         .target = target,
@@ -81,6 +93,8 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "port", .module = port },
             .{ .name = "interrupts", .module = interrupts },
             .{ .name = "lpuart", .module = lpuart },
+            .{ .name = "scg", .module = scg },
+            .{ .name = "vbat", .module = vbat }
         },
     });
 
