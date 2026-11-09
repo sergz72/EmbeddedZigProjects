@@ -16,10 +16,22 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const system_timer = b.addModule("system_timer", .{
+        .root_source_file = b.path("../../lib/system_timer.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "cpu", .module = cpu }
+        },
+    });
+
     const syscon = b.addModule("syscon", .{
         .root_source_file = b.path("../lib/syscon.zig"),
         .target = target,
-        .optimize = optimize
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "system_timer", .module = system_timer }
+        },
     });
 
     const gpio = b.addModule("gpio", .{
@@ -28,12 +40,47 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
-    const system_timer = b.addModule("system_timer", .{
-        .root_source_file = b.path("../../lib/system_timer.zig"),
+    const nvic = b.addModule("nvic", .{
+        .root_source_file = b.path("../../lib/nvic.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const port = b.addModule("port", .{
+        .root_source_file = b.path("../lib/port.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const interrupts = b.addModule("interrupts", .{
+        .root_source_file = b.path("../lib/interrupts.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const ctimer = b.addModule("ctimer", .{
+        .root_source_file = b.path("../lib/ctimer.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const lpuart = b.addModule("lpuart", .{
+        .root_source_file = b.path("../lib/lpuart.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const board = b.addModule("board", .{
+        .root_source_file = b.path("../lib/FRDM_MCXN236.zig"),
         .target = target,
         .optimize = optimize,
         .imports = &.{
-            .{ .name = "cpu", .module = cpu }
+            .{ .name = "syscon", .module = syscon },
+            .{ .name = "gpio", .module = gpio },
+            .{ .name = "nvic", .module = nvic },
+            .{ .name = "port", .module = port },
+            .{ .name = "interrupts", .module = interrupts },
+            .{ .name = "lpuart", .module = lpuart },
         },
     });
 
@@ -45,8 +92,8 @@ pub fn build(b: *std.Build) !void {
             .optimize = optimize,
             .imports = &.{
                 .{ .name = "system_timer", .module = system_timer },
-                .{ .name = "syscon", .module = syscon },
-                .{ .name = "gpio", .module = gpio }
+                .{ .name = "board", .module = board },
+                .{ .name = "ctimer", .module = ctimer },
             },
         }),
     });

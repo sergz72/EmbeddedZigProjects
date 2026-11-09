@@ -115,6 +115,34 @@ pub const Gpio = extern struct {
     gichr: Gichr,
     reserved4: [6]u32,
     isfr: [2]u32,
+
+    pub inline fn setPins(self: *volatile Gpio, pins: u32) void {
+        self.pdor = pins;
+    }
+
+    pub inline fn clearPins(self: *volatile Gpio, pins: u32) void {
+        self.pcor = pins;
+    }
+
+    pub inline fn togglePins(self: *volatile Gpio, pins: u32) void {
+        self.ptor = pins;
+    }
+
+    pub inline fn in(self: *volatile Gpio) u32 {
+        return self.pdir;
+    }
+
+    pub inline fn out(self: *volatile Gpio, pins: u32) void {
+        self.pdor = pins;
+    }
+
+    pub inline fn disableInput(self: *volatile Gpio, pins: u32) void {
+        self.pidr |= pins;
+    }
+
+    pub fn setAsOutput(self: *volatile Gpio, pins: u32) void {
+        self.pddr |= pins;
+    }
 };
 
 pub const gpio0: *volatile Gpio = @ptrFromInt(GPIO0_BASE);
