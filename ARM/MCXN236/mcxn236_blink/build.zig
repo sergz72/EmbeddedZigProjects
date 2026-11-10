@@ -28,10 +28,7 @@ pub fn build(b: *std.Build) !void {
     const syscon = b.addModule("syscon", .{
         .root_source_file = b.path("../lib/syscon.zig"),
         .target = target,
-        .optimize = optimize,
-        .imports = &.{
-            .{ .name = "system_timer", .module = system_timer }
-        },
+        .optimize = optimize
     });
 
     const gpio = b.addModule("gpio", .{
@@ -85,6 +82,12 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const lp_flexcomm = b.addModule("lp_flexcomm", .{
+        .root_source_file = b.path("../lib/lp_flexcomm.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const board = b.addModule("board", .{
         .root_source_file = b.path("../lib/FRDM_MCXN236.zig"),
         .target = target,
@@ -98,6 +101,10 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "lpuart", .module = lpuart },
             .{ .name = "scg", .module = scg },
             .{ .name = "vbat", .module = vbat },
+            .{ .name = "system_timer", .module = system_timer },
+            .{ .name = "lp_flexcomm", .module = lp_flexcomm },
+            .{ .name = "nvic", .module = nvic },
+            .{ .name = "interrupts", .module = interrupts },
             .{ .name = "cpu", .module = cpu }
         },
     });

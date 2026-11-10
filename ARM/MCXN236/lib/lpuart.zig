@@ -138,17 +138,8 @@ pub const Ctrl = packed struct(u32) {
     r8t9: bool = false,
 };
 
-pub const Data = packed struct(u32) {
-    r0t0: bool = false,
-    r1t1: bool = false,
-    r2t2: bool = false,
-    r3t3: bool = false,
-    r4t4: bool = false,
-    r5t5: bool = false,
-    r6t6: bool = false,
-    r7t7: bool = false,
-    r8t8: bool = false,
-    r9t9: bool = false,
+pub const Data32 = packed struct(u32) {
+    data: u10 = 0,
     linbrk: bool = false,
     idline: bool = false,
     rxempt: bool = true,
@@ -156,6 +147,11 @@ pub const Data = packed struct(u32) {
     paritye: bool = false,
     noisy: bool = false,
     reserved0: u16 = 0,
+};
+
+pub const Data = extern union {
+    data8: u8,
+    data32: Data32
 };
 
 pub const Match = packed struct(u32) {
@@ -348,6 +344,16 @@ pub const Lpuart = extern struct {
     reserved2: [100]u32,
     tcbr: [128]Tcbr,
     tdbr: [256]Tdbr,
+
+    pub fn init(self: *volatile Lpuart, baud: usize, clock_frequency: usize) void {
+        self.global = Global{ .rst = true };
+        self.global = Global{};
+        self.baud = Baud{
+            .sbr = @truncate(clock_frequency / (baud * 16)),
+            .osr = 15, // oversampling ratio = 16
+        };
+        self.ctrl = Ctrl{ .re = true, .te = true, .rie = true };
+    }
 };
 
 pub const lpuart0: *volatile Lpuart = @ptrFromInt(LPUART0_BASE);

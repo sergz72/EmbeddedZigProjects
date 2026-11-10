@@ -186,21 +186,21 @@ pub const Rosccsr = packed struct(u32) {
     reserved2: u5 = 0,
 };
 
-pub const Apllcsr = packed struct(u32) {
-    apllpwren: bool = false,
-    apllclken: bool = false,
-    apllsten: bool = false,
+pub const Pllcsr = packed struct(u32) {
+    pwren: bool = false,
+    clken: bool = false,
+    sten: bool = false,
     frm_clockstable: bool = false,
     reserved0: u12 = 0,
-    apllcm: bool = false,
-    apllcmre: bool = false,
+    cm: bool = false,
+    cmre: bool = false,
     reserved1: u5 = 0,
     lk: bool = false,
-    apll_lock: bool = false,
-    apllsel: bool = false,
-    apllerr: bool = false,
+    lock: bool = false,
+    sel: bool = false,
+    err: bool = false,
     reserved2: u3 = 0,
-    apll_lock_ie: bool = false,
+    lock_ie: bool = false,
     reserved3: u1 = 0,
 };
 
@@ -210,7 +210,7 @@ pub const Source = enum(u2) {
     no_clock = 3,
 };
 
-pub const Apllctrl = packed struct(u32) {
+pub const Pllctrl = packed struct(u32) {
     selr: u4 = 0,
     seli: u6 = 0,
     selp: u5 = 0,
@@ -227,7 +227,7 @@ pub const Apllctrl = packed struct(u32) {
     reserved3: u5 = 0,
 };
 
-pub const Apllstat = packed struct(u32) {
+pub const Pllstat = packed struct(u32) {
     reserved0: u1,
     ndivack: bool,
     mdivack: bool,
@@ -236,30 +236,30 @@ pub const Apllstat = packed struct(u32) {
     reserved1: u27,
 };
 
-pub const Apllndiv = packed struct(u32) {
+pub const Pllndiv = packed struct(u32) {
     ndiv: u8 = 1,
     reserved0: u23 = 0,
     nreq: bool = false,
 };
 
-pub const Apllmdiv = packed struct(u32) {
+pub const Pllmdiv = packed struct(u32) {
     mdiv: u16 = 1,
     reserved0: u15 = 0,
     mreq: bool = false,
 };
 
-pub const Apllpdiv = packed struct(u32) {
+pub const Pllpdiv = packed struct(u32) {
     pdiv: u5 = 1,
     reserved0: u26 = 0,
     preq: bool = false,
 };
 
-pub const AplllockCnfg = packed struct(u32) {
+pub const PlllockCnfg = packed struct(u32) {
     lock_time: u17 = 20300,
     reserved0: u15 = 0,
 };
 
-pub const Apllsscgstat = packed struct(u32) {
+pub const Pllsscgstat = packed struct(u32) {
     ss_mdiv_ack: bool,
     reserved0: u31,
 };
@@ -269,7 +269,7 @@ pub const Mc = enum(u2) {
     max_comp = 3,
 };
 
-pub const Apllsscg1 = packed struct(u32) {
+pub const Pllsscg1 = packed struct(u32) {
     ss_mdiv_msb: bool = false,
     ss_mdiv_req: bool = false,
     mf: u3 = 0,
@@ -281,102 +281,11 @@ pub const Apllsscg1 = packed struct(u32) {
     ss_pd: bool = true,
 };
 
-pub const ApllOvrd = packed struct(u32) {
-    apllpwren_ovrd: bool = false,
-    apllclken_ovrd: bool = false,
+pub const PllOvrd = packed struct(u32) {
+    pwren_ovrd: bool = false,
+    clken_ovrd: bool = false,
     reserved0: u29 = 0,
-    apll_ovrd_en: bool = false,
-};
-
-pub const Spllcsr = packed struct(u32) {
-    spllpwren: bool = false,
-    spllclken: bool = false,
-    spllsten: bool = false,
-    frm_clockstable: bool = false,
-    reserved0: u12 = 0,
-    spllcm: bool = false,
-    spllcmre: bool = false,
-    reserved1: u5 = 0,
-    lk: bool = false,
-    spll_lock: bool = false,
-    spllsel: bool = false,
-    spllerr: bool = false,
-    reserved2: u3 = 0,
-    spll_lock_ie: bool = false,
-    reserved3: u1 = 0,
-};
-
-pub const Spllctrl = packed struct(u32) {
-    selr: u4 = 0,
-    seli: u6 = 0,
-    selp: u5 = 0,
-    reserved0: u1 = 0,
-    bypasspostdiv2: bool = false,
-    limupoff: bool = false,
-    banddirect: bool = false,
-    bypassprediv: bool = false,
-    bypasspostdiv: bool = false,
-    reserved1: u1 = 0,
-    frm: bool = false,
-    reserved2: u2 = 0,
-    source: Source = .sosc,
-    reserved3: u5 = 0,
-};
-
-pub const Spllstat = packed struct(u32) {
-    reserved0: u1,
-    ndivack: bool,
-    mdivack: bool,
-    pdivack: bool,
-    frmdet: bool,
-    reserved1: u27,
-};
-
-pub const Spllndiv = packed struct(u32) {
-    ndiv: u8 = 1,
-    reserved0: u23 = 0,
-    nreq: bool = false,
-};
-
-pub const Spllmdiv = packed struct(u32) {
-    mdiv: u16 = 1,
-    reserved0: u15 = 0,
-    mreq: bool = false,
-};
-
-pub const Spllpdiv = packed struct(u32) {
-    pdiv: u5 = 1,
-    reserved0: u26 = 0,
-    preq: bool = false,
-};
-
-pub const SplllockCnfg = packed struct(u32) {
-    lock_time: u17 = 20300,
-    reserved0: u15 = 0,
-};
-
-pub const Spllsscgstat = packed struct(u32) {
-    ss_mdiv_ack: bool,
-    reserved0: u31,
-};
-
-pub const Spllsscg1 = packed struct(u32) {
-    ss_mdiv_msb: bool = false,
-    ss_mdiv_req: bool = false,
-    mf: u3 = 0,
-    mr: u3 = 0,
-    mc: Mc = .no_comp,
-    dither: bool = false,
-    sel_ss_mdiv: bool = false,
-    reserved0: u19 = 1,
-    ss_pd: bool = true,
-};
-
-pub const SpllOvrd = packed struct(u32) {
-    spllpwren_ovrd: bool = false,
-    spllclken_ovrd: bool = false,
-    reserved0: u29 = 0,
-    spll_ovrd_en: bool = false,
+    ovrd_en: bool = false,
 };
 
 pub const Upllcsr = packed struct(u32) {
@@ -410,6 +319,23 @@ pub const Ldocsr = packed struct(u32) {
     vout_ok: bool = false,
 };
 
+pub const Pll = extern struct {
+    csr: Pllcsr,
+    ctrl: Pllctrl,
+    stat: Pllstat,
+    ndiv: Pllndiv,
+    mdiv: Pllmdiv,
+    pdiv: Pllpdiv,
+    lock_cnfg: PlllockCnfg,
+    reserved11: u32,
+    sscgstat: Pllsscgstat,
+    sscg0: u32,
+    sscg1: Pllsscg1,
+    reserved12: [50]u32,
+    ovrd: PllOvrd,
+    reserved13: [2]u32
+};
+
 pub const Scg = extern struct {
     verid: u32,
     param: Param,
@@ -439,34 +365,7 @@ pub const Scg = extern struct {
     reserved9: [57]u32,
     rosccsr: Rosccsr,
     reserved10: [63]u32,
-    apllcsr: Apllcsr,
-    apllctrl: Apllctrl,
-    apllstat: Apllstat,
-    apllndiv: Apllndiv,
-    apllmdiv: Apllmdiv,
-    apllpdiv: Apllpdiv,
-    appl_lock_cnfg: AplllockCnfg,
-    reserved11: u32,
-    apllsscgstat: Apllsscgstat,
-    apllsscg0: u32,
-    apllsscg1: Apllsscg1,
-    reserved12: [50]u32,
-    apll_ovrd: ApllOvrd,
-    reserved13: [2]u32,
-    spllcsr: Spllcsr,
-    spllctrl: Spllctrl,
-    spllstat: Spllstat,
-    spllndiv: Spllndiv,
-    spllmdiv: Spllmdiv,
-    spllpdiv: Spllpdiv,
-    spll_lock_cnfg: SplllockCnfg,
-    reserved14: u32,
-    spllsscgstat: Spllsscgstat,
-    spllsscg0: u32,
-    spllsscg1: Spllsscg1,
-    reserved15: [50]u32,
-    spll_ovrd: SpllOvrd,
-    reserved16: [2]u32,
+    pll: [2]Pll,
     upllcsr: Upllcsr,
     reserved17: [63]u32,
     ldocsr: Ldocsr,
@@ -514,7 +413,7 @@ pub const Scg = extern struct {
         }
     }
 
-    pub fn spllInit(self: *volatile Scg, source: Source, source_frequency: usize, output_frequency: usize) bool {
+    pub fn pllInit(self: *volatile Scg, pll1: bool, source: Source, source_frequency: usize, output_frequency: usize) bool {
         const fi = source_frequency / 2;
         var m: usize = PLL_VCO_MIN_FREQUENCY / fi;
         if (PLL_VCO_MIN_FREQUENCY % fi != 0) {
@@ -523,49 +422,20 @@ pub const Scg = extern struct {
         var f: usize = fi * m;
         while (f <= PLL_VCO_MAX_FREQUENCY) : (f += fi) {
             if (f % output_frequency == 0 and (f / output_frequency) & 1 == 0) {
+                const pll = if (pll1) &self.pll[1] else &self.pll[0];
                 const selp = m / 4 + 1;
                 const seli = 2 * (m / 4) + 3;
-                self.spllctrl = Spllctrl{.source = source, .seli = @truncate(seli), .selp = @truncate(selp)};
-                self.spllndiv = Spllndiv{.ndiv = 2};
-                self.spllmdiv = Spllmdiv{.mdiv = @truncate(m)};
-                self.spllpdiv = Spllpdiv{.pdiv = @truncate(f / output_frequency / 2)};
-                self.spllcsr = Spllcsr{
-                    .spllpwren = true,
-                    .spllclken = true
+                pll.ctrl = Pllctrl{.source = source, .seli = @truncate(seli), .selp = @truncate(selp)};
+                pll.ndiv = Pllndiv{.ndiv = 2};
+                pll.mdiv = Pllmdiv{.mdiv = @truncate(m)};
+                pll.pdiv = Pllpdiv{.pdiv = @truncate(f / output_frequency / 2)};
+                self.trim_lock = TrimLock{.trim_unlock = true, .ifr_disable = false, .trim_lock_key = 0x5A5A};
+                pll.lock_cnfg = PlllockCnfg{.lock_time = @truncate(fi / 2000 + 300)};
+                pll.csr = Pllcsr{
+                    .pwren = true,
+                    .clken = true
                 };
-                while (!self.spllcsr.spll_lock) {
-                    asm volatile ("nop");
-                }
-                return true;
-            }
-            m += 1;
-        }
-        return false;
-    }
-
-    pub fn apllInit(self: *volatile Scg, source: Source, source_frequency: usize, output_frequency: usize) bool {
-        const fi = source_frequency / 2;
-        var m: usize = PLL_VCO_MIN_FREQUENCY / fi;
-        if (PLL_VCO_MIN_FREQUENCY % fi != 0) {
-            m += 1;
-        }
-        var f: usize = fi * m;
-        while (f <= PLL_VCO_MAX_FREQUENCY) : (f += fi) {
-            if (f % output_frequency == 0 and (f / output_frequency) & 1 == 0) {
-                const selp = m / 4 + 1;
-                const seli = 2 * (m / 4) + 3;
-                self.apllctrl = Apllctrl{.source = source, .seli = @truncate(seli), .selp = @truncate(selp)};
-                self.apllndiv = Apllndiv{.ndiv = 2};
-                self.apllmdiv = Apllmdiv{.mdiv = @truncate(m)};
-                self.apllpdiv = Apllpdiv{.pdiv = @truncate(f / output_frequency / 2)};
-                //self.trim_lock = TrimLock{.trim_unlock = true, .ifr_disable = false, .trim_lock_key = 0x5A5A};
-                //todo
-                //self.appl_lock_cnfg = AplllockCnfg{.lock_time = 0};
-                self.apllcsr = Apllcsr{
-                    .apllpwren = true,
-                    .apllclken = true
-                };
-                while (!self.apllcsr.apll_lock) {
+                while (!pll.csr.lock) {
                     asm volatile ("nop");
                 }
                 return true;
