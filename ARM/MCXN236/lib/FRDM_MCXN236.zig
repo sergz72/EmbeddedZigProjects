@@ -69,14 +69,18 @@ pub fn getSW3() bool {
 }
 
 pub fn initClock() void {
-    scg.Scg.enable();
-    scg.scg0.enableXosc(24000000);
+    //scg.Scg.enable();
+    //scg.scg0.enableXosc(24000000);
     vbat.vbat0.enableOsc32k();
-    if (!scg.scg0.pllInit(false, .sosc, 24000000, 48000000)) {
-        ledRedOn();
-        while (true) {}
-    }
-    scg.scg0.switchMainClockTo(.apll);
+    //if (!scg.scg0.pllInit(false, .sosc, 24000000, 48000000)) {
+    //    ledRedOn();
+    //    while (true) {}
+    //}
+    //if (!scg.scg0.pllInit(true, .sosc, 24000000, 48000000)) {
+    //    ledRedOn();
+    //    while (true) {}
+    //}
+    //scg.scg0.switchMainClockTo(.apll);
     system_timer.delay_init(system_timer.init_div1);
 }
 
@@ -94,7 +98,10 @@ pub fn initUart(baud: usize, callback: *const fn(u8) void) void {
     usart_callback = callback;
     syscon.syscon0.ahbclkctrlset0 = syscon.Ahbclkctrl0{.port1 = true};
     syscon.syscon0.ahbclkctrlset1 = syscon.Ahbclkctrl1{.fc4 = true};
-    syscon.syscon0.fcclksel[4] = .pll_div;
+    //syscon.syscon0.pll1clk0div = syscon.Clkdiv{.halt = false};
+    //syscon.syscon0.pllclkdivsel = .pll1_clk0;
+    syscon.syscon0.frohfdiv = syscon.Frohfdiv{.halt = false};
+    syscon.syscon0.fcclksel[4] = .fro_hf_div;
     syscon.syscon0.lp_flexcommclkdiv[4] = syscon.Clkdiv{.halt = false};
     UART_PORT.pcr[UART_RX_PIN] = port.Pcr{.mux = 2, .ibe = true};
     UART_PORT.pcr[UART_TX_PIN] = port.Pcr{.mux = 2, .ibe = true};
