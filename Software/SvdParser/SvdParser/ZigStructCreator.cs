@@ -47,25 +47,25 @@ public static class ZigStructCreator
             regLines.Add($"pub const {rName} = packed struct(u{register.Size.Value}) {{");
             uint nextBit = 0;
             _reservedIdx = 0;
+            var resetValue  = register.ResetValue?.Value ?? 0;
             if (register.Fields != null && register.Fields.Value.Fields != null)
             {
                 foreach (var field in register.Fields.Value.Fields.OrderBy(a => a.BitOffset))
                 {
                     var fname = field.Name.ToLower();
                     if (field.BitOffset > nextBit)
-                        regLines.Add(BuildReserved(register.ResetValue.Value, field.BitOffset,
-                            field.BitOffset - nextBit, rw));
+                        regLines.Add(BuildReserved(resetValue, field.BitOffset, field.BitOffset - nextBit, rw));
 
                     if (field.BitWidth == 1)
                     {
                         var iv = rw
-                            ? BuildInitValue(register.ResetValue.Value, field.BitOffset, field.BitWidth, true)
+                            ? BuildInitValue(resetValue, field.BitOffset, field.BitWidth, true)
                             : "";
                         regLines.Add($"    {fname}: bool{iv},");
                     }
                     else
                     {
-                        var v = BuildFieldStruct(lines, field, register.ResetValue.Value, rw);
+                        var v = BuildFieldStruct(lines, field, resetValue, rw);
                         regLines.Add($"    {fname}: {v},");
                     }
 
@@ -73,7 +73,7 @@ public static class ZigStructCreator
                 }
             }
             if (nextBit < register.Size.Value)
-                regLines.Add(BuildReserved(register.ResetValue.Value, nextBit, register.Size.Value - nextBit, rw));
+                regLines.Add(BuildReserved(resetValue, nextBit, register.Size.Value - nextBit, rw));
             regLines.Add("};");
             regLines.Add("");
             lines.AddRange(regLines);
