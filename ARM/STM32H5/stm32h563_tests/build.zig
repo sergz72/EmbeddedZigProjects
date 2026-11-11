@@ -84,6 +84,21 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const rng = b.addModule("rng", .{
+        .root_source_file = b.path("../lib/rng.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "rcc", .module = rcc }
+        },
+    });
+
+    const crc = b.addModule("crc", .{
+        .root_source_file = b.path("../lib/crc.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const usb_device = b.addModule("usb_device", .{
         .root_source_file = b.path("../../../common_lib/usb/usb_device.zig"),
         .target = target,
@@ -160,6 +175,12 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const usb_writer = b.addModule("usb_writer", .{
+        .root_source_file = b.path("../../../common_lib/usb_writer.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const allocator = b.addModule("allocator", .{
         .root_source_file = b.path("../../lib/fb_allocator.zig"),
         .target = target,
@@ -212,6 +233,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "system_timer", .module = system_timer },
             .{ .name = "interrupts", .module = interrupts },
             .{ .name = "shell", .module = shell },
+            .{ .name = "rng", .module = rng },
         },
     });
 
@@ -238,6 +260,44 @@ pub fn build(b: *std.Build) !void {
         }
     });
 
+    const i2c_commands = b.addModule("i2c_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/i2c_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell }
+        }
+    });
+
+    const spi_commands = b.addModule("spi_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/spi_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "utils", .module = utils }
+        }
+    });
+
+    const trng_commands = b.addModule("trng_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/trng_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell }
+        }
+    });
+
+    const crc_commands = b.addModule("crc_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/crc_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "utils", .module = utils }
+        }
+    });
+
     const exe = b.addExecutable(.{
         .name = "stm32h563_tests.elf",
         .root_module = b.createModule(.{
@@ -247,6 +307,7 @@ pub fn build(b: *std.Build) !void {
             .imports = &.{
                 .{ .name = "board", .module = board },
                 .{ .name = "usart_writer", .module = usart_writer },
+                .{ .name = "usb_writer", .module = usb_writer },
                 .{ .name = "hal", .module = hal },
                 .{ .name = "shell", .module = shell },
                 .{ .name = "allocator", .module = allocator },
@@ -255,6 +316,12 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "flash_commands", .module = flash_commands },
                 .{ .name = "usb_cdc_impl", .module = usb_cdc_impl },
                 .{ .name = "rcc", .module = rcc },
+                .{ .name = "i2c_commands", .module = i2c_commands },
+                .{ .name = "spi_commands", .module = spi_commands },
+                .{ .name = "trng_commands", .module = trng_commands },
+                .{ .name = "crc_commands", .module = crc_commands },
+                .{ .name = "rng", .module = rng },
+                .{ .name = "crc", .module = crc }
             },
         }),
     });

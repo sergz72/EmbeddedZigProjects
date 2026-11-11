@@ -67,7 +67,7 @@ pub const Rng = extern struct {
     htcr: u32,
 
     pub fn init(self: *volatile Rng) void {
-        rcc.rcc.ahb2enr.rngen = true;
+        rcc.rcc.hpenr.ahb2.rngen = true;
         self.cr.rngen = true;
     }
 

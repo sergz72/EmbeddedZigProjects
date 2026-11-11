@@ -8,6 +8,7 @@ const interrupts = @import("interrupts");
 const flash = @import("flash");
 const scb = @import("scb");
 const shell = @import("shell");
+const rng = @import("rng");
 
 const TIMER_INSTANCE = tim.tim7;
 
@@ -25,7 +26,7 @@ export fn TIM7_IRQHandler() callconv(.c) void {
 }
 
 fn usartCallback(data: u8) void {
-    sh.processChar(data);
+    sh.processChar(0, data);
 }
 
 inline fn initTimer() void {
@@ -46,6 +47,9 @@ export fn SystemInit() callconv(.c) void {
     board.init(false, 48000000, rcc.PllCharacteristicsH563);
     board.initUsart(115200, &usartCallback, true);
     initTimer();
+    rcc.rcc.hsi48On();
+    rng.rng.init();
+    rcc.rcc.hpenr.ahb1.crcen = true;
 }
 
 pub fn ledToggle() void {
@@ -78,4 +82,27 @@ pub fn wdtReset() void {
 
 pub fn getResetCause() []const u8 {
     return rcc.rcc.getResetCause();
+}
+
+pub fn i2cScan(channel: usize, address: u10) [2]u8 {
+    _ = channel;
+    _ = address;
+    //if (channel != 0)
+        return [2]u8{'e', 'c'};
+    //I2C_INSTANCE.scan(address, I2C_TIMEOUT) catch |err| {
+    //    const e: []const u8 = @errorName(err);
+    //    return [2]u8{e[0], e[1]};
+    //};
+    //return [2]u8{0,0};
+}
+
+pub fn spiSendReceive(channel: usize, wdata: []const u8, rdata: []u8) bool {
+    _ = channel;
+    //_ = spi1CsSet(@ptrFromInt(1), false);
+    //SPI_INSTANCE.sendReceivePoll8(wdata, rdata);
+    //_ = spi1CsSet(@ptrFromInt(1), true);
+    //return true;
+    _ = wdata;
+    _ = rdata;
+    return false;
 }
