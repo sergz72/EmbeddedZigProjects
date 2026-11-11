@@ -10,6 +10,8 @@ const interrupts = @import("interrupts");
 const usart_writer = @import("usart_writer");
 const dma_sender = @import("dma_sender");
 const gpdma = @import("gpdma");
+const i2c = @import("i2c");
+const spi = @import("spi");
 
 const LED_GREEN_PB0_PIN = 0;
 const LED_GREEN_PB0_PIN_MASK: u16 = 1 << LED_GREEN_PB0_PIN;
@@ -27,9 +29,18 @@ const LED_RED_PIN = 4;
 const LED_RED_PIN_MASK: u16 = 1 << LED_RED_PIN;
 const LED_RED_PORT = gpio.gpiog;
 
+const LED_GPIO_INIT: gpio.GpioInit = .{
+    .mode = .output,
+    .speed = .low
+};
+
 const BUTTON_PIN = 13;
 const BUTTON_PIN_MASK: u16 = 1 << BUTTON_PIN;
 const BUTTON_PORT = gpio.gpioc;
+
+const BUTTON_GPIO_INIT: gpio.GpioInit = .{
+    .mode = .input
+};
 
 const USART_PORT = gpio.gpiod;
 pub const USART_INSTANCE = usart.usart3;
@@ -39,6 +50,24 @@ const USART_TX_PIN_MASK: u16 = 1 << USART_TX_PIN;
 //--------------------------------
 const USART_RX_PIN = 9;
 const USART_RX_PIN_MASK: u16 = 1 << USART_RX_PIN;
+
+pub const I2C_INSTANCE = i2c.i2c1;
+//--------------------------
+const I2C_PORT = gpio.gpiob;
+const I2C_SCL_PIN = 8;
+const I2C_SCL_PIN_MASK = (1 << I2C_SCL_PIN);
+const I2C_SDA_PIN = 9;
+const I2C_SDA_PIN_MASK = (1 << I2C_SDA_PIN);
+const I2C_PINS_INIT: gpio.GpioInit = .{
+    .mode = .alternate,
+    .pull = .pullup,
+    .open_drain = true,
+    .speed = .low,
+    .alternate = 4
+};
+//------------------------------
+pub const I2C_TIMEOUT = 10000;
+const I2C_SPEED = 100000;
 
 var led_green_alternate: bool = undefined;
 var rcc_init = rcc.RccInit{};
@@ -100,21 +129,14 @@ pub fn initLeds(led_green_pa5: bool) void {
     rcc.rcc.hpenr.ahb2.gpiofen = true;
     rcc.rcc.hpenr.ahb2.gpiogen = true;
     led_green_alternate = led_green_pa5;
-    const ginit: gpio.GpioInit = .{
-        .mode = .output,
-        .speed = .low
-    };
-    if (led_green_pa5) LED_GREEN_PA5_PORT.init(LED_GREEN_PA5_PIN_MASK, ginit) else LED_GREEN_PB0_PORT.init(LED_GREEN_PB0_PIN_MASK, ginit);
-    LED_YELLOW_PORT.init(LED_YELLOW_PIN_MASK, ginit);
-    LED_RED_PORT.init(LED_RED_PIN_MASK, ginit);
+    if (led_green_pa5) LED_GREEN_PA5_PORT.init(LED_GREEN_PA5_PIN_MASK, LED_GPIO_INIT) else LED_GREEN_PB0_PORT.init(LED_GREEN_PB0_PIN_MASK, LED_GPIO_INIT);
+    LED_YELLOW_PORT.init(LED_YELLOW_PIN_MASK, LED_GPIO_INIT);
+    LED_RED_PORT.init(LED_RED_PIN_MASK, LED_GPIO_INIT);
 }
 
 pub fn initButton() void {
     rcc.rcc.hpenr.ahb2.gpiocen = true;
-    const init_data: gpio.GpioInit = .{
-        .mode = .input
-    };
-    BUTTON_PORT.init(BUTTON_PIN_MASK, init_data);
+    BUTTON_PORT.init(BUTTON_PIN_MASK, BUTTON_GPIO_INIT);
 }
 
 pub fn usartDmaInit(buffer_size: usize, allocator: std.mem.Allocator) error{OutOfMemory}!void {
@@ -145,6 +167,15 @@ pub fn initUsart(baud: u32, callback: *const fn(u8) void, use_dma: bool) void {
         usart_writer.usart_writer.writeCharFunc = usartWrite;
     }
     nvic.nvic.enableInterrupt(interrupts.Interrupt.USART3.toU8());
+}
+
+pub fn initArduinoI2c() void {
+    rcc.rcc.hpenr.ahb2.gpioben = true;
+    rcc.rcc.hpenr.apb1l.i2c1en = true;
+    I2C_PORT.init(I2C_SCL_PIN_MASK | I2C_SDA_PIN_MASK, I2C_PINS_INIT);
+    I2C_INSTANCE.initMaster(I2C_SPEED, cpu.cpu.pclk1_frequency) catch {
+        while (true) {}
+    };
 }
 
 pub fn init(led_green_pa5: bool, cpu_frequency: usize, pll_characteristics: rcc.PllCharacteristics) void {

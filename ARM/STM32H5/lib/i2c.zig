@@ -124,6 +124,15 @@ pub const I2cPecr = packed struct(u32) {
     reserved0: u24 = 0,
 };
 
+pub const I2cError = error {
+    TimeoutWaitStopf,
+    TimeoutWaitTxis,
+    AcknowledgeFailure,
+    UnsupportedSpeed,
+    InvalidClock,
+    NoValidTiming
+};
+
 pub const I2c = extern struct {
     cr1: I2cCr1,
     cr2: I2cCr2,
@@ -137,8 +146,224 @@ pub const I2c = extern struct {
     rxdr: u8,
     reserved0: [3]u8,
     txdr: u8,
-    reserved1: [3]u8
+    reserved1: [3]u8,
+
+    pub fn enable(self: *volatile I2c) void {
+        self.cr1.pe = true;
+    }
+
+    pub fn disable(self: *volatile I2c) void {
+        self.cr1.pe = false;
+    }
+
+    pub fn initMaster(self: *volatile I2c, speed: usize, i2c_clock_frequency: usize) I2cError!void {
+        self.timingr = try calcTimingr(speed,i2c_clock_frequency);
+        self.cr2 = I2cCr2{.nack = true, .autoend = true};
+        self.cr1 = I2cCr1{.pe = true};
+    }
+
+    fn waitEvent(self: *volatile I2c, event_fn: *const fn(*volatile I2c) bool, timeout: usize, check_af: bool) I2cError!bool {
+        var t = timeout;
+        while (t != 0) {
+            if (check_af and self.isAcknowledgeFailed(timeout))
+                return I2cError.AcknowledgeFailure;
+            if (event_fn(self))
+                break;
+            t -= 1;
+        }
+        return t != 0;
+    }
+
+    fn flushTxdr(self: *volatile I2c) void {
+        // If a pending TXIS flag is set
+        // Write a dummy data in TXDR to clear it
+        if(self.isr.txis)
+            self.txdr = 0;
+
+        // Flush TX register if not empty
+        if (!self.isr.txe)
+            self.isr.txe = true;
+    }
+
+    fn resetCr2(self: *volatile I2c) void {
+        var cr2 = self.cr2;
+        cr2.sadd = 0;
+        cr2.nbytes = 0;
+        cr2.rd_wrn = false;
+        cr2.reload = false;
+        cr2.head10r = false;
+        self.cr2 = cr2;
+    }
+
+    fn clearNackStopFlags(self: *volatile I2c) void {
+        self.icr = I2cIcr{.nackcf = true, .stopcf = true};
+    }
+
+    fn isAcknowledgeFailed(self: *volatile I2c, timeout: usize) bool {
+        if (self.isr.nackf) {
+            var t = timeout;
+            while (t != 0) {
+                if (self.isr.stopf)
+                    break;
+                t -= 1;
+            }
+            if (t == 0) {
+                return true;
+            }
+            self.clearNackStopFlags();
+            self.flushTxdr();
+            self.resetCr2();
+            return true;
+        }
+        return false;
+    }
+
+    fn transferConfig(self: *volatile I2c, dev_address: u10, size: u8, rd_wrn: bool, autoend: bool, start: bool, reload: bool) void {
+        var cr2 = self.cr2;
+        cr2.sadd = dev_address << 1;
+        cr2.nbytes = size;
+        cr2.rd_wrn = rd_wrn;
+        cr2.autoend = autoend;
+        cr2.reload = reload;
+        cr2.start = start;
+        cr2.stop = false;
+        self.cr2 = cr2;
+    }
+
+    pub fn write(self: *volatile I2c, address: u10, data: []const u8, timeout: usize) I2cError!void {
+        _ = self;
+        _ = address;
+        _ = data;
+        _ = timeout;
+    }
+
+    pub fn transfer(self: *volatile I2c, address: u10, wdata: []const u8, rdata: []u8, timeout: usize) I2cError!void {
+        _ = self;
+        _ = address;
+        _ = wdata;
+        _ = rdata;
+        _ = timeout;
+    }
+
+    pub fn scan(self: *volatile I2c, address: u10, timeout: usize) I2cError!void {
+        self.transferConfig(address, 0, false, true, true, false);
+        if (!try self.waitEvent(checkStopf, timeout, true)) {
+            return I2cError.TimeoutWaitStopf;
+        }
+        self.clearNackStopFlags();
+    }
+
+    pub fn read(self: *volatile I2c, address: u10, data: []u8, timeout: usize) I2cError!void {
+        _ = self;
+        _ = address;
+        _ = data;
+        _ = timeout;
+    }
+
+    fn checkTxis(self: *volatile I2c) bool {
+        return self.isr.txis;
+    }
+
+    fn checkStopf(self: *volatile I2c) bool {
+        return self.isr.stopf;
+    }
 };
+
+pub const TimingConfig = struct {
+    rise_ns: u64 = 100, // SCL/SDA rise time (real board value, not the spec max)
+    fall_ns: u64 = 50, // SCL/SDA fall time
+    analog_filter_ns: u64 = 50, // 0 if ANFOFF = 1
+    dnf: u64 = 0, // digital filter length in I2CCLK cycles (0..15)
+};
+
+const DEFAULT_TIMING_CONFIG = TimingConfig{};
+
+const Spec = struct {
+    t_low_ns: u64,
+    t_high_ns: u64,
+    t_su_dat_ns: u64,
+    t_hd_dat_ns: u64,
+};
+
+fn specFor(bus_hz: usize) ?Spec {
+    if (bus_hz == 0) return null;
+    if (bus_hz <= 100_000) return .{ .t_low_ns = 4700, .t_high_ns = 4000, .t_su_dat_ns = 250, .t_hd_dat_ns = 0 };
+    if (bus_hz <= 400_000) return .{ .t_low_ns = 1300, .t_high_ns = 600, .t_su_dat_ns = 100, .t_hd_dat_ns = 0 };
+    if (bus_hz <= 1_000_000) return .{ .t_low_ns = 500, .t_high_ns = 260, .t_su_dat_ns = 50, .t_hd_dat_ns = 0 };
+    return null;
+}
+
+const ps_per_ns: u64 = 1000;
+const ps_per_s: u64 = 1_000_000_000_000;
+
+fn ceilDiv(a: u64, b: u64) u64 {
+    return (a + b - 1) / b;
+}
+
+/// bus_hz: desired SCL frequency (e.g. 100_000, 400_000, 1_000_000)
+/// i2cclk_hz: I2C kernel clock frequency
+fn calcTimingr(bus_hz: usize, i2cclk_hz: usize) I2cError!I2cTimingr {
+    return calcTimingrCfg(bus_hz, i2cclk_hz, &DEFAULT_TIMING_CONFIG);
+}
+
+fn calcTimingrCfg(bus_hz: usize, i2cclk_hz: usize, cfg: *const TimingConfig) I2cError!I2cTimingr {
+    if (i2cclk_hz < bus_hz * 10) return I2cError.InvalidClock;
+    const spec = specFor(bus_hz) orelse return I2cError.UnsupportedSpeed;
+
+    const t_clk_ps = ps_per_s / i2cclk_hz;
+    const t_scl_ps = ps_per_s / bus_hz;
+
+    // t_sync1 + t_sync2 ~= tf + tr + 2*tI2CCLK + analog filter + DNF*tI2CCLK
+    const sync_ps = (cfg.fall_ns + cfg.rise_ns + cfg.analog_filter_ns) * ps_per_ns + (2 + cfg.dnf) * t_clk_ps;
+    if (t_scl_ps <= sync_ps) return I2cError.NoValidTiming;
+    const avail_ps = t_scl_ps - sync_ps; // time available for (SCLL+1) + (SCLH+1)
+
+    const low_min_ps = spec.t_low_ns * ps_per_ns;
+    const high_min_ps = spec.t_high_ns * ps_per_ns;
+
+    var presc: u64 = 0;
+    while (presc < 16) : (presc += 1) {
+        const t_presc = (presc + 1) * t_clk_ps;
+
+        // Minimum number of steps for each phase.
+        const low_min = ceilDiv(low_min_ps, t_presc);
+        const high_min = ceilDiv(high_min_ps, t_presc);
+
+        // Total steps available at the requested frequency.
+        const total = avail_ps / t_presc;
+        if (total < low_min + high_min) continue; // can't meet spec at this speed
+        if (total > 512) continue; // doesn't fit 2 x 8 bit, use a bigger prescaler
+
+        // Split proportionally to the spec's low/high ratio, then enforce minimums.
+        var n_low = total * low_min_ps / (low_min_ps + high_min_ps);
+        if (n_low < low_min) n_low = low_min;
+        var n_high = total - n_low;
+        if (n_high < high_min) {
+            n_high = high_min;
+            n_low = total - n_high;
+        }
+        if (n_low < 1 or n_high < 1 or n_low > 256 or n_high > 256) continue;
+
+        // SCLDEL: (SCLDEL+1)*tPRESC >= tr + tSU;DAT
+        const scldel_ps = (cfg.rise_ns + spec.t_su_dat_ns) * ps_per_ns;
+        const scldel_steps = ceilDiv(scldel_ps, t_presc);
+        if (scldel_steps < 1 or scldel_steps - 1 > 15) continue;
+
+        // SDADEL: SDADEL*tPRESC >= tHD;DAT (min). Upper limit tVD;DAT(max) is easily met
+        // for sane values, but check roughly against the data valid time budget.
+        const sdadel_steps = ceilDiv(spec.t_hd_dat_ns * ps_per_ns, t_presc);
+        if (sdadel_steps > 15) continue;
+
+        return .{
+            .scll = @truncate(n_low - 1),
+            .sclh = @truncate(n_high - 1),
+            .sdadel = @truncate(sdadel_steps),
+            .scldel = @truncate(scldel_steps - 1),
+            .presc = @truncate(presc),
+        };
+    }
+    return I2cError.NoValidTiming;
+}
 
 pub const i2c1: *volatile I2c = @ptrFromInt(I2C1_BASE);
 pub const i2c2: *volatile I2c = @ptrFromInt(I2C2_BASE);
@@ -148,4 +373,22 @@ pub const i2c4: *volatile I2c = @ptrFromInt(I2C4_BASE);
 test "sizeof test" {
     const std = @import("std");
     try std.testing.expectEqual(0x2C, @sizeOf(I2c));
+}
+
+test "400 kHz @ 64 MHz" {
+    const std = @import("std");
+
+    const t = try calcTimingr(400_000, 64_000_000);
+    const raw: u32 = @bitCast(t);
+    std.debug.print("TIMINGR = 0x{X:0>8}\n", .{raw});
+    try std.testing.expectEqual(0xC02D62, @backingInt(t));
+}
+
+test "100 kHz @ 48 MHz" {
+    const std = @import("std");
+
+    const t = try calcTimingr(100_000, 48_000_000);
+    const raw: u32 = @bitCast(t);
+    std.debug.print("TIMINGR = 0x{X:0>8}\n", .{raw});
+    try std.testing.expectEqual(0x10806B7D, @backingInt(t));
 }

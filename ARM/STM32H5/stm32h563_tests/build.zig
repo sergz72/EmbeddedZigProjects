@@ -99,6 +99,18 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const i2c = b.addModule("i2c", .{
+        .root_source_file = b.path("../lib/i2c.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const spi = b.addModule("spi", .{
+        .root_source_file = b.path("../lib/spi.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const usb_device = b.addModule("usb_device", .{
         .root_source_file = b.path("../../../common_lib/usb/usb_device.zig"),
         .target = target,
@@ -215,6 +227,8 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "interrupts", .module = interrupts },
             .{ .name = "dma_sender", .module = dma_sender },
             .{ .name = "gpdma", .module = gpdma },
+            .{ .name = "i2c", .module = i2c },
+            .{ .name = "spi", .module = spi },
         },
     });
 

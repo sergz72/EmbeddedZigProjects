@@ -50,6 +50,7 @@ export fn SystemInit() callconv(.c) void {
     rcc.rcc.hsi48On();
     rng.rng.init();
     rcc.rcc.hpenr.ahb1.crcen = true;
+    board.initArduinoI2c();
 }
 
 pub fn ledToggle() void {
@@ -85,15 +86,13 @@ pub fn getResetCause() []const u8 {
 }
 
 pub fn i2cScan(channel: usize, address: u10) [2]u8 {
-    _ = channel;
-    _ = address;
-    //if (channel != 0)
+    if (channel != 0)
         return [2]u8{'e', 'c'};
-    //I2C_INSTANCE.scan(address, I2C_TIMEOUT) catch |err| {
-    //    const e: []const u8 = @errorName(err);
-    //    return [2]u8{e[0], e[1]};
-    //};
-    //return [2]u8{0,0};
+    board.I2C_INSTANCE.scan(address, board.I2C_TIMEOUT) catch |err| {
+        const e: []const u8 = @errorName(err);
+        return [2]u8{e[0], e[1]};
+    };
+    return [2]u8{0,0};
 }
 
 pub fn spiSendReceive(channel: usize, wdata: []const u8, rdata: []u8) bool {
