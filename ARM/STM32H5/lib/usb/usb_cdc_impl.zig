@@ -64,6 +64,15 @@ pub fn tx(data: []const u8) void {
     dma_sender_instance.start();
 }
 
+pub fn txChar(c: u8) void {
+    dma_sender_instance.sendChar(c);
+    dma_sender_instance.start();
+}
+
+pub fn flush() void {
+    dma_sender_instance.start();
+}
+
 fn usbDmaStart(data: []const u8) usize {
     if (data.len <= usb_device.USB_FS_MAX_PACKET_SIZE) {
         usb.usb.tx(usb_cdc.DATA_OUT_ENDPOINT, data);
