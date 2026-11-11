@@ -10,6 +10,12 @@ pub fn build(b: *std.Build) !void {
 
     const optimize = b.standardOptimizeOption(.{});
 
+    const struct_modify = b.addModule("modify_struct", .{
+        .root_source_file = b.path("../../../common_lib/struct_modify.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const cpu = b.addModule("cpu", .{
         .root_source_file = b.path("../lib/cpu.zig"),
         .target = target,
@@ -102,7 +108,10 @@ pub fn build(b: *std.Build) !void {
     const i2c = b.addModule("i2c", .{
         .root_source_file = b.path("../lib/i2c.zig"),
         .target = target,
-        .optimize = optimize
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "struct_modify", .module = struct_modify }
+        },
     });
 
     const spi = b.addModule("spi", .{

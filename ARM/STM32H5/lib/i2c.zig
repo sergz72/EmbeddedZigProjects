@@ -1,3 +1,5 @@
+const struct_modify = @import("struct_modify");
+
 const I2C1_BASE = 0x40005400;
 const I2C2_BASE = 0x40005800;
 const I2C3_BASE = 0x44002800;
@@ -186,13 +188,13 @@ pub const I2c = extern struct {
     }
 
     fn resetCr2(self: *volatile I2c) void {
-        var cr2 = self.cr2;
-        cr2.sadd = 0;
-        cr2.nbytes = 0;
-        cr2.rd_wrn = false;
-        cr2.reload = false;
-        cr2.head10r = false;
-        self.cr2 = cr2;
+        struct_modify.struct_modify(&self.cr2, .{
+            .sadd = 0,
+            .nbytes = 0,
+            .rd_wrn = false,
+            .reload = false,
+            .head10r = false
+        });
     }
 
     fn clearNackStopFlags(self: *volatile I2c) void {

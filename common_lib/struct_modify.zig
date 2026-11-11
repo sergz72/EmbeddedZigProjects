@@ -13,7 +13,7 @@ pub fn struct_modify(reg: anytype, comptime changes: anytype) void {
             const off = @bitOffsetOf(T, f);
 
             const fmask: Int = @intCast(((1 << bits) - 1) << off);
-            const val = @as(Int, @field(changes, f));
+            const val = if (F == bool) @as(Int, @intFromBool(@field(changes, f))) else @as(Int, @field(changes, f));
 
             clear |= fmask;
             set |= val << off;
@@ -29,14 +29,25 @@ const TestStruct  = packed struct(u32) {
     field1: u8,
     field2: u8,
     field3: u8,
-    field4: u8
+    field4: u7,
+    field5: bool
 };
 
 test "modify works" {
-    var reg: TestStruct = .{ .field1 = 10, .field2 = 20, .field3 = 30, .field4 = 40 };
-    struct_modify(&reg, .{ .field1 = 3, .field2 = 2 });
+    var source: std.Random.IoSource = .{ .io = std.testing.io };
+    const rand = source.interface();
+    var reg = TestStruct{
+        .field1 = rand.int(u8), 
+        .field2 = rand.int(u8),
+        .field3 = rand.int(u8),
+        .field4 = rand.int(u7),
+        .field5 = rand.boolean()
+    };
+    const saved = reg;
+    struct_modify(&reg, .{ .field1 = 3, .field2 = 2, .field5 = true });
     try std.testing.expect(reg.field1 == 3);
     try std.testing.expect(reg.field2 == 2);
-    try std.testing.expect(reg.field3 == 30);
-    try std.testing.expect(reg.field4 == 40);
+    try std.testing.expect(reg.field3 == saved.field3);
+    try std.testing.expect(reg.field4 == saved.field4);
+    try std.testing.expect(reg.field5 == true); 
 }
