@@ -1,3 +1,5 @@
+const rcc = @import("rcc");
+
 const RNG_BASE = 0x420C0800;
 
 pub const Clkdiv = enum(u4) {
@@ -63,6 +65,34 @@ pub const Rng = extern struct {
     dr: u32,
     nscr: RngNscr,
     htcr: u32,
+
+    pub fn init(self: *volatile Rng) void {
+        rcc.rcc.ahb2enr.rngen = true;
+        self.cr.rngen = true;
+    }
+
+    pub fn generate(self: *volatile Rng, result: []u32) bool {
+        for (result) |*value| {
+            while (true) {
+                while (!self.sr.drdy) {
+                    if (self.sr.cecs)
+                        return false;
+                    if (self.sr.secs) {
+                        self.cr.rngen = false;
+                        self.cr.rngen = true;
+                    }
+                }
+                if (self.sr.cecs)
+                    return false;
+                if (!self.sr.secs)
+                    break;
+                self.cr.rngen = false;
+                self.cr.rngen = true;
+            }
+            value.* = self.dr;
+        }
+        return true;
+    }
 };
 
 pub const rng: *volatile Rng = @ptrFromInt(RNG_BASE);
@@ -70,5 +100,4 @@ pub const rng: *volatile Rng = @ptrFromInt(RNG_BASE);
 test "sizeof test" {
     const std = @import("std");
     try std.testing.expectEqual(0x14, @sizeOf(Rng));
-
 }

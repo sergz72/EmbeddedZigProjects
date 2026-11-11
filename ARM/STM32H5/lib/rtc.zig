@@ -219,7 +219,7 @@ pub const RtcOr = packed struct(u32) {
     reserved0: u31 = 0,
 };
 
-pub const RTC = extern struct {
+pub const Rtc = extern struct {
     tr: RtcTr,
     dr: RtcDr,
     ssr: u32,
@@ -245,15 +245,14 @@ pub const RTC = extern struct {
     smisr: RtcSr,
     scr: RtcSr,
     rtc_or: RtcOr,
-    reserved1: [12]u8,
+    reserved1: [3]u32,
     alrabinr: u32,
     alrbbinr: u32,
 };
 
-pub const rtc: *volatile RTC = @ptrFromInt(RTC_BASE);
+pub const rtc: *volatile Rtc = @ptrFromInt(RTC_BASE);
 
 test "sizeof test" {
     const std = @import("std");
-    try std.testing.expectEqual(0x78, @sizeOf(RTC));
-
+    try std.testing.expectEqual(0x78, @sizeOf(Rtc));
 }
