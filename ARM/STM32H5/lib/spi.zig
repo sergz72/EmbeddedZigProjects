@@ -207,6 +207,42 @@ pub const Spi = extern struct {
     udrdr: u32,
     i2scfgr: SpiI2scfgr,
 
+    pub fn initMasterSoftwareCs(self: *volatile Spi, speed: usize, clock_speed: usize, comm: Comm) void {
+        if (speed == 0 or clock_speed == 0) {
+            while (true) {}
+        }
+        var mbr: Mbr = .div2;
+        const div = clock_speed / speed;
+        if (div > 1) {
+            if (div <= 2) {
+                mbr = .div2;
+            } else if (div <= 4) {
+                mbr = .div4;
+            } else if (div <= 8) {
+                mbr = .div8;
+            } else if (div <= 16) {
+                mbr = .div16;
+            } else if (div <= 32) {
+                mbr = .div32;
+            } else if (div <= 64) {
+                mbr = .div64;
+            } else if (div <= 128) {
+                mbr = .div128;
+            } else if (div <= 256) {
+                mbr = .div256;
+            } else if (div <= 512) {
+                mbr = .div512;
+            } else {
+                mbr = .div1024;
+            }
+            self.cfg1 = SpiCfg1{ .mbr = mbr };
+        } else {
+            self.cfg1 = SpiCfg1{ .bpass = true };
+        }
+        self.cfg2 = SpiCfg2{ .ssm = true, .master = true, .comm = comm };
+        self.cr1 = SpiCr1{.ssi = true, .spe = true};
+    }
+
     pub fn sendPoll8(self: *volatile Spi, data: []const u8) void {
         for (data) |b| {
             while (!self.sr.txp) {
@@ -220,16 +256,24 @@ pub const Spi = extern struct {
         }
     }
 
+    pub fn sendPoll8Simplex(self: *volatile Spi, data: []const u8) void {
+        for (data) |b| {
+            while (!self.sr.txp) {
+                asm volatile ("nop");
+            }
+            self.dr.b = b;
+        }
+    }
+
     pub fn waitForTransferComplete(self: *volatile Spi) void {
-        while (!self.sr.eot) {
+        while (!self.sr.txc) {
             asm volatile ("nop");
         }
         self.ifcr.eotc = true;
     }
 
     pub fn sendReceivePoll8(self: *volatile Spi, data_in: []const u8, data_out: []u8) void {
-        var idx: usize = 0;
-        for (data_in) |b| {
+        for (data_in, 0..) |b, idx| {
             while (!self.sr.txp) {
                 asm volatile ("nop");
             }
@@ -238,12 +282,11 @@ pub const Spi = extern struct {
                 asm volatile ("nop");
             }
             data_out[idx] = self.dr.b;
-            idx += 1;
         }
     }
 
     pub fn receivePoll8(self: *volatile Spi, data_out: []u8) void {
-        for (0..data_out.len) |idx| {
+        for (data_out) |*d| {
             while (!self.sr.txp) {
                 asm volatile ("nop");
             }
@@ -251,7 +294,7 @@ pub const Spi = extern struct {
             while (!self.sr.rxp) {
                 asm volatile ("nop");
             }
-            data_out[idx] = self.dr.b;
+            d.* = self.dr.b;
         }
     }
 };

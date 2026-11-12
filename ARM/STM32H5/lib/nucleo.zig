@@ -69,6 +69,40 @@ const I2C_PINS_INIT: gpio.GpioInit = .{
 pub const I2C_TIMEOUT = 10000;
 const I2C_SPEED = 100000;
 
+pub const SPI_INSTANCE = spi.spi1;
+//--------------------------
+const SPI_RX_PORT = gpio.gpiog;
+const SPI_RX_PIN = 9;
+const SPI_RX_PIN_MASK: u24 = 1 << SPI_RX_PIN;
+const SPI_RX_PIN_INIT: gpio.GpioInit = .{
+    .mode = .alternate,
+    .pull = .pullup,
+    .speed = .very_high,
+    .alternate = 5
+};
+//--------------------------
+const SPI_TX_PORT = gpio.gpiob;
+const SPI_TX_PIN = 5;
+const SPI_TX_PIN_MASK: u24 = 1 << SPI_TX_PIN;
+const SPI_OUT_PINS_INIT: gpio.GpioInit = .{
+    .mode = .alternate,
+    .speed = .very_high,
+    .alternate = 5
+};
+//--------------------------
+const SPI_CLK_PORT = gpio.gpioa;
+const SPI_CLK_PIN = 5;
+const SPI_CLK_PIN_MASK: u24 = 1 << SPI_CLK_PIN;
+//--------------------------
+const SPI_CS_PORT = gpio.gpiod;
+const SPI_CS_PIN = 14;
+const SPI_CS_PIN_MASK: u24 = 1 << SPI_CS_PIN;
+const SPI_CS_PIN_INIT: gpio.GpioInit = .{
+    .mode = .output,
+    .speed = .very_high
+};
+const SPI_BAUD = 1000000;
+
 var led_green_alternate: bool = undefined;
 var rcc_init = rcc.RccInit{};
 var usart_callback: *const fn(u8) void = undefined;
@@ -176,6 +210,28 @@ pub fn initArduinoI2c() void {
     I2C_INSTANCE.initMaster(I2C_SPEED, cpu.cpu.pclk1_frequency) catch {
         while (true) {}
     };
+}
+
+pub fn initArduinoSPI() void {
+    rcc.rcc.hpenr.ahb2.gpioaen = true;
+    rcc.rcc.hpenr.ahb2.gpioben = true;
+    rcc.rcc.hpenr.ahb2.gpioden = true;
+    rcc.rcc.hpenr.ahb2.gpiogen = true;
+    rcc.rcc.hpenr.apb2.spi1en = true;
+    SPI_TX_PORT.init(SPI_TX_PIN_MASK, SPI_OUT_PINS_INIT);
+    SPI_CLK_PORT.init(SPI_CLK_PIN_MASK, SPI_OUT_PINS_INIT);
+    SPI_RX_PORT.init(SPI_RX_PIN_MASK, SPI_RX_PIN_INIT);
+    SPI_INSTANCE.initMasterSoftwareCs(SPI_BAUD, cpu.cpu.apb2_frequency);
+    SPI_CS_PORT.setPins(SPI_CS_PIN_MASK); // cs is 1
+    SPI_CS_PORT.init(SPI_CS_PIN_MASK, SPI_CS_PIN_INIT);
+}
+
+pub fn arduinoSpiCsSet(state: bool) void {
+    if (state) {
+        SPI_CS_PORT.setPins(SPI_CS_PIN_MASK);
+    } else {
+        SPI_CS_PORT.clearPins(SPI_CS_PIN_MASK);
+    }
 }
 
 pub fn init(led_green_pa5: bool, cpu_frequency: usize, pll_characteristics: rcc.PllCharacteristics) void {
