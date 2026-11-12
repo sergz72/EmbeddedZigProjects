@@ -1,7 +1,16 @@
+const std = @import("std");
+
 const FLASH_BASE = 0x40022000;
 
 const FLASH_UNLOCK_KEY1 = 0x45670123;
 const FLASH_UNLOCK_KEY2 = 0xCDEF89AB;
+
+const FLASH_BASE_ADDR = 0x08000000;
+const FLASH_BANK_SIZE = 0x00100000;      // 1 MB per bank (2 MB device)
+const FLASH_SECTOR_SIZE = 0x2000;        // 8 KB
+
+const ERASE_TIMEOUT = 0x40000000; // internal flash erase operation timeout
+const PROGRAMMING_TIMEOUT = 0x00100000; // internal flash program operation timeout
 
 pub const FlashAcr = bitpack struct(u32) {
     latency: u4 = 3,
@@ -273,7 +282,12 @@ pub const FlashEccdetr = bitpack struct(u32) {
 };
 
 pub const FlashError = error {
-    Timeout
+    Timeout,
+    WriteProtectionError,
+    ProgramError,
+    StrobeError,
+    InconsistencyError,
+    InvalidAddress
 };
 
 pub const Flash = extern struct {
@@ -341,13 +355,94 @@ pub const Flash = extern struct {
     edata2r_cur: FlashEdata,
     edata2r_prg: FlashEdata,
     hdp2r_cur: FlashHdp,
-    hdp2r_prg: FlashHdp
+    hdp2r_prg: FlashHdp,
+
+    pub fn flashUnlock(self: *volatile Flash) void {
+        self.nskeyr = FLASH_UNLOCK_KEY1;
+        self.nskeyr = FLASH_UNLOCK_KEY2;
+    }
+
+    pub fn flashLock(self: *volatile Flash) void {
+        self.nscr.lock = true;
+    }
+
+    pub fn wait(self: *volatile Flash, timeout: usize) FlashError!void {
+        for (0..timeout) |_| {
+            const sts = self.nssr;
+            if (sts.wrperr) {
+                return FlashError.WriteProtectionError;
+            }
+            if (sts.pgserr) {
+                return FlashError.ProgramError;
+            }
+            if (sts.strberr) {
+                return FlashError.StrobeError;
+            }
+            if (sts.incerr) {
+                return FlashError.InconsistencyError;
+            }
+            if (!sts.bsy) {
+                return;
+            }
+        }
+        return FlashError.Timeout;
+    }
+
+    fn setBankAndSector(self: *volatile Flash, address: usize) FlashError!void {
+        if (address < FLASH_BASE_ADDR) return FlashError.InvalidAddress;
+        const bank: usize = if (address < FLASH_BASE_ADDR + FLASH_BANK_SIZE) 0 else 1;
+        const sector = (address - (FLASH_BASE_ADDR + bank * FLASH_BANK_SIZE)) / FLASH_SECTOR_SIZE;
+        if (sector > 127) return FlashError.InvalidAddress;
+        self.nscr.bksel = bank != 0;
+        self.nscr.snb = @truncate(sector);
+    }
+
+    pub fn sectorErase(self: *volatile Flash, address: usize) FlashError!void {
+        self.nsccr = FlashNsccr{}; // clear all flags
+        try self.setBankAndSector(address);
+        self.nscr.ser = true;
+        self.nscr.strt = true;
+        defer self.nscr.ser = false;
+        try self.wait(ERASE_TIMEOUT);
+    }
+
+    pub fn write(self: *volatile Flash, address: usize, data: []const u8) FlashError!void {
+        if (address & 0x0F != 0 or address < FLASH_BASE_ADDR or address >= FLASH_BASE_ADDR + 2 * FLASH_BANK_SIZE) {
+            return FlashError.InvalidAddress;
+        }
+        self.nsccr = FlashNsccr{}; // clear all flags
+        self.nscr.pg = true;
+        defer self.nscr.pg = false;
+        var l = data.len;
+        var idx: usize = 0;
+        var p: [*]u32 = @ptrFromInt(address);
+        var buffer: [4]u32 = undefined;
+        var byte_buffer = std.mem.sliceAsBytes(&buffer);
+        while (l != 0) {
+            const chunk_size = if (l >= 16) 16 else l;
+            buffer[0] = 0xFFFFFFFF;
+            buffer[1] = 0xFFFFFFFF;
+            buffer[2] = 0xFFFFFFFF;
+            buffer[3] = 0xFFFFFFFF;
+            @memcpy(byte_buffer[0..chunk_size], data[idx..][0..chunk_size]);
+            idx += chunk_size;
+            l -= chunk_size;
+            p[0] = buffer[0];
+            p += 1;
+            p[0] = buffer[1];
+            p += 1;
+            p[0] = buffer[2];
+            p += 1;
+            p[0] = buffer[3];
+            p += 1;
+            asm volatile ("dsb");
+            try self.wait(PROGRAMMING_TIMEOUT);
+        }
+    }
 };
 
 pub const flash: *volatile Flash = @ptrFromInt(FLASH_BASE);
 
 test "sizeof test" {
-    const std = @import("std");
     try std.testing.expectEqual(0x200, @sizeOf(Flash));
-
 }

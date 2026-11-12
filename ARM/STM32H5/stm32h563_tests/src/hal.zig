@@ -78,14 +78,15 @@ pub fn ledToggle() void {
 }
 
 pub fn flashWrite(address: usize, data: []u8) flash.FlashError!void {
-    _ = address;
-    _ = data;
-    return flash.FlashError.Timeout;
+    flash.flash.flashUnlock();
+    defer flash.flash.flashLock();
+    try flash.flash.write(address, data);
 }
 
 pub fn flashSectorErase(address: usize) flash.FlashError!void {
-    _ = address;
-    return flash.FlashError.Timeout;
+    flash.flash.flashUnlock();
+    defer flash.flash.flashLock();
+    try flash.flash.sectorErase(address);
 }
 
 pub fn reboot() void {
