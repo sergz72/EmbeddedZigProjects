@@ -6,7 +6,6 @@ const GPIOE_BASE = 0x42021000;
 const GPIOF_BASE = 0x42021400;
 const GPIOG_BASE = 0x42021800;
 const GPIOH_BASE = 0x42021C00;
-const GPIOI_BASE = 0x42022000;
 
 pub const GpioMode = enum(u2) {
     input = 0,
@@ -116,7 +115,6 @@ pub const gpioe: *volatile Gpio = @ptrFromInt(GPIOE_BASE);
 pub const gpiof: *volatile Gpio = @ptrFromInt(GPIOF_BASE);
 pub const gpiog: *volatile Gpio = @ptrFromInt(GPIOG_BASE);
 pub const gpioh: *volatile Gpio = @ptrFromInt(GPIOH_BASE);
-pub const gpioi: *volatile Gpio = @ptrFromInt(GPIOI_BASE);
 
 test "sizeof test" {
     const std = @import("std");
