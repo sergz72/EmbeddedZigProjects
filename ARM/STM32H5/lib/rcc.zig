@@ -875,6 +875,13 @@ pub const Rcc = extern struct {
     seccfgr: RccSeccfgr,
     privcfgr: RccPrivcfgr,
 
+    pub fn lsiOn(self: *volatile Rcc) void {
+        self.bdcr.lsion = true;
+        while (!self.bdcr.lsirdy) {
+            asm volatile("nop");
+        }
+    }
+
     pub fn hsi48On(self: *volatile Rcc) void {
         self.cr.hsi48on = true;
         while (!self.cr.hsi48rdy) {

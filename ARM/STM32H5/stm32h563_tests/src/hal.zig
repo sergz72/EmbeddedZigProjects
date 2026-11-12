@@ -12,6 +12,7 @@ const shell = @import("shell");
 const rng = @import("rng");
 const scd4x = @import("scd4x");
 const veml = @import("veml7700");
+const iwdg = @import("iwdg");
 
 const TIMER_INSTANCE = tim.tim7;
 
@@ -47,16 +48,24 @@ pub inline fn startTimer() void {
     TIMER_INSTANCE.cr1 = .{.cen = true, .arpe = true};
 }
 
+fn initClock() void {
+    rcc.rcc.hsi48On();
+    rcc.rcc.lsiOn();
+}
+
 export fn SystemInit() callconv(.c) void {
     led_status = false;
     board.init(false, 48000000, rcc.PllCharacteristicsH563);
+    initClock();
     board.initUsart(115200, &usartCallback, true);
     initTimer();
-    rcc.rcc.hsi48On();
     rng.rng.init();
     rcc.rcc.hpenr.ahb1.crcen = true;
     board.initArduinoI2c();
     board.initArduinoSPI(1000000, .full_duplex);
+    if (!iwdg.iwdg.init(10000)) {
+        while (true) {}
+    }
 }
 
 pub fn ledToggle() void {
@@ -84,7 +93,7 @@ pub fn reboot() void {
 }
 
 pub fn wdtReset() void {
-    //todo
+    iwdg.iwdg.reload();
 }
 
 pub fn getResetCause() []const u8 {

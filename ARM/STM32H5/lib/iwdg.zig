@@ -55,13 +55,13 @@ pub const Iwdg = extern struct {
         }
         self.kr = IwdgKey.unlock;
         self.pr = .div128;
-        self.rld = @truncate(rld);
+        self.rlr = @truncate(rld);
         self.kr = IwdgKey.enable;
         return true;
     }
 
     pub fn reload(self: *volatile Iwdg) void {
-        self.cmd = IwdgKey.reload_counter;
+        self.kr = IwdgKey.reload_counter;
     }
 };
 

@@ -120,6 +120,15 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const iwdg = b.addModule("iwdg", .{
+        .root_source_file = b.path("../lib/iwdg.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "cpu", .module = cpu }
+        },
+    });
+
     const usb_device = b.addModule("usb_device", .{
         .root_source_file = b.path("../../../common_lib/usb/usb_device.zig"),
         .target = target,
@@ -277,6 +286,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "rng", .module = rng },
             .{ .name = "scd4x", .module = scd4x },
             .{ .name = "veml7700", .module = veml7700 },
+            .{ .name = "iwdg", .module = iwdg },
         },
     });
 
