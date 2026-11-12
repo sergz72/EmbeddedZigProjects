@@ -1,12 +1,12 @@
 const GPDMA1_BASE = 0x40020000;
 const GPDMA2_BASE = 0x40021000;
 
-pub const GpdmaLbar = packed struct(u32) {
+pub const GpdmaLbar = bitpack struct(u32) {
     reserved0: u16 = 0,
     lba: u16 = 0,
 };
 
-pub const GpdmaFcr = packed struct(u32) {
+pub const GpdmaFcr = bitpack struct(u32) {
     reserved0: u8 = 0,
     tcf: bool = false,
     htf: bool = false,
@@ -18,7 +18,7 @@ pub const GpdmaFcr = packed struct(u32) {
     reserved1: u17 = 0,
 };
 
-pub const GpdmaSr = packed struct(u32) {
+pub const GpdmaSr = bitpack struct(u32) {
     idlef: bool,
     reserved0: u7,
     tcf: bool,
@@ -40,7 +40,7 @@ pub const GpdmaPrio = enum(u2) {
     very_high = 3
 };
 
-pub const GpdmaCr = packed struct(u32) {
+pub const GpdmaCr = bitpack struct(u32) {
     en: bool = false,
     reset: bool = false,
     susp: bool = false,
@@ -66,7 +66,7 @@ pub const GpdmaDwLog2 = enum(u2) {
     word = 2
 };
 
-pub const GpdmaTr1 = packed struct(u32) {
+pub const GpdmaTr1 = bitpack struct(u32) {
     sdw_log2: GpdmaDwLog2 = .byte,
     reserved0: u1 = 0,
     sinc: bool = false,
@@ -93,7 +93,7 @@ pub const Trigpol = enum(u2) {
     falling_edge = 2
 };
 
-pub const GpdmaTr2 = packed struct(u32) {
+pub const GpdmaTr2 = bitpack struct(u32) {
     reqsel: GpdmaReqsel = .adc1,
     reserved0: u1 = 0,
     swreq: bool = false,
@@ -109,7 +109,7 @@ pub const GpdmaTr2 = packed struct(u32) {
     tcem: u2 = 0
 };
 
-pub const GpdmaLlr = packed struct(u32) {
+pub const GpdmaLlr = bitpack struct(u32) {
     reserved0: u2 = 0,
     la: u14 = 0,
     ull: bool = false,
@@ -123,7 +123,7 @@ pub const GpdmaLlr = packed struct(u32) {
     ut1: bool = false,
 };
 
-pub const GpdmaBr1 = packed struct(u32) {
+pub const GpdmaBr1 = bitpack struct(u32) {
     bndt: u16 = 0,
     brc: u11 = 0,
     reserved0: u1 = 0,
@@ -133,14 +133,14 @@ pub const GpdmaBr1 = packed struct(u32) {
     brddec: bool = false,
 };
 
-pub const GpdmaTr3 = packed struct(u32) {
+pub const GpdmaTr3 = bitpack struct(u32) {
     sao: u13 = 0,
     reserved0: u3 = 0,
     dao: u13 = 0,
     reserved1: u3 = 0,
 };
 
-pub const GpdmaBr2 = packed struct(u32) {
+pub const GpdmaBr2 = bitpack struct(u32) {
     brsao: u16 = 0,
     brdao: u16 = 0,
 };

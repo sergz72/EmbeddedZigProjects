@@ -6,7 +6,7 @@ pub const DacChannel = extern struct {
     r8bdhr: u32
 };
 
-pub const DacCtlrChannel = packed struct(u13) {
+pub const DacCtlrChannel = bitpack struct(u13) {
     en: bool = false,
     boff: bool = false,
     ten: bool = false,
@@ -16,7 +16,7 @@ pub const DacCtlrChannel = packed struct(u13) {
     dmaen: bool = false
 };
 
-pub const DacCtlr = packed struct(u32) {
+pub const DacCtlr = bitpack struct(u32) {
     ch1: DacCtlrChannel = DacCtlrChannel{},
     reserved: u3 = 0,
     ch2: DacCtlrChannel = DacCtlrChannel{},

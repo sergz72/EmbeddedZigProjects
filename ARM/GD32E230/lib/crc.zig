@@ -16,7 +16,7 @@ pub const CrcReverse = enum(u2) {
     word = 3
 };
 
-pub const CrcCtl = packed struct(u32) {
+pub const CrcCtl = bitpack struct(u32) {
     rst: bool = false,
     reserved: u2 = 0,
     ps: CrcPolySize = ._32,

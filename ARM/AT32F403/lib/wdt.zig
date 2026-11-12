@@ -18,7 +18,7 @@ pub const WdtDiv = enum(u32) {
     div256 = 6
 };
 
-pub const WdtSts = packed struct(u32) {
+pub const WdtSts = bitpack struct(u32) {
     divf: bool,
     rldf: bool,
     reserved1: u30

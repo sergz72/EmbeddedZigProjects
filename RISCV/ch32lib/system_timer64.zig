@@ -7,7 +7,7 @@ var p_us: u64 = undefined;
 var p_ms: u64 = undefined;
 var systick_counter: usize = undefined;
 
-const SystickCtlr = packed struct(u32) {
+const SystickCtlr = bitpack struct(u32) {
     ste: bool = false,
     stie: bool = false,
     stclk_hclk: bool = false,

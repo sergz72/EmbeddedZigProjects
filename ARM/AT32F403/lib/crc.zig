@@ -9,7 +9,7 @@ pub const CrcRevid = enum(u2) {
     word = 3
 };
 
-pub const CrcCtrl = packed struct(u32) {
+pub const CrcCtrl = bitpack struct(u32) {
     rst: bool = false,
     reserved: u4 = 0,
     revid: CrcRevid = .none,

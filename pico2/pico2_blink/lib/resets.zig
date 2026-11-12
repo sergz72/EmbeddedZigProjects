@@ -2,7 +2,7 @@ const io_registers = @import("io_registers");
 
 const RESETS_BASE: u32 = 0x40020000;
 
-pub const ResetFields = packed struct(u32) {
+pub const ResetFields = bitpack struct(u32) {
     adc: bool = false,
     busctrl: bool = false,
     dma: bool = false,

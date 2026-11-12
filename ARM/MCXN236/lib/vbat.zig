@@ -1,12 +1,12 @@
 const VBAT0_BASE = 0x40059000;
 
-pub const Verid = packed struct(u32) {
+pub const Verid = bitpack struct(u32) {
     feature: u16,
     minor: u8,
     major: u8,
 };
 
-pub const Statusa = packed struct(u32) {
+pub const Statusa = bitpack struct(u32) {
     por_det: bool = true,
     wakeup_flag: bool = false,
     timer0_flag: bool = false,
@@ -23,7 +23,7 @@ pub const Statusa = packed struct(u32) {
     reserved2: u12 = 0,
 };
 
-pub const Irqena = packed struct(u32) {
+pub const Irqena = bitpack struct(u32) {
     por_det: bool = false,
     wakeup_flag: bool = false,
     timer0_flag: bool = false,
@@ -45,7 +45,7 @@ pub const Irqena = packed struct(u32) {
     reserved2: u12 = 0,
 };
 
-pub const Wakena = packed struct(u32) {
+pub const Wakena = bitpack struct(u32) {
     por_det: bool = false,
     wakeup_flag: bool = false,
     timer0_flag: bool = false,
@@ -67,7 +67,7 @@ pub const Wakena = packed struct(u32) {
     reserved2: u12 = 0,
 };
 
-pub const Tampera = packed struct(u32) {
+pub const Tampera = bitpack struct(u32) {
     por_det: bool = true,
     reserved0: u5 = 0,
     clock_det: bool = false,
@@ -80,17 +80,17 @@ pub const Tampera = packed struct(u32) {
     reserved2: u19 = 0,
 };
 
-pub const Locka = packed struct(u32) {
+pub const Locka = bitpack struct(u32) {
     lock: bool = false,
     reserved0: u31 = 0,
 };
 
-pub const Lockb = packed struct(u32) {
+pub const Lockb = bitpack struct(u32) {
     lock: bool = true,
     reserved0: u31 = 0,
 };
 
-pub const Wakecfg = packed struct(u32) {
+pub const Wakecfg = bitpack struct(u32) {
     out: bool = false,
     reserved0: u31 = 0,
 };
@@ -125,7 +125,7 @@ pub const SupplyDet = enum(u2) {
     greater3v = 1,
 };
 
-pub const Oscctla = packed struct(u32) {
+pub const Oscctla = bitpack struct(u32) {
     osc_en: bool = false,
     osc_byp_en: bool = false,
     coarse_amp_gain: u2 = 0,
@@ -162,7 +162,7 @@ pub const InitTrim = enum(u3) {
     _0p5ms = 7,
 };
 
-pub const Osccfga = packed struct(u32) {
+pub const Osccfga = bitpack struct(u32) {
     cmp_trim: CmpTrim = ._760mv,
     cap2_trim: bool = false,
     dly_trim: u4 = 0,
@@ -171,64 +171,64 @@ pub const Osccfga = packed struct(u32) {
     reserved0: u20 = 0,
 };
 
-pub const Osclcka = packed struct(u32) {
+pub const Osclcka = bitpack struct(u32) {
     lock: bool = false,
     reserved0: u31 = 0,
 };
 
-pub const Osclckb = packed struct(u32) {
+pub const Osclckb = bitpack struct(u32) {
     lock: bool = true,
     reserved0: u31 = 0,
 };
 
-pub const Oscclke = packed struct(u32) {
+pub const Oscclke = bitpack struct(u32) {
     clke: u4 = 0,
     reserved0: u28 = 0,
 };
 
-pub const Froctla = packed struct(u32) {
+pub const Froctla = bitpack struct(u32) {
     fro_en: bool = true,
     reserved0: u31 = 0,
 };
 
-pub const Froctlb = packed struct(u32) {
+pub const Froctlb = bitpack struct(u32) {
     inverse: bool = false,
     reserved0: u31 = 0,
 };
 
-pub const Frolcka = packed struct(u32) {
+pub const Frolcka = bitpack struct(u32) {
     lock: bool = false,
     reserved0: u31 = 0,
 };
 
-pub const Frolckb = packed struct(u32) {
+pub const Frolckb = bitpack struct(u32) {
     lock: bool = true,
     reserved0: u31 = 0,
 };
 
-pub const Froclke = packed struct(u32) {
+pub const Froclke = bitpack struct(u32) {
     clke: u4 = 0,
     reserved0: u28 = 0,
 };
 
-pub const Ldoctla = packed struct(u32) {
+pub const Ldoctla = bitpack struct(u32) {
     bg_en: bool = false,
     ldo_en: bool = false,
     refresh_en: bool = false,
     reserved0: u29 = 0,
 };
 
-pub const Ldolcka = packed struct(u32) {
+pub const Ldolcka = bitpack struct(u32) {
     lock: bool = false,
     reserved0: u31 = 0,
 };
 
-pub const Ldolckb = packed struct(u32) {
+pub const Ldolckb = bitpack struct(u32) {
     lock: bool = true,
     reserved0: u31 = 0,
 };
 
-pub const Ldoramc = packed struct(u32) {
+pub const Ldoramc = bitpack struct(u32) {
     iso: bool = false,
     swi: bool = false,
     reserved0: u6 = 0,
@@ -250,45 +250,45 @@ pub const Timcfg = enum(u3) {
     _8ms = 7,
 };
 
-pub const Ldotimer0 = packed struct(u32) {
+pub const Ldotimer0 = bitpack struct(u32) {
     timcfg: Timcfg = ._1s,
     reserved0: u28 = 0,
     timen: bool = false,
 };
 
-pub const Ldotimer1 = packed struct(u32) {
+pub const Ldotimer1 = bitpack struct(u32) {
     timcfg: u24 = 0,
     reserved0: u7 = 0,
     timen: bool = false,
 };
 
-pub const Swictla = packed struct(u32) {
+pub const Swictla = bitpack struct(u32) {
     swi_en: bool = false,
     lp_en: bool = false,
     reserved0: u30 = 0,
 };
 
-pub const Swictlb = packed struct(u32) {
+pub const Swictlb = bitpack struct(u32) {
     inverse: u2 = 3,
     reserved0: u30 = 0,
 };
 
-pub const Swilcka = packed struct(u32) {
+pub const Swilcka = bitpack struct(u32) {
     lock: bool = false,
     reserved0: u31 = 0,
 };
 
-pub const Swilckb = packed struct(u32) {
+pub const Swilckb = bitpack struct(u32) {
     lock: bool = true,
     reserved0: u31 = 0,
 };
 
-pub const Waklcka = packed struct(u32) {
+pub const Waklcka = bitpack struct(u32) {
     lock: bool = false,
     reserved0: u31 = 0,
 };
 
-pub const Waklckb = packed struct(u32) {
+pub const Waklckb = bitpack struct(u32) {
     lock: bool = true,
     reserved0: u31 = 0,
 };

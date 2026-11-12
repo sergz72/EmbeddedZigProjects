@@ -10,18 +10,18 @@ pub const Feature = enum(u16) {
     with_protection_registers = 1,
 };
 
-pub const Verid = packed struct(u32) {
+pub const Verid = bitpack struct(u32) {
     feature: Feature,
     minor: u8,
     major: u8,
 };
 
-pub const Param = packed struct(u32) {
+pub const Param = bitpack struct(u32) {
     irqnum: u4,
     reserved0: u28,
 };
 
-pub const Lock = packed struct(u32) {
+pub const Lock = bitpack struct(u32) {
     pcns: bool = false,
     icns: bool = false,
     pcnp: bool = false,
@@ -29,19 +29,19 @@ pub const Lock = packed struct(u32) {
     reserved0: u28 = 0,
 };
 
-pub const Icns = packed struct(u32) {
+pub const Icns = bitpack struct(u32) {
     nse0: bool = false,
     nse1: bool = false,
     reserved0: u30 = 0,
 };
 
-pub const Icnp = packed struct(u32) {
+pub const Icnp = bitpack struct(u32) {
     npe0: bool = false,
     npe1: bool = false,
     reserved0: u30 = 0,
 };
 
-pub const Icr = packed struct(u32) {
+pub const Icr = bitpack struct(u32) {
     reserved0: u16 = 0,
     irqc: u4 = 0,
     irqs: bool = false,
@@ -51,7 +51,7 @@ pub const Icr = packed struct(u32) {
     reserved2: u7 = 0,
 };
 
-pub const Giclr = packed struct(u32) {
+pub const Giclr = bitpack struct(u32) {
     giwe0: bool = false,
     giwe1: bool = false,
     giwe2: bool = false,
@@ -71,7 +71,7 @@ pub const Giclr = packed struct(u32) {
     giwd: u16 = 0,
 };
 
-pub const Gichr = packed struct(u32) {
+pub const Gichr = bitpack struct(u32) {
     giwe16: bool = false,
     giwe17: bool = false,
     giwe18: bool = false,

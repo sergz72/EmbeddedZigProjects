@@ -28,7 +28,7 @@ pub const GptimerRepeat = enum(u3) {
     continue_to_advance_following_zero_event_no_debug = 3,
 };
 
-pub const GptimerCtrCtl = packed struct(u32) {
+pub const GptimerCtrCtl = bitpack struct(u32) {
     en: bool = false,
     repeat: GptimerRepeat = .do_not_advance_following_zero_event,
     cm: GptimerCountMode = .down,
@@ -48,7 +48,7 @@ pub const GptimerCtrCtl = packed struct(u32) {
     reserved5: u2 = 0
 };
 
-pub const GptimerCCCtl = packed struct(u32) {
+pub const GptimerCCCtl = bitpack struct(u32) {
     ccond: u3 = 0,
     reserved: u1 = 0,
     acond: u3 = 0,
@@ -105,7 +105,7 @@ pub const GptimerCommonregs = extern struct {
     gctl: u32,
 };
 
-pub const GptimerIntIMask = packed struct(u32) {
+pub const GptimerIntIMask = bitpack struct(u32) {
     z: bool = false,
     l: bool = false,
     reserved: u2 = 0,

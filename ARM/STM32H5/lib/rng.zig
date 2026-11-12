@@ -21,7 +21,7 @@ pub const Clkdiv = enum(u4) {
     div32768 = 15
 };
 
-pub const RngCr = packed struct(u32) {
+pub const RngCr = bitpack struct(u32) {
     reserved0: u2 = 0,
     rngen: bool = false,
     ie: bool = false,
@@ -39,7 +39,7 @@ pub const RngCr = packed struct(u32) {
     configlock: bool = false,
 };
 
-pub const RngSr = packed struct(u32) {
+pub const RngSr = bitpack struct(u32) {
     drdy: bool = false,
     cecs: bool = false,
     secs: bool = false,
@@ -49,7 +49,7 @@ pub const RngSr = packed struct(u32) {
     reserved1: u25 = 0,
 };
 
-pub const RngNscr = packed struct(u32) {
+pub const RngNscr = bitpack struct(u32) {
     en_osc1: u3 = 7,
     en_osc2: u3 = 7,
     en_osc3: u3 = 7,

@@ -159,7 +159,7 @@ pub const CC1101AddressCheck = enum(u2) {
     address_check_0_and_255_broadcast = 3
 };
 
-pub const CC1101PktCtrl1 = packed struct(u8) {
+pub const CC1101PktCtrl1 = bitpack struct(u8) {
     adr_chk: CC1101AddressCheck = .no_address_check,
     append_status: bool = true,
     crc_autoflush: bool = false,
@@ -184,7 +184,7 @@ pub const CC1101PktFormat = enum(u2) {
     async_serial_mode = 3
 };
 
-pub const CC1101PktCtrl0 = packed struct(u8) {
+pub const CC1101PktCtrl0 = bitpack struct(u8) {
     length_config: CC1101LengthConfig = .variable,
     crc_en: bool = true,
     reserved: u1 = 0,
@@ -208,7 +208,7 @@ pub const CC1101SyncMode = enum(u3) {
     _3032_carrier_sense = 7
 };
 
-pub const CC1101MdmCfg2 = packed struct(u8) {
+pub const CC1101MdmCfg2 = bitpack struct(u8) {
     sync_mode: CC1101SyncMode = ._1616,
     manchester_en: bool = false,
     mod_format: u3 = 0,
@@ -230,7 +230,7 @@ pub const CC1101NumPreamble = enum(u3) {
     _24 = 7
 };
 
-pub const CC1101MdmCfg1 = packed struct(u8) {
+pub const CC1101MdmCfg1 = bitpack struct(u8) {
     chanspc_e: u2 = 2,
     reserved: u2 = 0,
     num_preamble: CC1101NumPreamble = ._4,
@@ -241,7 +241,7 @@ pub const CC1101MdmCfg1 = packed struct(u8) {
     }
 };
 
-pub const CC1101Mcsm2 = packed struct(u8) {
+pub const CC1101Mcsm2 = bitpack struct(u8) {
     rx_time: u3 = 7,
     rx_time_qual: bool = false,
     rx_time_rssi: bool = false,
@@ -266,7 +266,7 @@ pub const CC1101CcaMode = enum(u2) {
     rssi_below_threshold_unless_currently_receiving_packet = 3
 };
 
-pub const CC1101Mcsm1 = packed struct(u8) {
+pub const CC1101Mcsm1 = bitpack struct(u8) {
     txoff_mode: CC1101OffMode = .idle,
     rxoff_mode: CC1101OffMode = .idle,
     cca_mode: CC1101CcaMode = .rssi_below_threshold_unless_currently_receiving_packet,
@@ -291,7 +291,7 @@ pub const CC1101FsAutocal = enum(u2) {
     to_idle_every_4_time = 3
 };
 
-pub const CC1101Mcsm0 = packed struct(u8) {
+pub const CC1101Mcsm0 = bitpack struct(u8) {
     xosc_force_on: bool = false,
     pin_ctrl_en: bool = false,
     po_timeout: CC1101PoTimeout,
@@ -383,7 +383,7 @@ pub const CC1101State = enum(u3) {
     txfifo_underflow = 7
 };
 
-pub const CC1101Status = packed struct(u8) {
+pub const CC1101Status = bitpack struct(u8) {
     fifo_bytes_available: u4,
     state: CC1101State,
     chip_rdy: bool

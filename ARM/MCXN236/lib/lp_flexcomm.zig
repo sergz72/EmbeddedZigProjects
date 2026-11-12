@@ -7,7 +7,7 @@ const LP_FLEXCOMM5_BASE = 0x400B5000;
 const LP_FLEXCOMM6_BASE = 0x400B6000;
 const LP_FLEXCOMM7_BASE = 0x400B7000;
 
-pub const Istat = packed struct(u32) {
+pub const Istat = bitpack struct(u32) {
     uarttx: bool,
     uartrx: bool,
     spi: bool,
@@ -25,7 +25,7 @@ pub const Persel = enum(u3) {
     uarti2c = 7,
 };
 
-pub const Pselid = packed struct(u32) {
+pub const Pselid = bitpack struct(u32) {
     persel: Persel = .none,
     lock: bool = false,
     uartpresent: bool = true,

@@ -17,7 +17,7 @@ pub const FmcWsCnt = enum(u3) {
     _2upto72Mhz = 2
 };
 
-pub const FmcWs = packed struct(u32) {
+pub const FmcWs = bitpack struct(u32) {
     wscnt: FmcWsCnt = ._0upto24Mhz,
     reserved: u1 = 0,
     pfen: bool = true,
@@ -26,7 +26,7 @@ pub const FmcWs = packed struct(u32) {
     reserved3: u16 = 0
 };
 
-pub const FmcStat = packed struct(u32) {
+pub const FmcStat = bitpack struct(u32) {
     busy: bool = false,
     reserved: u1 = 0,
     pgerr: bool = false,
@@ -36,7 +36,7 @@ pub const FmcStat = packed struct(u32) {
     reserved2: u26 = 0
 };
 
-pub const FmcCtl = packed struct(u32) {
+pub const FmcCtl = bitpack struct(u32) {
     pg: bool = false,
     per: bool = false,
     mer: bool = false,
@@ -60,7 +60,7 @@ pub const FmcProtectionLevel = enum(u2) {
     high = 3
 };
 
-pub const FlashObstat = packed struct(u32) {
+pub const FlashObstat = bitpack struct(u32) {
     oberr: bool,
     plevel: FmcProtectionLevel,
     reserved: u5,

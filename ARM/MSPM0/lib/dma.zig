@@ -4,7 +4,7 @@ const common = if (builtin.is_test) @import("common.zig") else @import("common")
 
 const DMA_BASE: usize = 0x4042A000 + 0x400;
 
-pub const DmaCtl = packed struct(u32) {
+pub const DmaCtl = bitpack struct(u32) {
     dmareq: bool = false,
     dmaen: bool = false,
     dmaautoen: u2 = 0,
@@ -22,7 +22,7 @@ pub const DmaCtl = packed struct(u32) {
     reserved5: u2 = 0
 };
 
-pub const DmaSz = packed struct(u32) {
+pub const DmaSz = bitpack struct(u32) {
     sz: u16 = 0,
     reserved: u16 = 0
 };
@@ -64,7 +64,7 @@ pub const DmaIntIIdx = enum(u32) {
     data_error = 26
 };
 
-pub const DmaIntInt = packed struct(u32) {
+pub const DmaIntInt = bitpack struct(u32) {
     ch0: bool = false,
     ch1: bool = false,
     ch2: bool = false,
@@ -108,12 +108,12 @@ pub const DmaInt = extern struct {
     iclr: DmaIntInt
 };
 
-pub const DmaCh = packed struct(u32) {
+pub const DmaCh = bitpack struct(u32) {
     chanid: u8 = 0,
     reserved: u24 = 0
 };
 
-pub const DmaEvtMode = packed struct(u32) {
+pub const DmaEvtMode = bitpack struct(u32) {
     int0_cfg: common.EvtCfg,
     evt1_cfg: common.EvtCfg,
     reserved: u28
@@ -126,14 +126,14 @@ pub const DmaBurstSz = enum(u2) {
     _32 = 3
 };
 
-pub const DmaPrio = packed struct(u32) {
+pub const DmaPrio = bitpack struct(u32) {
     roundrobin: bool = false,
     reserved: u15 = 0,
     burstsz: DmaBurstSz = .none,
     reserved2: u14 = 0
 };
 
-pub const DmaTctl = packed struct(u32) {
+pub const DmaTctl = bitpack struct(u32) {
     dmatsel: u6 = 0,
     reserved: u1 = 0,
     dmaint: bool = false,

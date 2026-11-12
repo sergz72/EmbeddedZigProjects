@@ -13,19 +13,19 @@ pub const Feature = enum(u16) {
     modem_irda_idle = 7
 };
 
-pub const Verid = packed struct(u32) {
+pub const Verid = bitpack struct(u32) {
     feature: Feature,
     minor: u8,
     major: u8,
 };
 
-pub const Param = packed struct(u32) {
+pub const Param = bitpack struct(u32) {
     txfifo: u8,
     rxfifo: u8,
     reserved0: u16,
 };
 
-pub const Global = packed struct(u32) {
+pub const Global = bitpack struct(u32) {
     reserved0: u1 = 0,
     rst: bool = false,
     reserved1: u30 = 0,
@@ -38,7 +38,7 @@ pub const Trgsel = enum(u2) {
     trg_txd = 3,
 };
 
-pub const Pincfg = packed struct(u32) {
+pub const Pincfg = bitpack struct(u32) {
     trgsel: Trgsel = .disabled,
     reserved0: u30 = 0,
 };
@@ -50,7 +50,7 @@ pub const Matcfg = enum(u2) {
     rwu_match = 3,
 };
 
-pub const Baud = packed struct(u32) {
+pub const Baud = bitpack struct(u32) {
     sbr: u13 = 4,
     sbns: bool = false,
     rxedgie: bool = false,
@@ -68,7 +68,7 @@ pub const Baud = packed struct(u32) {
     maen1: bool = false,
 };
 
-pub const Stat = packed struct(u32) {
+pub const Stat = bitpack struct(u32) {
     lbkfe: bool = false,
     ame: bool = false,
     reserved0: u6 = 0,
@@ -106,7 +106,7 @@ pub const Idlecfg = enum(u3) {
     _128 = 7,
 };
 
-pub const Ctrl = packed struct(u32) {
+pub const Ctrl = bitpack struct(u32) {
     pt: bool = false,
     pe: bool = false,
     ilt: bool = false,
@@ -138,7 +138,7 @@ pub const Ctrl = packed struct(u32) {
     r8t9: bool = false,
 };
 
-pub const Data32 = packed struct(u32) {
+pub const Data32 = bitpack struct(u32) {
     data: u10 = 0,
     linbrk: bool = false,
     idline: bool = false,
@@ -154,7 +154,7 @@ pub const Data = extern union {
     data32: Data32
 };
 
-pub const Match = packed struct(u32) {
+pub const Match = bitpack struct(u32) {
     ma1: u10 = 0,
     reserved0: u6 = 0,
     ma2: u10 = 0,
@@ -168,7 +168,7 @@ pub const Tnp = enum(u2) {
     four_sample = 3,
 };
 
-pub const Modir = packed struct(u32) {
+pub const Modir = bitpack struct(u32) {
     txctse: bool = false,
     txrtse: bool = false,
     txrtspol: bool = false,
@@ -205,7 +205,7 @@ pub const Rxiden = enum(u3) {
     _64 = 7,
 };
 
-pub const Fifo = packed struct(u32) {
+pub const Fifo = bitpack struct(u32) {
     rxfifosize: Fifosize = ._8,
     rxfe: bool = false,
     txfifosize: Fifosize = ._8,
@@ -224,7 +224,7 @@ pub const Fifo = packed struct(u32) {
     reserved2: u8 = 0,
 };
 
-pub const Water = packed struct(u32) {
+pub const Water = bitpack struct(u32) {
     txwater: u3 = 0,
     reserved0: u5 = 0,
     txcount: u4 = 0,
@@ -235,12 +235,12 @@ pub const Water = packed struct(u32) {
     reserved3: u4 = 0,
 };
 
-pub const Dataro = packed struct(u32) {
+pub const Dataro = bitpack struct(u32) {
     data: u16,
     reserved0: u16,
 };
 
-pub const Mcr = packed struct(u32) {
+pub const Mcr = bitpack struct(u32) {
     cts: bool = false,
     dsr: bool = false,
     rin: bool = false,
@@ -251,7 +251,7 @@ pub const Mcr = packed struct(u32) {
     reserved1: u22 = 0,
 };
 
-pub const Msr = packed struct(u32) {
+pub const Msr = bitpack struct(u32) {
     dcts: bool = false,
     ddsr: bool = false,
     dri: bool = false,
@@ -263,7 +263,7 @@ pub const Msr = packed struct(u32) {
     reserved0: u24 = 0,
 };
 
-pub const Hdcr = packed struct(u32) {
+pub const Hdcr = bitpack struct(u32) {
     txstall: bool = false,
     rxsel: bool = false,
     rxwrmsk: bool = false,
@@ -273,7 +273,7 @@ pub const Hdcr = packed struct(u32) {
     reserved1: u16 = 0,
 };
 
-pub const Tocr = packed struct(u32) {
+pub const Tocr = bitpack struct(u32) {
     toen: u4 = 0,
     reserved0: u4 = 0,
     toie: u4 = 0,
@@ -285,7 +285,7 @@ pub const Tof = enum(u4) {
     occurred_clear = 1,
 };
 
-pub const Tosr = packed struct(u32) {
+pub const Tosr = bitpack struct(u32) {
     toz: u4 = 15,
     reserved0: u4 = 0,
     tof: Tof = .not_occurred,
@@ -299,18 +299,18 @@ pub const Timeoutfg = enum(u2) {
     cnt_char_idle = 3,
 };
 
-pub const Timeout = packed struct(u32) {
+pub const Timeout = bitpack struct(u32) {
     timeout: u14 = 0,
     reserved0: u16 = 0,
     cfg: Timeoutfg = .cnt_char,
 };
 
-pub const Tcbr = packed struct(u32) {
+pub const Tcbr = bitpack struct(u32) {
     data: u16 = 0,
     reserved0: u16 = 0,
 };
 
-pub const Tdbr = packed struct(u32) {
+pub const Tdbr = bitpack struct(u32) {
     data0: u8 = 0,
     data1: u8 = 0,
     data2: u8 = 0,

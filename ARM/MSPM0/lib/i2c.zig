@@ -32,7 +32,7 @@ pub const I2cSlave = extern struct {
     target_pecsr: u32,
 };
 
-pub const I2cMctr = packed struct(u32) {
+pub const I2cMctr = bitpack struct(u32) {
     burstrun: bool = false,
     start: bool = false,
     stop: bool = false,
@@ -44,7 +44,7 @@ pub const I2cMctr = packed struct(u32) {
     reserved2: u4 = 0
 };
 
-pub const I2cMfifoCtl = packed struct(u32) {
+pub const I2cMfifoCtl = bitpack struct(u32) {
     txtrig: u3 = 0,
     reserved: u4 = 0,
     txflush: bool = false,
@@ -54,7 +54,7 @@ pub const I2cMfifoCtl = packed struct(u32) {
     reserved3: u16 = 0
 };
 
-pub const I2cMcr = packed struct(u32) {
+pub const I2cMcr = bitpack struct(u32) {
     active: bool = false,
     mctl: bool = false,
     clkstretch: bool = false,
@@ -63,7 +63,7 @@ pub const I2cMcr = packed struct(u32) {
     reserved2: u23 = 0
 };
 
-pub const I2cMsr = packed struct(u32) {
+pub const I2cMsr = bitpack struct(u32) {
     busy: bool,
     err: bool,
     adrack: bool,
@@ -76,7 +76,7 @@ pub const I2cMsr = packed struct(u32) {
     reserved2: u4
 };
 
-pub const I2cMfifoSr = packed struct(u32) {
+pub const I2cMfifoSr = bitpack struct(u32) {
     rxfifocnt: u4,
     reserved: u3,
     rxflush: bool,
@@ -86,7 +86,7 @@ pub const I2cMfifoSr = packed struct(u32) {
     reserved3: u16 = 0
 };
 
-pub const I2cMsa = packed struct(u32) {
+pub const I2cMsa = bitpack struct(u32) {
     dir_receive: bool = false,
     taddr: u10 = 0,
     reserved: u4 = 0,
@@ -159,7 +159,7 @@ pub const I2cIntIIdx = enum(u32) {
     interrupt_overflow = 0x20
 };
 
-pub const I2cIntIMask = packed struct(u32) {
+pub const I2cIntIMask = bitpack struct(u32) {
     crxdone: bool = false,
     ctxdone: bool = false,
     crxfifotrg: bool = false,
@@ -216,7 +216,7 @@ pub const I2cGprcm = extern struct {
     stat: u32,
 };
 
-pub const I2cGfctl = packed struct(u32) {
+pub const I2cGfctl = bitpack struct(u32) {
     dgfsel: u3 = 0,
     reserved: u5 = 0,
     agfen: bool = true,

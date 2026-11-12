@@ -1,6 +1,6 @@
 const LPUART_BASE = 0x44002400;
 
-pub const LpuartCr1 = packed struct(u32) {
+pub const LpuartCr1 = bitpack struct(u32) {
     ue: bool = false,
     uesm: bool = false,
     re: bool = false,
@@ -31,7 +31,7 @@ pub const Stop = enum(u2) {
     _2 = 2
 };
 
-pub const LpuartCr2 = packed struct(u32) {
+pub const LpuartCr2 = bitpack struct(u32) {
     reserved0: u4 = 0,
     addm7: bool = false,
     reserved1: u7 = 0,
@@ -64,7 +64,7 @@ pub const Txftcfg = enum(u3) {
     empty = 5
 };
 
-pub const LpuartCr3 = packed struct(u32) {
+pub const LpuartCr3 = bitpack struct(u32) {
     eie: bool = false,
     reserved0: u2 = 0,
     hdsel: bool = false,
@@ -90,7 +90,7 @@ pub const LpuartCr3 = packed struct(u32) {
     txftcfg: Txftcfg = ._0p125,
 };
 
-pub const LpuartRqr = packed struct(u32) {
+pub const LpuartRqr = bitpack struct(u32) {
     reserved0: u1 = 0,
     sbkrq: bool = false,
     mmrq: bool = false,
@@ -99,7 +99,7 @@ pub const LpuartRqr = packed struct(u32) {
     reserved1: u27 = 0,
 };
 
-pub const LpuartIsr = packed struct(u32) {
+pub const LpuartIsr = bitpack struct(u32) {
     pe: bool,
     fe: bool,
     ne: bool,
@@ -127,7 +127,7 @@ pub const LpuartIsr = packed struct(u32) {
     reserved3: u4
 };
 
-pub const LpuartIcr = packed struct(u32) {
+pub const LpuartIcr = bitpack struct(u32) {
     pecf: bool = false,
     fecf: bool = false,
     necf: bool = false,

@@ -4,7 +4,7 @@ const CTIMER2_BASE = 0x4000E000;
 const CTIMER3_BASE = 0x4000F000;
 const CTIMER4_BASE = 0x40010000;
 
-pub const Ir = packed struct(u32) {
+pub const Ir = bitpack struct(u32) {
     mr0int: bool = false,
     mr1int: bool = false,
     mr2int: bool = false,
@@ -16,7 +16,7 @@ pub const Ir = packed struct(u32) {
     reserved0: u24 = 0,
 };
 
-pub const Tcr = packed struct(u32) {
+pub const Tcr = bitpack struct(u32) {
     cen: bool = false,
     crst: bool = false,
     reserved0: u2 = 0,
@@ -25,7 +25,7 @@ pub const Tcr = packed struct(u32) {
     reserved1: u26 = 0,
 };
 
-pub const Mcr = packed struct(u32) {
+pub const Mcr = bitpack struct(u32) {
     mr0i: bool = false,
     mr0r: bool = false,
     mr0s: bool = false,
@@ -46,7 +46,7 @@ pub const Mcr = packed struct(u32) {
     reserved1: u4 = 0,
 };
 
-pub const Ccr = packed struct(u32) {
+pub const Ccr = bitpack struct(u32) {
     cap0re: bool = false,
     cap0fe: bool = false,
     cap0i: bool = false,
@@ -69,7 +69,7 @@ pub const Emc = enum(u2) {
     toggle = 3
 };
 
-pub const Emr = packed struct(u32) {
+pub const Emr = bitpack struct(u32) {
     em0: bool = false,
     em1: bool = false,
     em2: bool = false,
@@ -99,7 +99,7 @@ pub const Selcc = enum(u3) {
     channel_3_falling = 7
 };
 
-pub const Ctcr = packed struct(u32) {
+pub const Ctcr = bitpack struct(u32) {
     ctmode: Ctmode = .timer,
     cinsel: u2 = 0,
     encc: bool = false,
@@ -107,7 +107,7 @@ pub const Ctcr = packed struct(u32) {
     reserved0: u24 = 0,
 };
 
-pub const Pwmc = packed struct(u32) {
+pub const Pwmc = bitpack struct(u32) {
     pwmen0: bool = false,
     pwmen1: bool = false,
     pwmen2: bool = false,

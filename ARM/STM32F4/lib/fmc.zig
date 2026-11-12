@@ -10,7 +10,7 @@ pub const FMC_BANK4: usize = 0x90000000;
 pub const SDRAM_BANK1: usize = 0xC0000000;
 pub const SDRAM_BANK2: usize = 0xD0000000;
 
-pub const FmcBcr = packed struct(u32) {
+pub const FmcBcr = bitpack struct(u32) {
     mbken: bool = false,
     muxen: bool = true,
     mtyp: u2 = 0,
@@ -30,7 +30,7 @@ pub const FmcBcr = packed struct(u32) {
     reserved2: u12 = 0
 };
 
-pub const FmcBtr = packed struct(u32) {
+pub const FmcBtr = bitpack struct(u32) {
     addset: u4 = 0x0F,
     addhld: u4 = 0x0F,
     datast: u8 = 0xFF,
@@ -41,7 +41,7 @@ pub const FmcBtr = packed struct(u32) {
     reserved: u2 = 0
 };
 
-pub const FmcBwtrr = packed struct(u32) {
+pub const FmcBwtrr = bitpack struct(u32) {
     addset: u4 = 0x0F,
     addhld: u4 = 0x0F,
     datast: u8 = 0xFF,
@@ -56,7 +56,7 @@ pub const FmcBtcr = extern struct {
     btr: FmcBtr
 };
 
-pub const FmcPcrPcr = packed struct(u32) {
+pub const FmcPcrPcr = bitpack struct(u32) {
     reserved: u1 = 0,
     pwaiten: bool = false,
     pbken: bool = false,
@@ -70,7 +70,7 @@ pub const FmcPcrPcr = packed struct(u32) {
     reserved3: u12 = 0
 };
 
-pub const FmcPcrSr = packed struct(u32) {
+pub const FmcPcrSr = bitpack struct(u32) {
     irs: bool = false,
     ils: bool = false,
     ifs: bool = false,
@@ -81,7 +81,7 @@ pub const FmcPcrSr = packed struct(u32) {
     reserved: u25 = 0
 };
 
-pub const FmcPcrP = packed struct(u32) {
+pub const FmcPcrP = bitpack struct(u32) {
     set: u8 = 0xFC,
     wait: u8 = 0xFC,
     hold: u8 = 0xFC,
@@ -128,7 +128,7 @@ pub const FmcSdclk = enum(u2) {
     three_hclk_periods = 3
 };
 
-pub const FmcSdcr = packed struct(u32) {
+pub const FmcSdcr = bitpack struct(u32) {
     nc: sdram.SdramNc = ._8,
     nr: sdram.SdramNr = ._11,
     mwid: sdram.SdramMw = ._16,
@@ -141,7 +141,7 @@ pub const FmcSdcr = packed struct(u32) {
     reserved: u17 = 0
 };
 
-pub const FmcSdtr = packed struct(u32) {
+pub const FmcSdtr = bitpack struct(u32) {
     tmrd: sdram.SdramDelay = ._16,
     txsr: sdram.SdramDelay = ._16,
     tras: sdram.SdramDelay = ._16,
@@ -162,7 +162,7 @@ pub const FmcSdcmrMode = enum(u3) {
     power_down = 6
 };
 
-pub const FmcSdcmr = packed struct(u32) {
+pub const FmcSdcmr = bitpack struct(u32) {
     mode: FmcSdcmrMode = .normal_mode,
     ctb2: bool = false,
     ctb1: bool = false,
@@ -171,7 +171,7 @@ pub const FmcSdcmr = packed struct(u32) {
     reserved: u10 = 0
 };
 
-pub const FmcSdrtr = packed struct(u32) {
+pub const FmcSdrtr = bitpack struct(u32) {
     cre: bool = false,
     count: u13 = 0,
     reie: bool = false,
@@ -185,7 +185,7 @@ pub const FsmcSdsrMode = enum(u2) {
     _
 };
 
-pub const FmcSdsr = packed struct(u32) {
+pub const FmcSdsr = bitpack struct(u32) {
     re: bool,
     modes1: FsmcSdsrMode,
     modes2: FsmcSdsrMode,

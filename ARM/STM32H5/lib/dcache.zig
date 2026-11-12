@@ -7,7 +7,7 @@ pub const DCachecmd = enum(u3) {
     inv = 3
 };
 
-pub const DcacheCr = packed struct(u32) {
+pub const DcacheCr = bitpack struct(u32) {
     en: bool = false,
     cacheinv: bool = false,
     reserved0: u6 = 0,
@@ -26,7 +26,7 @@ pub const DcacheCr = packed struct(u32) {
     hburst: bool = false,
 };
 
-pub const DcacheSr = packed struct(u32) {
+pub const DcacheSr = bitpack struct(u32) {
     busyf: bool,
     bsyendf: bool,
     errf: bool,
@@ -35,7 +35,7 @@ pub const DcacheSr = packed struct(u32) {
     reserved0: u27
 };
 
-pub const Dcacher = packed struct(u32) {
+pub const Dcacher = bitpack struct(u32) {
     reserved0: u1 = 0,
     bsyend: bool = false,
     err: bool = false,
@@ -44,7 +44,7 @@ pub const Dcacher = packed struct(u32) {
     reserved2: u27 = 0
 };
 
-pub const DcacheCmdraddrr = packed struct(u32) {
+pub const DcacheCmdraddrr = bitpack struct(u32) {
     reserved0: u4 = 0,
     cmdstartaddr: u28 = 0,
 };

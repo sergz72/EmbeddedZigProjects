@@ -184,7 +184,7 @@ const ElcEvent = enum(u8) {
     SPI1_TEI                      = 0x0B6  // Transmission complete event
 };
 
-pub const IcuCr = packed struct(u8) {
+pub const IcuCr = bitpack struct(u8) {
     irqmd: u2 = 0,
     reserved: u2 = 0,
     fscksel: u2 = 0,
@@ -192,7 +192,7 @@ pub const IcuCr = packed struct(u8) {
     flten: bool = false
 };
 
-pub const IcuIelsr = packed struct(u32) {
+pub const IcuIelsr = bitpack struct(u32) {
     iels: ElcEvent = .NONE,
     reserved: u8 = 0,
     ir: bool = false,
@@ -201,14 +201,14 @@ pub const IcuIelsr = packed struct(u32) {
     reserved3: u7 = 0
 };
 
-pub const IcuDelsr = packed struct(u32) {
+pub const IcuDelsr = bitpack struct(u32) {
     iels: ElcEvent = .NONE,
     reserved: u8 = 0,
     ir: bool = false,
     reserved2: u15 = 0
 };
 
-pub const IcuSelsr = packed struct(u16) {
+pub const IcuSelsr = bitpack struct(u16) {
     iels: ElcEvent = .NONE,
     reserved: u8 = 0
 };

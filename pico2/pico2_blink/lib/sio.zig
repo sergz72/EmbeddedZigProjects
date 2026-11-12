@@ -24,7 +24,7 @@ const SioMask = extern struct {
     high: u32
 };
 
-pub const RiscvSoftIrq = packed struct(u32) {
+pub const RiscvSoftIrq = bitpack struct(u32) {
     core0_set: bool = false,
     core1_set: bool = false,
     core0_clr: bool = false,
@@ -32,7 +32,7 @@ pub const RiscvSoftIrq = packed struct(u32) {
     _reserved: u28 = 0
 };
 
-pub const MTimeCtrl = packed struct(u32) {
+pub const MTimeCtrl = bitpack struct(u32) {
     en: bool = false,
     fullspeed: bool = false,
     dbgpause_core0: bool = false,
@@ -40,7 +40,7 @@ pub const MTimeCtrl = packed struct(u32) {
     _reserved: u28 = 0
 };
 
-pub const SioFifoSt = packed struct(u32) {
+pub const SioFifoSt = bitpack struct(u32) {
     vld: bool = false,
     rdy: bool = false,
     wof: bool = false,
@@ -235,24 +235,14 @@ pub const Sio = extern struct {
         self.mtimecmp = @intCast(value & 0xFFFFFFFF);
     }
 
-    //todo: fix
-    noinline fn check_fifo_st_lvd(self: *volatile Sio) bool {
-        return self.fifo_st.vld;
-    }
-
     pub inline fn fifo_drain(self: *volatile Sio) void {
-        while (self.check_fifo_st_lvd()) {
+        while (self.fifo_st.vld) {
             _ = self.fifo_rd;
         }
     }
 
-    //todo: fix
-    noinline fn check_fifo_st_rdy(self: *volatile Sio) bool {
-        return self.fifo_st.rdy;
-    }
-
     pub inline fn fifo_push_blocking(self: *volatile Sio, v: u32) void {
-        while (!self.check_fifo_st_rdy()) {
+        while (!self.fifo_st.rdy) {
             asm volatile ("nop");
         }
         self.fifo_wr = v;
@@ -260,7 +250,7 @@ pub const Sio = extern struct {
     }
 
     pub inline fn fifo_pop_blocking(self: *volatile Sio) u32 {
-        while (!self.check_fifo_st_lvd()) {
+        while (!self.fifo_st.vld) {
             cpu.Cpu.wfe();
         }
         return self.fifo_rd;
@@ -283,7 +273,7 @@ pub const Sio = extern struct {
 };
 
 /// Bitfields for the GPIO Status Register (GPIOx_STATUS)
-const GpioStatus = packed struct(u32) {
+const GpioStatus = bitpack struct(u32) {
     _reserved0: u9 = 0,               // Bits 0-8
     outtopad: bool,                   // Bit 9
     _reserved1: u3 = 0,               // Bits 10-12
@@ -312,7 +302,7 @@ pub const GpioFunc = enum(u5) {
 };
 
 /// Bitfields for the GPIO Control Register (GPIOx_CTRL)
-const GpioCtrl = packed struct(u32) {
+const GpioCtrl = bitpack struct(u32) {
     /// Function select (0-31). Check datasheet for specific pin mux maps.
     funcsel: GpioFunc,                // Bits 0-4
     _reserved0: u7 = 0,               // Bits 5-11
@@ -360,12 +350,12 @@ pub const IoBank = extern struct {
     }
 };
 
-const PadsVoltageSelect = packed struct(u32) {
+const PadsVoltageSelect = bitpack struct(u32) {
     voltage_select_1v8: bool,
     _reserved: u31 = 0
 };
 
-const PadsGpio = packed struct(u32) {
+const PadsGpio = bitpack struct(u32) {
     slewfast: bool,
     schmitt: bool,
     pde: bool,

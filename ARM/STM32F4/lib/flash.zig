@@ -6,7 +6,7 @@ pub const FLASH_OPT_KEY1 = 0x08192A3B;
 pub const FLASH_OPT_KEY2 = 0x4C5D6E7F;
 
 
-pub const FlashAcr = packed struct(u32) {
+pub const FlashAcr = bitpack struct(u32) {
     latency: u4 = 0,
     reserved: u4 = 0,
     prften: bool = false,
@@ -17,7 +17,7 @@ pub const FlashAcr = packed struct(u32) {
     reserved2: u19 = 0
 };
 
-pub const FlashSr = packed struct(u32) {
+pub const FlashSr = bitpack struct(u32) {
     eop: bool = false,
     operr: bool = false,
     reserved: u2 = 0,
@@ -31,7 +31,7 @@ pub const FlashSr = packed struct(u32) {
     reserved3: u15 = 0
 };
 
-pub const FlashCr = packed struct(u32) {
+pub const FlashCr = bitpack struct(u32) {
     pg: bool = false,
     ser: bool = false,
     mer: bool = false,

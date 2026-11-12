@@ -241,6 +241,24 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const scd4x = b.addModule("scd4x", .{
+        .root_source_file = b.path("../../../common_lib/sensor/scd4x.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "system_timer", .module = system_timer }
+        }
+    });
+
+    const veml7700 = b.addModule("veml7700", .{
+        .root_source_file = b.path("../../../common_lib/sensor/veml7700.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "system_timer", .module = system_timer }
+        }
+    });
+
     const hal = b.addModule("hal", .{
         .root_source_file = b.path("src/hal.zig"),
         .target = target,
@@ -257,6 +275,8 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "interrupts", .module = interrupts },
             .{ .name = "shell", .module = shell },
             .{ .name = "rng", .module = rng },
+            .{ .name = "scd4x", .module = scd4x },
+            .{ .name = "veml7700", .module = veml7700 },
         },
     });
 
@@ -321,6 +341,26 @@ pub fn build(b: *std.Build) !void {
         }
     });
 
+    const veml7700_commands = b.addModule("veml7700_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/veml7700_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "veml7700", .module = veml7700 }
+        }
+    });
+
+    const scd4x_commands = b.addModule("scd4x_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/scd4x_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "scd4x", .module = scd4x }
+        }
+    });
+
     const exe = b.addExecutable(.{
         .name = "stm32h563_tests.elf",
         .root_module = b.createModule(.{
@@ -344,7 +384,9 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "trng_commands", .module = trng_commands },
                 .{ .name = "crc_commands", .module = crc_commands },
                 .{ .name = "rng", .module = rng },
-                .{ .name = "crc", .module = crc }
+                .{ .name = "crc", .module = crc },
+                .{ .name = "scd4x_commands", .module = scd4x_commands },
+                .{ .name = "veml7700_commands", .module = veml7700_commands },
             },
         }),
     });

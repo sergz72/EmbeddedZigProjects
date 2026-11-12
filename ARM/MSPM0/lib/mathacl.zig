@@ -25,7 +25,7 @@ pub const MathaclFunc = enum(u5) {
     sqrt_and_accumulate = 11
 };
 
-pub const MathaclCtl = packed struct(u32) {
+pub const MathaclCtl = bitpack struct(u32) {
     func: MathaclFunc,
     optype: bool = false,
     reserved: u2 = 0,
@@ -38,7 +38,7 @@ pub const MathaclCtl = packed struct(u32) {
     reserved4: u3 = 0,
 };
 
-pub const MathaclStatus = packed struct(u32) {
+pub const MathaclStatus = bitpack struct(u32) {
     uf: bool = false,
     ovf: bool = false,
     err: u2 = 0,
@@ -47,7 +47,7 @@ pub const MathaclStatus = packed struct(u32) {
     reserved2: u23 = 0
 };
 
-pub const MathaclStatusClr = packed struct(u32) {
+pub const MathaclStatusClr = bitpack struct(u32) {
     clr_uf: bool = false,
     clr_ovf: bool = false,
     clr_err: bool = false,

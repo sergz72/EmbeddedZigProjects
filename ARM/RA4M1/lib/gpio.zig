@@ -13,7 +13,7 @@ const Port = extern struct {
     reserved: [8]u16
 };
 
-const Pfs = packed struct(u32) {
+const Pfs = bitpack struct(u32) {
     podr: bool = false,
     pidr: bool = false,
     pdr: bool = false,

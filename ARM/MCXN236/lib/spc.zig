@@ -1,6 +1,6 @@
 const SPC0_BASE = 0x40045000;
 
-pub const Verid = packed struct(u32) {
+pub const Verid = bitpack struct(u32) {
     feature: u16,
     minor: u8,
     major: u8,
@@ -13,7 +13,7 @@ pub const LpMode = enum(u4) {
     dpdown = 8
 };
 
-pub const Sc = packed struct(u32) {
+pub const Sc = bitpack struct(u32) {
     busy: bool = false,
     spc_lp_req: bool = false,
     reserved0: u2 = 0,
@@ -23,7 +23,7 @@ pub const Sc = packed struct(u32) {
     reserved2: u14 = 0,
 };
 
-pub const Cntrl = packed struct(u32) {
+pub const Cntrl = bitpack struct(u32) {
     coreldo_en: bool = true,
     sysldo_en: bool = true,
     dcdc_en: bool = true,
@@ -36,14 +36,14 @@ pub const Lpreqov = enum(u2) {
     forced_high = 3,
 };
 
-pub const LpreqCfg = packed struct(u32) {
+pub const LpreqCfg = bitpack struct(u32) {
     lpreqoe: bool = false,
     lpreqpol: bool = false,
     lpreqov: Lpreqov = .not_forced,
     reserved0: u28 = 0,
 };
 
-pub const PdStatus = packed struct(u32) {
+pub const PdStatus = bitpack struct(u32) {
     pwr_req_status: bool = false,
     reserved0: u3 = 0,
     pd_lp_req: bool = false,
@@ -57,7 +57,7 @@ pub const Vsm = enum(u2) {
     _1v1 = 2,
 };
 
-pub const Sramctl = packed struct(u32) {
+pub const Sramctl = bitpack struct(u32) {
     vsm: Vsm = ._1v0,
     reserved0: u28 = 0,
     req: bool = false,
@@ -82,7 +82,7 @@ pub const Bgmode = enum(u2) {
     enabled_with_buffer = 2
 };
 
-pub const ActiveCfg = packed struct(u32) {
+pub const ActiveCfg = bitpack struct(u32) {
     coreldo_vdd_ds: bool = true,
     reserved0: u1 = 1,
     coreldo_vdd_lvl: VddLvl = .mid,
@@ -108,7 +108,7 @@ pub const ActiveCfg = packed struct(u32) {
     reserved6: u2 = 0,
 };
 
-pub const LpCfg = packed struct(u32) {
+pub const LpCfg = bitpack struct(u32) {
     coreldo_vdd_ds: bool = false,
     reserved0: u1 = 1,
     coreldo_vdd_lvl: VddLvl = .mid,
@@ -133,7 +133,7 @@ pub const LpCfg = packed struct(u32) {
     reserved5: u2 = 0,
 };
 
-pub const VdStat = packed struct(u32) {
+pub const VdStat = bitpack struct(u32) {
     corevdd_lvdf: bool = false,
     sysvdd_lvdf: bool = false,
     iovdd_lvdf: bool = false,
@@ -144,7 +144,7 @@ pub const VdStat = packed struct(u32) {
     reserved1: u25 = 0,
 };
 
-pub const VdCoreCfg = packed struct(u32) {
+pub const VdCoreCfg = bitpack struct(u32) {
     lvdre: bool = true,
     lvdie: bool = false,
     hvdre: bool = false,
@@ -154,7 +154,7 @@ pub const VdCoreCfg = packed struct(u32) {
     reserved1: u15 = 0,
 };
 
-pub const VdSysCfg = packed struct(u32) {
+pub const VdSysCfg = bitpack struct(u32) {
     lvdre: bool = true,
     lvdie: bool = false,
     hvdre: bool = false,
@@ -166,7 +166,7 @@ pub const VdSysCfg = packed struct(u32) {
     reserved2: u15 = 0,
 };
 
-pub const VdIoCfg = packed struct(u32) {
+pub const VdIoCfg = bitpack struct(u32) {
     lvdre: bool = true,
     lvdie: bool = false,
     hvdre: bool = false,
@@ -178,7 +178,7 @@ pub const VdIoCfg = packed struct(u32) {
     reserved2: u15 = 0,
 };
 
-pub const EvdCfg = packed struct(u32) {
+pub const EvdCfg = bitpack struct(u32) {
     evdiso: u6 = 0,
     reserved0: u2 = 0,
     evdlpiso: u6 = 0,
@@ -187,7 +187,7 @@ pub const EvdCfg = packed struct(u32) {
     reserved2: u10 = 0,
 };
 
-pub const GlitchDetectSc = packed struct(u32) {
+pub const GlitchDetectSc = bitpack struct(u32) {
     cnt_select: u2 = 3,
     timeout: u4 = 15,
     re: bool = false,
@@ -198,18 +198,18 @@ pub const GlitchDetectSc = packed struct(u32) {
     reserved1: u15 = 0,
 };
 
-pub const CoreldoCfg = packed struct(u32) {
+pub const CoreldoCfg = bitpack struct(u32) {
     reserved0: u16 = 0,
     dpdown_pulldown_disable: bool = false,
     reserved1: u15 = 0,
 };
 
-pub const SysldoCfg = packed struct(u32) {
+pub const SysldoCfg = bitpack struct(u32) {
     isinken: bool = true,
     reserved0: u31 = 128,
 };
 
-pub const DcdcCfg = packed struct(u32) {
+pub const DcdcCfg = bitpack struct(u32) {
     freq_cntrl_on: bool = false,
     reserved0: u7 = 0,
     freq_cntrl: u6 = 0,
@@ -218,7 +218,7 @@ pub const DcdcCfg = packed struct(u32) {
     reserved2: u12 = 0,
 };
 
-pub const DcdcBurstCfg = packed struct(u32) {
+pub const DcdcBurstCfg = bitpack struct(u32) {
     burst_req: bool = false,
     ext_burst_en: bool = false,
     reserved0: u1 = 0,

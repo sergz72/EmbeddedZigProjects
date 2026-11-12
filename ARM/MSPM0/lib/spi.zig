@@ -10,7 +10,7 @@ pub const SpiDmaTxIIdx = enum(u32) {
     transmit_event = 5
 };
 
-pub const SpiDmaTxInt = packed struct(u32) {
+pub const SpiDmaTxInt = bitpack struct(u32) {
     reserved: u4 = 0,
     tx: bool = false,
     reserved2: u27 = 0
@@ -36,7 +36,7 @@ pub const SpiDmaRxIIdx = enum(u32) {
     receive_event = 4
 };
 
-pub const SpiDmaRxInt = packed struct(u32) {
+pub const SpiDmaRxInt = bitpack struct(u32) {
     reserved: u2 = 0,
     rtout: bool = false,
     rx: bool = false,
@@ -72,7 +72,7 @@ pub const SpiIntIIdx = enum(u32) {
     rx_fifo_full = 11
 };
 
-pub const SpiIntInt = packed struct(u32) {
+pub const SpiIntInt = bitpack struct(u32) {
     rxfifo_ovf: bool = false,
     per: bool = false,
     rtout: bool = false,
@@ -109,7 +109,7 @@ pub const SpiGprcm = extern struct {
     stat: u32,
 };
 
-pub const SpiEvtMode = packed struct(u32) {
+pub const SpiEvtMode = bitpack struct(u32) {
     int0_cfg: common.EvtCfg = .software_mode,
     int1_cfg: common.EvtCfg = .hardware_mode,
     int2_cfg: common.EvtCfg = .hardware_mode,
@@ -140,7 +140,7 @@ pub const SpiFrf = enum(u2) {
     national = 3
 };
 
-pub const SpiCtl0 = packed struct(u32) {
+pub const SpiCtl0 = bitpack struct(u32) {
     dss: SpiDss = .reserved,
     frf: SpiFrf = .motorola_3wire,
     packen: bool = false,
@@ -152,7 +152,7 @@ pub const SpiCtl0 = packed struct(u32) {
     reserved3: u17 = 0
 };
 
-pub const SpiCtr1 = packed struct(u32) {
+pub const SpiCtr1 = bitpack struct(u32) {
     enable: bool = false,
     lbm: bool = false,
     cp: bool = false,
@@ -170,7 +170,7 @@ pub const SpiCtr1 = packed struct(u32) {
     reserved3: u2 = 0
 };
 
-pub const SpiClkCtl = packed struct(u32) {
+pub const SpiClkCtl = bitpack struct(u32) {
     scr: u10 = 0,
     reserved: u18 = 0,
     dsample: u4 = 0
@@ -192,13 +192,13 @@ pub const SpiRxIflsel = enum(u3) {
     contains_more_than_one_frame = 7
 };
 
-pub const SpiIfls = packed struct(u32) {
+pub const SpiIfls = bitpack struct(u32) {
     txiflsel: SpiTxIflsel = .p5_empty,
     rxiflsel: SpiRxIflsel = .p5_full,
     reserved: u26 = 0
 };
 
-pub const SpiStat = packed struct(u32) {
+pub const SpiStat = bitpack struct(u32) {
     tfe: bool,
     tnf: bool,
     rfe: bool,

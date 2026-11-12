@@ -1,6 +1,6 @@
 pub const SCFG_BASE = 0x40010000;
 
-pub const ScfgCfg1 = packed struct(u32) {
+pub const ScfgCfg1 = bitpack struct(u32) {
     mem_map_sel: u2,
     reserved1: u2,
     pa11_12_rmp: bool = false,
@@ -24,13 +24,13 @@ pub const ScfgCfg1 = packed struct(u32) {
     reserved5: u1 = 0
 };
 
-pub const ScfgCfg2 = packed struct(u32) {
+pub const ScfgCfg2 = bitpack struct(u32) {
     reserved1: u24 = 0,
     can1_tst_sel: bool = false,
     reserved2: u7 = 0
 };
 
-pub const ScfgIocfg = packed struct(u32) {
+pub const ScfgIocfg = bitpack struct(u32) {
     nrst_rmp: bool,
     reserved1: u31
 };

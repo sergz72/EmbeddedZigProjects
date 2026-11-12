@@ -3,7 +3,7 @@ pub const SPI2_BASE = 0x40003800;
 pub const SPI3_BASE = 0x40003C00;
 pub const SPI4_BASE = 0x40014000;
 
-pub const SpiCtrl1 = packed struct(u16) {
+pub const SpiCtrl1 = bitpack struct(u16) {
     clkpha: bool = false,
     clkpol: bool = false,
     msten: bool = false,
@@ -20,7 +20,7 @@ pub const SpiCtrl1 = packed struct(u16) {
     slben: bool = false
 };
 
-pub const SpiCtrl2 = packed struct(u16) {
+pub const SpiCtrl2 = bitpack struct(u16) {
     dmaren: bool = false,
     dmaten: bool = false,
     hwcsoe: bool = false,
@@ -33,7 +33,7 @@ pub const SpiCtrl2 = packed struct(u16) {
     reserved: u7 = 0
 };
 
-pub const SpiSts = packed struct(u16) {
+pub const SpiSts = bitpack struct(u16) {
     rdbf: bool,
     tdbe: bool,
     acs: bool,
@@ -45,7 +45,7 @@ pub const SpiSts = packed struct(u16) {
     reserved: u8
 };
 
-pub const SpiI2sCtrl = packed struct(u16) {
+pub const SpiI2sCtrl = bitpack struct(u16) {
     i2scbn: bool = false,
     i2sdbn: u2 = 0,
     i2sclkpol: bool = false,
@@ -58,7 +58,7 @@ pub const SpiI2sCtrl = packed struct(u16) {
     reserved2: u4 = 0
 };
 
-pub const SpiI2sClkp = packed struct(u16) {
+pub const SpiI2sClkp = bitpack struct(u16) {
     i2sdiv_l: u8 = 2,
     i2sodd: bool = false,
     i2smclkoe: bool = false,

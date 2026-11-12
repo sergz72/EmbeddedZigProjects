@@ -7,7 +7,7 @@ const PLL_VCO_MAX_FREQUENCY = 550000000;
 const PLL_IN_MIN_FREQUENCY = 5000000;
 const PLL_IN_MAX_FREQUENCY = 50000000;
 
-pub const Param = packed struct(u32) {
+pub const Param = bitpack struct(u32) {
     reserved0: u1,
     soscclkpres: bool,
     sircclkpres: bool,
@@ -20,7 +20,7 @@ pub const Param = packed struct(u32) {
     reserved1: u23
 };
 
-pub const TrimLock = packed struct(u32) {
+pub const TrimLock = bitpack struct(u32) {
     trim_unlock: bool = false,
     ifr_disable: bool = false,
     reserved0: u14 = 0,
@@ -37,13 +37,13 @@ pub const Scs = enum(u4) {
     upll = 7,
 };
 
-pub const Csr = packed struct(u32) {
+pub const Csr = bitpack struct(u32) {
     reserved0: u24 = 0,
     scs: Scs = .firc,
     reserved1: u4 = 0,
 };
 
-pub const Sosccsr = packed struct(u32) {
+pub const Sosccsr = bitpack struct(u32) {
     soscen: bool = false,
     soscsten: bool = false,
     reserved0: u14 = 0,
@@ -66,7 +66,7 @@ pub const Range = enum(u2) {
     _50to66mhz = 3
 };
 
-pub const Sosccfg = packed struct(u32) {
+pub const Sosccfg = bitpack struct(u32) {
     reserved0: u2 = 0,
     erefs: bool = false,
     reserved1: u1 = 0,
@@ -74,7 +74,7 @@ pub const Sosccfg = packed struct(u32) {
     reserved2: u26 = 0,
 };
 
-pub const Sirccsr = packed struct(u32) {
+pub const Sirccsr = bitpack struct(u32) {
     reserved0: u1 = 0,
     sircsten: bool = false,
     reserved1: u3 = 1,
@@ -99,14 +99,14 @@ pub const Trimsrc = enum(u2) {
     rosc = 3,
 };
 
-pub const Sirctcfg = packed struct(u32) {
+pub const Sirctcfg = bitpack struct(u32) {
     trimsrc: Trimsrc = .reserved,
     reserved0: u14 = 0,
     trimdiv: u7 = 0,
     reserved1: u9 = 0,
 };
 
-pub const Sirctrim = packed struct(u32) {
+pub const Sirctrim = bitpack struct(u32) {
     ccotrim: u6 = 0,
     reserved0: u2 = 0,
     cltrim: u6 = 0,
@@ -117,14 +117,14 @@ pub const Sirctrim = packed struct(u32) {
     reserved3: u3 = 0,
 };
 
-pub const Sircstat = packed struct(u32) {
+pub const Sircstat = bitpack struct(u32) {
     ccotrim: u6 = 0,
     reserved0: u2 = 0,
     cltrim: u6 = 0,
     reserved1: u18 = 0,
 };
 
-pub const Firccsr = packed struct(u32) {
+pub const Firccsr = bitpack struct(u32) {
     fircen: bool = true,
     fircsten: bool = false,
     reserved0: u2 = 3,
@@ -146,19 +146,19 @@ pub const Firccsr = packed struct(u32) {
     fircacc: bool = false,
 };
 
-pub const Firccfg = packed struct(u32) {
+pub const Firccfg = bitpack struct(u32) {
     range: bool = false,
     reserved0: u31 = 0,
 };
 
-pub const Firctcfg = packed struct(u32) {
+pub const Firctcfg = bitpack struct(u32) {
     trimsrc: Trimsrc = .reserved,
     reserved0: u14 = 0,
     trimdiv: u7 = 0,
     reserved1: u9 = 0,
 };
 
-pub const Firctrim = packed struct(u32) {
+pub const Firctrim = bitpack struct(u32) {
     trimfine: u8 = 0,
     trimcoar: u6 = 0,
     reserved0: u2 = 0,
@@ -168,13 +168,13 @@ pub const Firctrim = packed struct(u32) {
     reserved2: u2 = 0,
 };
 
-pub const Fircstat = packed struct(u32) {
+pub const Fircstat = bitpack struct(u32) {
     trimfine: u8 = 0,
     trimcoar: u6 = 0,
     reserved0: u18 = 0,
 };
 
-pub const Rosccsr = packed struct(u32) {
+pub const Rosccsr = bitpack struct(u32) {
     reserved0: u16 = 0,
     rosccm: bool = false,
     rosccmre: bool = false,
@@ -186,7 +186,7 @@ pub const Rosccsr = packed struct(u32) {
     reserved2: u5 = 0,
 };
 
-pub const Pllcsr = packed struct(u32) {
+pub const Pllcsr = bitpack struct(u32) {
     pwren: bool = false,
     clken: bool = false,
     sten: bool = false,
@@ -210,7 +210,7 @@ pub const Source = enum(u2) {
     no_clock = 3,
 };
 
-pub const Pllctrl = packed struct(u32) {
+pub const Pllctrl = bitpack struct(u32) {
     selr: u4 = 0,
     seli: u6 = 0,
     selp: u5 = 0,
@@ -227,7 +227,7 @@ pub const Pllctrl = packed struct(u32) {
     reserved3: u5 = 0,
 };
 
-pub const Pllstat = packed struct(u32) {
+pub const Pllstat = bitpack struct(u32) {
     reserved0: u1,
     ndivack: bool,
     mdivack: bool,
@@ -236,30 +236,30 @@ pub const Pllstat = packed struct(u32) {
     reserved1: u27,
 };
 
-pub const Pllndiv = packed struct(u32) {
+pub const Pllndiv = bitpack struct(u32) {
     ndiv: u8 = 1,
     reserved0: u23 = 0,
     nreq: bool = false,
 };
 
-pub const Pllmdiv = packed struct(u32) {
+pub const Pllmdiv = bitpack struct(u32) {
     mdiv: u16 = 1,
     reserved0: u15 = 0,
     mreq: bool = false,
 };
 
-pub const Pllpdiv = packed struct(u32) {
+pub const Pllpdiv = bitpack struct(u32) {
     pdiv: u5 = 1,
     reserved0: u26 = 0,
     preq: bool = false,
 };
 
-pub const PlllockCnfg = packed struct(u32) {
+pub const PlllockCnfg = bitpack struct(u32) {
     lock_time: u17 = 20300,
     reserved0: u15 = 0,
 };
 
-pub const Pllsscgstat = packed struct(u32) {
+pub const Pllsscgstat = bitpack struct(u32) {
     ss_mdiv_ack: bool,
     reserved0: u31,
 };
@@ -269,7 +269,7 @@ pub const Mc = enum(u2) {
     max_comp = 3,
 };
 
-pub const Pllsscg1 = packed struct(u32) {
+pub const Pllsscg1 = bitpack struct(u32) {
     ss_mdiv_msb: bool = false,
     ss_mdiv_req: bool = false,
     mf: u3 = 0,
@@ -281,14 +281,14 @@ pub const Pllsscg1 = packed struct(u32) {
     ss_pd: bool = true,
 };
 
-pub const PllOvrd = packed struct(u32) {
+pub const PllOvrd = bitpack struct(u32) {
     pwren_ovrd: bool = false,
     clken_ovrd: bool = false,
     reserved0: u29 = 0,
     ovrd_en: bool = false,
 };
 
-pub const Upllcsr = packed struct(u32) {
+pub const Upllcsr = bitpack struct(u32) {
     reserved0: u16 = 0,
     upllcm: bool = false,
     upllcmre: bool = false,
@@ -311,7 +311,7 @@ pub const VoutSel = enum(u3) {
     _1v25 = 7,
 };
 
-pub const Ldocsr = packed struct(u32) {
+pub const Ldocsr = bitpack struct(u32) {
     ldoen: bool = false,
     vout_sel: VoutSel = ._1v1,
     ldobypass: bool = false,

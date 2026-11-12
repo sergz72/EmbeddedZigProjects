@@ -1,7 +1,7 @@
 const USART0_BASE: usize = 0x40013800;
 const USART1_BASE: usize = 0x40004400;
 
-pub const UsartStat = packed struct(u32) {
+pub const UsartStat = bitpack struct(u32) {
     perr: bool,
     ferr: bool,
     nerr: bool,
@@ -26,7 +26,7 @@ pub const UsartStat = packed struct(u32) {
     reserved2: u9
 };
 
-pub const UsartIntc = packed struct(u32) {
+pub const UsartIntc = bitpack struct(u32) {
     pec: bool,
     fec: bool,
     nec: bool,
@@ -47,18 +47,18 @@ pub const UsartIntc = packed struct(u32) {
     reserved6: u11
 };
 
-pub const UsartGp = packed struct(u32) {
+pub const UsartGp = bitpack struct(u32) {
     psc: u8 = 0,
     guat: u8 = 0,
     reserved: u16 = 0
 };
 
-pub const UsartRt = packed struct(u32) {
+pub const UsartRt = bitpack struct(u32) {
     rt: u24 = 0,
     bl: u8 = 0
 };
 
-pub const UsartCmd = packed struct(u32) {
+pub const UsartCmd = bitpack struct(u32) {
     reserved0: u1 = 0,
     sbkcmd: bool = false,
     mmcmd: bool = false,
@@ -67,7 +67,7 @@ pub const UsartCmd = packed struct(u32) {
     reserved1: u27 = 0
 };
 
-pub const UsartCtl0 = packed struct(u32) {
+pub const UsartCtl0 = bitpack struct(u32) {
     uen: bool = false,
     uesm: bool = false,
     ren: bool = false,
@@ -91,7 +91,7 @@ pub const UsartCtl0 = packed struct(u32) {
     reserved: u4 = 0
 };
 
-pub const UsartCtl1 = packed struct(u32) {
+pub const UsartCtl1 = bitpack struct(u32) {
     reserved0: u4 = 0,
     addm: bool = false,
     lblen: bool = false,
@@ -113,7 +113,7 @@ pub const UsartCtl1 = packed struct(u32) {
     addr: u8 = 0
 };
 
-pub const UsartCtl2 = packed struct(u32) {
+pub const UsartCtl2 = bitpack struct(u32) {
     errie: bool = false,
     iren: bool = false,
     irlp: bool = false,
@@ -137,7 +137,7 @@ pub const UsartCtl2 = packed struct(u32) {
     reserved2: u9 = 0
 };
 
-pub const UsartRfcs = packed struct(u32) {
+pub const UsartRfcs = bitpack struct(u32) {
     elnack: bool = false,
     reserved: u7 = 0,
     rfen: bool = false,

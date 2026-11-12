@@ -7,7 +7,7 @@ var p_ms: usize = undefined;
 var p_loop_us: usize = undefined;
 var systick_counter: usize = undefined;
 
-const SystickCsr = packed struct(u32) {
+const SystickCsr = bitpack struct(u32) {
     enable: bool = false,
     tickint: bool = false,
     clksource: bool = false,

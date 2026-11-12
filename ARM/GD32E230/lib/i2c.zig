@@ -13,7 +13,7 @@ pub const I2cError = error {
     TimeoutWaitMasterByteTransitted
 };
 
-pub const I2cCtl0 = packed struct(u32) {
+pub const I2cCtl0 = bitpack struct(u32) {
     i2cen: bool = false,
     smben: bool = false,
     reserved: u1 = 0,
@@ -33,7 +33,7 @@ pub const I2cCtl0 = packed struct(u32) {
     reserved3: u16 = 0
 };
 
-pub const I2cCtl1 = packed struct(u32) {
+pub const I2cCtl1 = bitpack struct(u32) {
     i2cclk: u7 = 0,
     reserved: u1 = 0,
     errie: bool = false,
@@ -46,20 +46,20 @@ pub const I2cCtl1 = packed struct(u32) {
     reserved3: u16 = 0
 };
 
-pub const I2cSaddr0 = packed struct(u32) {
+pub const I2cSaddr0 = bitpack struct(u32) {
     address: u10 = 0,
     reserved: u5 = 0,
     addformat_10bit: bool = false,
     reserved2: u16 = 0
 };
 
-pub const I2cSaddr1 = packed struct(u32) {
+pub const I2cSaddr1 = bitpack struct(u32) {
     duaden: bool = false,
     address2: u7 = 0,
     reserved: u24 = 0
 };
 
-pub const I2cStat0 = packed struct(u32) {
+pub const I2cStat0 = bitpack struct(u32) {
     sbsend: bool,
     addsend: bool,
     btc: bool,
@@ -79,7 +79,7 @@ pub const I2cStat0 = packed struct(u32) {
     reserved3: u16
 };
 
-pub const I2cStat1 = packed struct(u32) {
+pub const I2cStat1 = bitpack struct(u32) {
     master: bool,
     i2cbsy: bool,
     tr: bool,
@@ -92,7 +92,7 @@ pub const I2cStat1 = packed struct(u32) {
     reserved2: u16
 };
 
-pub const I2cCkCfg = packed struct(u32) {
+pub const I2cCkCfg = bitpack struct(u32) {
     clkc: u12 = 0,
     reserved: u2 = 0,
     dtcy: bool = false,
@@ -100,7 +100,7 @@ pub const I2cCkCfg = packed struct(u32) {
     reserved2: u16 = 0
 };
 
-pub const I2cRt = packed struct(u32) {
+pub const I2cRt = bitpack struct(u32) {
     risetime: u7 = 2,
     reserved: u25 = 0
 };
@@ -124,7 +124,7 @@ pub const I2c = extern struct {
 
     pub fn initMaster(self: *volatile I2c, speed: usize) void {
         self.ctl0 = .{};
-        var freq = cpu.cpu.pclk1_frequency / 1000000;
+        var freq = cpu.cpu.apb1_frequency / 1000000;
         if (freq < 2) {
             freq = 2;
         } else if (freq > 72) {
@@ -133,12 +133,12 @@ pub const I2c = extern struct {
         self.ctl1 = .{.i2cclk = @truncate(freq)};
         if (speed <= 100000) {
             self.rt = .{.risetime = @truncate(freq+1)};
-            var ccr = cpu.cpu.pclk1_frequency / (speed << 1);
+            var ccr = cpu.cpu.apb1_frequency / (speed << 1);
             if (ccr < 4)
                 ccr = 4;
             self.ckcfg = .{.clkc = @truncate(ccr)};
         } else {
-            var ccr = cpu.cpu.pclk1_frequency / (speed * 3);
+            var ccr = cpu.cpu.apb1_frequency / (speed * 3);
             if (ccr == 0)
                 ccr = 1;
             self.rt = .{.risetime = @truncate(freq * 3 / 10 + 1)};

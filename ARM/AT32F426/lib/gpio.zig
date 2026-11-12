@@ -36,7 +36,7 @@ pub const GpioInit = struct {
     pull: GpioPull = .floating,
 };
 
-pub const GpioScr = packed struct(u32) {
+pub const GpioScr = bitpack struct(u32) {
     iosb: u16 = 0,
     iocb: u16 = 0
 };

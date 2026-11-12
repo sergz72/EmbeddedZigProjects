@@ -7,7 +7,7 @@ pub const BkpData = extern struct {
     reserved: u16
 };
 
-pub const BkpOctlr = packed struct(u16) {
+pub const BkpOctlr = bitpack struct(u16) {
     cal: u7 = 0,
     cco: bool = false,
     asoe: bool = false,
@@ -15,13 +15,13 @@ pub const BkpOctlr = packed struct(u16) {
     reserved: u6 = 0
 };
 
-pub const BkpTpCtrl = packed struct(u16) {
+pub const BkpTpCtrl = bitpack struct(u16) {
     tpe: bool = false,
     tpal: bool = false,
     reserved: u14 = 0
 };
 
-pub const BkpTpCsr = packed struct(u16) {
+pub const BkpTpCsr = bitpack struct(u16) {
     cte: bool = false,
     cti: bool = false,
     tpie: bool = false,

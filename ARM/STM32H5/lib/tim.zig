@@ -26,7 +26,7 @@ pub const TimCkd = enum(u2) {
     div4 = 2
 };
 
-pub const TimCr1 = packed struct(u16) {
+pub const TimCr1 = bitpack struct(u16) {
     cen: bool = false,
     udis: bool = false,
     urs: bool = false,
@@ -41,7 +41,7 @@ pub const TimCr1 = packed struct(u16) {
     reserved1: u3 = 0,
 };
 
-pub const TimCr2 = packed struct(u32) {
+pub const TimCr2 = bitpack struct(u32) {
     ccpc: bool = false,
     reserved0: u1 = 0,
     ccus: bool = false,
@@ -73,7 +73,7 @@ pub const Etps = enum(u2) {
     div8 = 3
 };
 
-pub const TimSmcr = packed struct(u32) {
+pub const TimSmcr = bitpack struct(u32) {
     sms: u3 = 0,
     occs: bool = false,
     ts: u3 = 0,
@@ -91,7 +91,7 @@ pub const TimSmcr = packed struct(u32) {
     reserved2: u6 = 0,
 };
 
-pub const Timr = packed struct(u32) {
+pub const Timr = bitpack struct(u32) {
     u: bool = false,
     cc1: bool = false,
     cc2: bool = false,
@@ -115,7 +115,7 @@ pub const Timr = packed struct(u32) {
     reserved1: u8 = 0,
 };
 
-pub const TimEgr = packed struct(u16) {
+pub const TimEgr = bitpack struct(u16) {
     ug: bool = false,
     cc1g: bool = false,
     cc2g: bool = false,
@@ -135,7 +135,7 @@ pub const TimIcpsc = enum(u2) {
     div8 = 3
 };
 
-pub const TimCcmr1Input = packed struct(u32) {
+pub const TimCcmr1Input = bitpack struct(u32) {
     cc1s: u2 = 0,
     ic1psc: TimIcpsc = .div1,
     ic1f: u4 = 0,
@@ -145,7 +145,7 @@ pub const TimCcmr1Input = packed struct(u32) {
     reserved0: u16 = 0,
 };
 
-pub const TimCcmr1Output = packed struct(u32) {
+pub const TimCcmr1Output = bitpack struct(u32) {
     cc1s: u2 = 0,
     oc1fe: bool = false,
     oc1pe: bool = false,
@@ -162,7 +162,7 @@ pub const TimCcmr1Output = packed struct(u32) {
     reserved1: u7 = 0,
 };
 
-pub const TimCcmr2Input = packed struct(u32) {
+pub const TimCcmr2Input = bitpack struct(u32) {
     cc3s: u2 = 0,
     ic3psc: TimIcpsc = .div1,
     ic3f: u4 = 0,
@@ -172,7 +172,7 @@ pub const TimCcmr2Input = packed struct(u32) {
     reserved0: u16 = 0,
 };
 
-pub const TimCcmr2Output = packed struct(u32) {
+pub const TimCcmr2Output = bitpack struct(u32) {
     cc3s: u2 = 0,
     oc3fe: bool = false,
     oc3pe: bool = false,
@@ -189,7 +189,7 @@ pub const TimCcmr2Output = packed struct(u32) {
     reserved1: u7 = 0,
 };
 
-pub const TimCcer = packed struct(u32) {
+pub const TimCcer = bitpack struct(u32) {
     cc1e: bool = false,
     cc1p: bool = false,
     cc1ne: bool = false,
@@ -214,7 +214,7 @@ pub const TimCcer = packed struct(u32) {
     reserved1: u10 = 0,
 };
 
-pub const TimCnt = packed struct(u32) {
+pub const TimCnt = bitpack struct(u32) {
     cnt: u16 = 0,
     reserved0: u15 = 0,
     uifcpy: bool = false,
@@ -227,7 +227,7 @@ pub const Lock = enum(u2) {
     level3 = 3
 };
 
-pub const TimBdtr = packed struct(u32) {
+pub const TimBdtr = bitpack struct(u32) {
     dtg: u8 = 0,
     lock: Lock = .off,
     ossi: bool = false,
@@ -247,7 +247,7 @@ pub const TimBdtr = packed struct(u32) {
     reserved0: u2 = 0,
 };
 
-pub const TimCcr5 = packed struct(u32) {
+pub const TimCcr5 = bitpack struct(u32) {
     ccr5: u20 = 0,
     reserved0: u9 = 0,
     gc5c1: bool = false,
@@ -255,7 +255,7 @@ pub const TimCcr5 = packed struct(u32) {
     gc5c3: bool = false,
 };
 
-pub const TimCcmr3 = packed struct(u32) {
+pub const TimCcmr3 = bitpack struct(u32) {
     reserved0: u2 = 0,
     oc5fe: bool = false,
     oc5pe: bool = false,
@@ -272,7 +272,7 @@ pub const TimCcmr3 = packed struct(u32) {
     reserved3: u7 = 0,
 };
 
-pub const TimDtr2 = packed struct(u32) {
+pub const TimDtr2 = bitpack struct(u32) {
     dtgf: u8 = 0,
     reserved0: u8 = 0,
     dtae: bool = false,
@@ -286,7 +286,7 @@ pub const Idir = enum(u2) {
     down = 2,
 };
 
-pub const TimEcr = packed struct(u32) {
+pub const TimEcr = bitpack struct(u32) {
     ie: bool = false,
     idir: Idir = .any,
     iblk: u2 = 0,
@@ -298,7 +298,7 @@ pub const TimEcr = packed struct(u32) {
     reserved1: u5 = 0,
 };
 
-pub const TimTisel = packed struct(u32) {
+pub const TimTisel = bitpack struct(u32) {
     ti1sel: u4 = 0,
     reserved0: u4 = 0,
     ti2sel: u4 = 0,
@@ -309,7 +309,7 @@ pub const TimTisel = packed struct(u32) {
     reserved3: u4 = 0,
 };
 
-pub const TimAf1 = packed struct(u32) {
+pub const TimAf1 = bitpack struct(u32) {
     bkine: bool = true,
     bkcmp1e: bool = false,
     bkcmp2e: bool = false,
@@ -328,7 +328,7 @@ pub const TimAf1 = packed struct(u32) {
     reserved0: u14 = 0,
 };
 
-pub const TimAf2 = packed struct(u32) {
+pub const TimAf2 = bitpack struct(u32) {
     bk2ine: bool = true,
     bk2cmp1e: bool = false,
     bk2cmp2e: bool = false,
@@ -359,7 +359,7 @@ pub const Dbss = enum(u4) {
     trigger = 7
 };
 
-pub const TimDcr = packed struct(u32) {
+pub const TimDcr = bitpack struct(u32) {
     dba: u5 = 0,
     reserved0: u3 = 0,
     dbl: u5 = 0,

@@ -61,7 +61,7 @@ const SpecialFunction = enum(u5) {
     clear_no_persist_interrupt = 10
 };
 
-const Command = packed struct(u8) {
+const Command = bitpack struct(u8) {
     addr_sf: u5,
     transaction: Transaction,
     cmd: bool = true,
@@ -81,7 +81,7 @@ const Command = packed struct(u8) {
     }
 };
 
-pub const TSL2591Enable = packed struct(u8) {
+pub const TSL2591Enable = bitpack struct(u8) {
     pon: bool,
     aen: bool,
     reserved: u2 = 0,
@@ -140,7 +140,7 @@ pub const TSL2591Gain = enum(u2) {
     }
 };
 
-const Control = packed struct(u8) {
+const Control = bitpack struct(u8) {
     atime: TSL2591ATime,
     reserved: u1 = 0,
     again: TSL2591Gain = .low,
@@ -167,13 +167,13 @@ pub const TSL2591Persist = enum(u8) {
     _60OutOfRange = 15
 };
 
-const PID = packed struct(u8) {
+const PID = bitpack struct(u8) {
     reserved: u4,
     pid: u2,
     reserved2: u2
 };
 
-const TSL2591Status = packed struct(u8) {
+const TSL2591Status = bitpack struct(u8) {
     avalid: bool,
     reserved: u3,
     aint: bool,

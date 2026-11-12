@@ -18,7 +18,7 @@ pub const FwdgtPsc = enum(u32) {
     div256 = 6
 };
 
-pub const FwdgtStat = packed struct(u32) {
+pub const FwdgtStat = bitpack struct(u32) {
     pud: bool,
     rud: bool,
     wud: bool,

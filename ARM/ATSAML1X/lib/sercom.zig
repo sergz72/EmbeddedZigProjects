@@ -20,7 +20,7 @@ pub const SercomI2cInactOut = enum(u2) {
     _205us = 3
 };
 
-pub const SercomI2cHostCtrlA = packed struct(u32) {
+pub const SercomI2cHostCtrlA = bitpack struct(u32) {
     swrst: bool = false,
     enable: bool = false,
     mode: SercomMode = .usart_ext_clk,
@@ -47,7 +47,7 @@ pub const SercomI2cHostCmd = enum(u2) {
     stop = 3
 };
 
-pub const SercomI2cHostCtrlB = packed struct(u32) {
+pub const SercomI2cHostCtrlB = bitpack struct(u32) {
     reserved: u8 = 0,
     smen: bool = false,
     gcen: bool = false,
@@ -57,7 +57,7 @@ pub const SercomI2cHostCtrlB = packed struct(u32) {
     reserved5: u13 = 0
 };
 
-pub const SercomI2cHostInt = packed struct(u8) {
+pub const SercomI2cHostInt = bitpack struct(u8) {
     mb: bool = false,
     sb: bool = false,
     reserved: u5 = 0,
@@ -71,7 +71,7 @@ pub const SercomI2cBusState = enum(u2) {
     busy = 3
 };
 
-pub const SercomI2cHostStatus = packed struct(u16) {
+pub const SercomI2cHostStatus = bitpack struct(u16) {
     buserr: bool = false,
     arblost: bool = false,
     rxnack: bool = false,
@@ -85,14 +85,14 @@ pub const SercomI2cHostStatus = packed struct(u16) {
     reserve3: u5 = 0
 };
 
-pub const SercomI2cHostSyncBusy = packed struct(u32) {
+pub const SercomI2cHostSyncBusy = bitpack struct(u32) {
     swrst: bool,
     enable: bool,
     sysop: bool,
     reserved: u29
 };
 
-pub const SercomI2cHostAddr = packed struct(u32) {
+pub const SercomI2cHostAddr = bitpack struct(u32) {
     addr: u11 = 0,
     reserved: u2 = 0,
     lenen: bool = false,
@@ -102,7 +102,7 @@ pub const SercomI2cHostAddr = packed struct(u32) {
     reserved2: u8 = 0
 };
 
-pub const SercomI2cHostBaud = packed struct(u32) {
+pub const SercomI2cHostBaud = bitpack struct(u32) {
     baud: u8 = 0,
     baudlow: u8 = 0,
     hsbaud: u8 = 0,
@@ -188,7 +188,7 @@ pub const SercomI2cSpeed = enum(u2) {
     high = 2
 };
 
-pub const SercomI2cClientCtrlA = packed struct(u32) {
+pub const SercomI2cClientCtrlA = bitpack struct(u32) {
     swrst: bool = false,
     enable: bool = false,
     mode: SercomMode = .usart_ext_clk,
@@ -214,7 +214,7 @@ pub const SercomI2cClientCmd = enum(u2) {
     byte_read = 3
 };
 
-pub const SercomI2cClientCtrlB = packed struct(u32) {
+pub const SercomI2cClientCtrlB = bitpack struct(u32) {
     reserved: u8 = 0,
     smen: bool = false,
     gcmd: bool = false,
@@ -226,7 +226,7 @@ pub const SercomI2cClientCtrlB = packed struct(u32) {
     reserved5: u13 = 0
 };
 
-pub const SercomI2cClientInt = packed struct(u8) {
+pub const SercomI2cClientInt = bitpack struct(u8) {
     prec: bool = false,
     amatch: bool = false,
     drdy: bool = false,
@@ -234,7 +234,7 @@ pub const SercomI2cClientInt = packed struct(u8) {
     err: bool = false
 };
 
-pub const SercomI2cClientStatus = packed struct(u16) {
+pub const SercomI2cClientStatus = bitpack struct(u16) {
     buserr: bool = false,
     coll: bool = false,
     rxnack: bool = false,
@@ -249,13 +249,13 @@ pub const SercomI2cClientStatus = packed struct(u16) {
     reserve3: u5 = 0
 };
 
-pub const SercomI2cClientSyncBusy = packed struct(u32) {
+pub const SercomI2cClientSyncBusy = bitpack struct(u32) {
     swrst: bool,
     enable: bool,
     reserved: u30
 };
 
-pub const SercomI2cClientAddr = packed struct(u32) {
+pub const SercomI2cClientAddr = bitpack struct(u32) {
     gencen: bool = false,
     addr: u10 = 0,
     reserved: u4 = 0,
@@ -288,7 +288,7 @@ pub const SercomSpiForm = enum(u4) {
     spi_frame_with_address = 2
 };
 
-pub const SercomSpiCtrlA = packed struct(u32) {
+pub const SercomSpiCtrlA = bitpack struct(u32) {
     swrst: bool = false,
     enable: bool = false,
     mode: SercomMode = .usart_ext_clk,
@@ -318,7 +318,7 @@ pub const SercomAmode = enum(u2) {
     range = 2
 };
 
-pub const SercomSpiCtrlB = packed struct(u32) {
+pub const SercomSpiCtrlB = bitpack struct(u32) {
     chsize: SercomSpiChSize = ._8,
     reserved: u3 = 0,
     ploaden: bool = false,
@@ -332,7 +332,7 @@ pub const SercomSpiCtrlB = packed struct(u32) {
     reserved5: u14 = 0
 };
 
-pub const SercomSpiInt = packed struct(u8) {
+pub const SercomSpiInt = bitpack struct(u8) {
     dre: bool = false,
     txc: bool = false,
     rxc: bool = false,
@@ -341,20 +341,20 @@ pub const SercomSpiInt = packed struct(u8) {
     err: bool = false
 };
 
-pub const SercomSpiStatus = packed struct(u16) {
+pub const SercomSpiStatus = bitpack struct(u16) {
     reserved: u2 = 0,
     bufovf: bool = false,
     reserved2: u13 = 0
 };
 
-pub const SercomSpiSyncBusy = packed struct(u32) {
+pub const SercomSpiSyncBusy = bitpack struct(u32) {
     swrst: bool,
     enable: bool,
     ctrlb: bool,
     reserved: u29
 };
 
-pub const SercomSpiAddr = packed struct(u32) {
+pub const SercomSpiAddr = bitpack struct(u32) {
     addr: u8 = 0,
     reserved: u8 = 0,
     addrmask: u8 = 0,
@@ -505,7 +505,7 @@ pub const SercomUsartForm = enum(u4) {
     iso7816 = 7
 };
 
-pub const SercomUsartCtrlA = packed struct(u32) {
+pub const SercomUsartCtrlA = bitpack struct(u32) {
     swrst: bool = false,
     enable: bool = false,
     mode: SercomMode = .usart_ext_clk,
@@ -535,7 +535,7 @@ pub const SercomUsartChSize = enum(u3) {
     _7 = 7
 };
 
-pub const SercomUsartCtrlB = packed struct(u32) {
+pub const SercomUsartCtrlB = bitpack struct(u32) {
     chsize: SercomUsartChSize = ._8,
     reserved: u3 = 0,
     sbmode: bool = false,
@@ -551,7 +551,7 @@ pub const SercomUsartCtrlB = packed struct(u32) {
     reserved5: u14 = 0
 };
 
-pub const SercomUsartCtrlC = packed struct(u32) {
+pub const SercomUsartCtrlC = bitpack struct(u32) {
     gtime: u3 = 0,
     reserved: u13 = 0,
     inack: bool = false,
@@ -561,7 +561,7 @@ pub const SercomUsartCtrlC = packed struct(u32) {
     reserved3: u9 = 0
 };
 
-pub const SercomUsartInt = packed struct(u8) {
+pub const SercomUsartInt = bitpack struct(u8) {
     dre: bool = false,
     txc: bool = false,
     rxc: bool = false,
@@ -572,7 +572,7 @@ pub const SercomUsartInt = packed struct(u8) {
     err: bool = false
 };
 
-pub const SercomUsartStatus = packed struct(u16) {
+pub const SercomUsartStatus = bitpack struct(u16) {
     perr: bool = false,
     ferr: bool = false,
     bufovf: bool = false,
@@ -584,7 +584,7 @@ pub const SercomUsartStatus = packed struct(u16) {
     reserved: u8 = 0
 };
 
-pub const SercomUsartSyncBusy = packed struct(u32) {
+pub const SercomUsartSyncBusy = bitpack struct(u32) {
     swrst: bool,
     enable: bool,
     ctrlb: bool,

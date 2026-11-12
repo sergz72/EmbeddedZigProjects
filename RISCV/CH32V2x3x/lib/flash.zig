@@ -11,7 +11,7 @@ const OPERATION_TIMEOUT = 0x10000000; // flash common operation timeout
 
 pub const PAGE_SIZE = 4096;
 
-pub const FlashStat = packed struct(u32) {
+pub const FlashStat = bitpack struct(u32) {
     bsy: bool = false,
     wrbsy: u1 = 0,
     reserved: u2 = 0,
@@ -22,7 +22,7 @@ pub const FlashStat = packed struct(u32) {
     reserved3: u24 = 0
 };
 
-pub const FlashCtl = packed struct(u32) {
+pub const FlashCtl = bitpack struct(u32) {
     pg: bool = false,
     per: bool = false,
     mer: bool = false,

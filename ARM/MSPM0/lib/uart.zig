@@ -6,7 +6,7 @@ const UART1_BASE: usize = 0x40100000 + 0x800;
 const UART2_BASE: usize = 0x40102000 + 0x800;
 const UART3_BASE: usize = 0x40500000 + 0x800;
 
-pub const UartIntIMask = packed struct(u32) {
+pub const UartIntIMask = bitpack struct(u32) {
     rtout: bool = false,
     frmerr: bool = false,
     parerr: bool = false,
@@ -94,7 +94,7 @@ pub const UartWordLength = enum(u2) {
     _8 = 3
 };
 
-pub const UartCtl0 = packed struct(u32) {
+pub const UartCtl0 = bitpack struct(u32) {
     enable: bool = false,
     rserved: u1 = 0,
     lbe: bool = false,
@@ -115,7 +115,7 @@ pub const UartCtl0 = packed struct(u32) {
     reserved: u12 = 0
 };
 
-pub const UartLcrh = packed struct(u32) {
+pub const UartLcrh = bitpack struct(u32) {
     brk: bool = false,
     pen: bool = false,
     eps: bool = false,
@@ -129,7 +129,7 @@ pub const UartLcrh = packed struct(u32) {
     reserved2: u6 = 0
 };
 
-pub const UartStat = packed struct(u32) {
+pub const UartStat = bitpack struct(u32) {
     busy: bool,
     reserved: u1,
     rxfe: bool,

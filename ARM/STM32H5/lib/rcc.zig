@@ -29,7 +29,7 @@ pub const RccHsiDiv = enum(u2) {
     div8 = 3
 };
 
-pub const RccCr = packed struct(u32) {
+pub const RccCr = bitpack struct(u32) {
     hsion: bool = true,
     hsirdy: bool = true,
     hsikeron: bool = false,
@@ -58,14 +58,14 @@ pub const RccCr = packed struct(u32) {
     _r4: u2 = 0
 };
 
-pub const RccHsicfgr = packed struct(u32) {
+pub const RccHsicfgr = bitpack struct(u32) {
     hsical: u12,
     _r0: u4 = 0,
     hsitrim: u7 = 0x40,
     _r1: u9 = 0,
 };
 
-pub const RccCsicfgr = packed struct(u32) {
+pub const RccCsicfgr = bitpack struct(u32) {
     csical: u10,
     _r0: u6 = 0,
     csitrim: u6 = 0x20,
@@ -108,7 +108,7 @@ pub const RccCfgrMco2Sel = enum(u3) {
     lsi = 5
 };
 
-pub const RccCfgr1 = packed struct(u32) {
+pub const RccCfgr1 = bitpack struct(u32) {
     sw: RccCfgrSw = .hsi,
     sws: RccCfgrSw = .hsi,
     stopwuck: bool = false,
@@ -167,7 +167,7 @@ pub const RccCfgrPpre = enum(u3) {
     }
 };
 
-pub const RccCfgr2 = packed struct(u32) {
+pub const RccCfgr2 = bitpack struct(u32) {
     hpre: RccCfgrPre = .off,
     ppre1: RccCfgrPpre = .off,
     _r0: u1 = 0,
@@ -199,7 +199,7 @@ pub const RccPllRge = enum(u2) {
     _8to16 = 3
 };
 
-pub const RccPllCfgr = packed struct(u32) {
+pub const RccPllCfgr = bitpack struct(u32) {
     src: RccPllSrc = .off,
     rge: RccPllRge = ._1to2,
     fracen: bool = false,
@@ -213,7 +213,7 @@ pub const RccPllCfgr = packed struct(u32) {
     _r2: u13 = 0
 };
 
-pub const RccPllDivr = packed struct(u32) {
+pub const RccPllDivr = bitpack struct(u32) {
     divn: u9 = 0x80,
     divp: u7 = 1,
     divq: u7 = 1,
@@ -222,7 +222,7 @@ pub const RccPllDivr = packed struct(u32) {
     _r1: u1 = 0,
 };
 
-pub const RccPllFracr = packed struct(u32) {
+pub const RccPllFracr = bitpack struct(u32) {
     reserved: u3 = 0,
     fracn: u13 = 0,
     reserved2: u16 = 0
@@ -233,7 +233,7 @@ pub const RccPllDiv = extern struct {
     fracr: RccPllFracr,
 };
 
-pub const RccCier = packed struct(u32) {
+pub const RccCier = bitpack struct(u32) {
     lsirdyie: bool = false,
     lserdyie: bool = false,
     csirdyie: bool = false,
@@ -246,7 +246,7 @@ pub const RccCier = packed struct(u32) {
     _r2: u23 = 0
 };
 
-pub const RccCi = packed struct(u32) {
+pub const RccCi = bitpack struct(u32) {
     lsirdy: bool = false,
     lserdy: bool = false,
     csirdy: bool = false,
@@ -261,7 +261,7 @@ pub const RccCi = packed struct(u32) {
     _r2: u21 = 0
 };
 
-pub const RccAhb1enr = packed struct(u32) {
+pub const RccAhb1enr = bitpack struct(u32) {
     gpdma1en: bool = false,
     gpdma2en: bool = false,
     reserved0: u6 = 1,
@@ -286,7 +286,7 @@ pub const RccAhb1enr = packed struct(u32) {
     sram1en: bool = true,
 };
 
-pub const RccAhb2enr = packed struct(u32) {
+pub const RccAhb2enr = bitpack struct(u32) {
     gpioaen: bool = false,
     gpioben: bool = false,
     gpiocen: bool = false,
@@ -308,7 +308,7 @@ pub const RccAhb2enr = packed struct(u32) {
     sram2en: bool = true,
 };
 
-pub const RccAhb4enr = packed struct(u32) {
+pub const RccAhb4enr = bitpack struct(u32) {
     reserved0: u11 = 0,
     sdmmc1en: bool = false,
     sdmmc2en: bool = false,
@@ -319,7 +319,7 @@ pub const RccAhb4enr = packed struct(u32) {
     reserved3: u11 = 0,
 };
 
-pub const RccApb1lenr = packed struct(u32) {
+pub const RccApb1lenr = bitpack struct(u32) {
     tim2en: bool = false,
     tim3en: bool = false,
     tim4en: bool = false,
@@ -352,7 +352,7 @@ pub const RccApb1lenr = packed struct(u32) {
     uart8en: bool = false,
 };
 
-pub const RccApb1henr = packed struct(u32) {
+pub const RccApb1henr = bitpack struct(u32) {
     uart9en: bool = false,
     uart12en: bool = false,
     reserved0: u1 = 0,
@@ -366,7 +366,7 @@ pub const RccApb1henr = packed struct(u32) {
     reserved4: u8 = 0,
 };
 
-pub const RccApb2enr = packed struct(u32) {
+pub const RccApb2enr = bitpack struct(u32) {
     reserved0: u11 = 0,
     tim1en: bool = false,
     spi1en: bool = false,
@@ -385,7 +385,7 @@ pub const RccApb2enr = packed struct(u32) {
     reserved3: u7 = 0,
 };
 
-pub const RccApb3enr = packed struct(u32) {
+pub const RccApb3enr = bitpack struct(u32) {
     reserved0: u1 = 0,
     sbsen: bool = false,
     reserved1: u3 = 0,
@@ -418,7 +418,7 @@ pub const RccEnr = extern struct{
     reserved14: u32,
 };
 
-pub const RccBdcr = packed struct(u32) {
+pub const RccBdcr = bitpack struct(u32) {
     lseon: bool = false,
     lserdy: bool = false,
     lsebyp: bool = false,
@@ -438,7 +438,7 @@ pub const RccBdcr = packed struct(u32) {
     _r2: u4 = 0,
 };
 
-pub const RccRsr = packed struct(u32) {
+pub const RccRsr = bitpack struct(u32) {
     _r0: u23 = 0,
     rmvf: bool = false,
     _r1: u2 = 0,
@@ -450,7 +450,7 @@ pub const RccRsr = packed struct(u32) {
     lpwrrstf: bool = false
 };
 
-pub const RccSeccfgr = packed struct(u32) {
+pub const RccSeccfgr = bitpack struct(u32) {
     hsisec: bool = false,
     hsesec: bool = false,
     csisec: bool = false,
@@ -468,13 +468,13 @@ pub const RccSeccfgr = packed struct(u32) {
     _r0: u18 = 0,
 };
 
-pub const RccPrivcfgr = packed struct(u32) {
+pub const RccPrivcfgr = bitpack struct(u32) {
     spriv: bool = false,
     nspriv: bool = false,
     _r0: u30 = 0,
 };
 
-pub const RccAhb1Rstr = packed struct(u32) {
+pub const RccAhb1Rstr = bitpack struct(u32) {
     gpdma1rst: bool = false,
     gpdma2rst: bool = false,
     reserved1: u10 = 0,
@@ -489,7 +489,7 @@ pub const RccAhb1Rstr = packed struct(u32) {
     reserved5: u12 = 0
 };
 
-pub const RccAhb2Rstr = packed struct(u32) {
+pub const RccAhb2Rstr = bitpack struct(u32) {
     gpioarst: bool = false,
     gpiobrst: bool = false,
     gpiocrst: bool = false,
@@ -512,7 +512,7 @@ pub const RccAhb2Rstr = packed struct(u32) {
     reserved7: u11 = 0
 };
 
-pub const RccAhb4Rstr = packed struct(u32) {
+pub const RccAhb4Rstr = bitpack struct(u32) {
     reserved0: u7 = 0,
     otfdec1rst: bool = false,
     reserved4: u3 = 0,
@@ -525,7 +525,7 @@ pub const RccAhb4Rstr = packed struct(u32) {
     reserved3: u11 = 0
 };
 
-pub const RccApb1lRstr = packed struct(u32) {
+pub const RccApb1lRstr = bitpack struct(u32) {
     tim2rst: bool = false,
     tim3rst: bool = false,
     tim4rst: bool = false,
@@ -556,7 +556,7 @@ pub const RccApb1lRstr = packed struct(u32) {
     uart8rst: bool = false
 };
 
-pub const RccApb1hRstr = packed struct(u32) {
+pub const RccApb1hRstr = bitpack struct(u32) {
     uart9rst: bool = false,
     uart12rst: bool = false,
     reserved1: u1 = 0,
@@ -570,7 +570,7 @@ pub const RccApb1hRstr = packed struct(u32) {
     reserved5: u8 = 0
 };
 
-pub const RccApb2Rstr = packed struct(u32) {
+pub const RccApb2Rstr = bitpack struct(u32) {
     reserved0: u11 = 0,
     tim1rst: bool = false,
     spi1rst: bool = false,
@@ -589,7 +589,7 @@ pub const RccApb2Rstr = packed struct(u32) {
     reserved7: u7 = 0
 };
 
-pub const RccApb3Rstr = packed struct(u32) {
+pub const RccApb3Rstr = bitpack struct(u32) {
     reserved0: u1 = 0,
     sbsrst: bool = false,
     reserved1: u3 = 0,
@@ -617,7 +617,7 @@ pub const UsartSel = enum(u3) {
     lse = 5
 };
 
-pub const RccCcipr1 = packed struct(u32) {
+pub const RccCcipr1 = bitpack struct(u32) {
     usart1sel: UsartSel = .rcc_pclk2,
     usart2sel: UsartSel = .rcc_pclk2,
     usart3sel: UsartSel = .rcc_pclk2,
@@ -641,7 +641,7 @@ pub const LptimSel = enum(u3) {
     per = 5
 };
 
-pub const RccCcipr2 = packed struct(u32) {
+pub const RccCcipr2 = bitpack struct(u32) {
     usart11sel: UsartSel = .rcc_pclk2,
     reserved0: u1 = 0,
     usart12sel: UsartSel = .rcc_pclk2,
@@ -686,7 +686,7 @@ pub const LpuartSel = enum(u3) {
     lse = 5
 };
 
-pub const RccCcipr3 = packed struct(u32) {
+pub const RccCcipr3 = bitpack struct(u32) {
     spi1sel: SpiSel = .pll1q,
     spi2sel: SpiSel = .pll1q,
     spi3sel: SpiSel = .pll1q,
@@ -731,7 +731,7 @@ pub const I3cSel = enum(u2) {
     hsi_ker = 2,
 };
 
-pub const RccCcipr4 = packed struct(u32) {
+pub const RccCcipr4 = bitpack struct(u32) {
     octospi1sel: OctospiSel = .hclk4,
     systicksel: SystickSel = .hclk_div8,
     usbfssel: UsbfsSel = .no_clock,
@@ -789,7 +789,7 @@ pub const CkPerSel = enum(u2) {
     hse = 2
 };
 
-pub const RccCcipr5 = packed struct(u32) {
+pub const RccCcipr5 = bitpack struct(u32) {
     adcdacsel: AdcDacSel = .hclk,
     dacsel: bool = false,
     rngsel: RngSel = .hsi48,

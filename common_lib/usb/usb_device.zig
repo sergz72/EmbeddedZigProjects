@@ -67,7 +67,7 @@ pub const RequestTypeType = enum(u2) {
     reserved = 3
 };
 
-pub const RequestType = packed struct(u8) {
+pub const RequestType = bitpack struct(u8) {
     recipient: RequestRecipient,
     type: RequestTypeType,
     direction: bool
@@ -166,7 +166,7 @@ pub const EndpointUsageType = enum(u2) {
     implicit_feedback = 2
 };
 
-pub const EndpointAttributes = packed struct(u8) {
+pub const EndpointAttributes = bitpack struct(u8) {
     transfer_type: EndpointTransferType,
     sync_type: EndpointSyncType = .none,
     usage_type: EndpointUsageType = .data,

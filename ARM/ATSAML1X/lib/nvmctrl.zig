@@ -17,13 +17,13 @@ pub const NvmCmd = enum(u7) {
     set_dal1 = 0x4C
 };
 
-pub const NvmctrlCtrlA = packed struct(u16) {
+pub const NvmctrlCtrlA = bitpack struct(u16) {
     cmd: NvmCmd = .reserved,
     reserved: u1 = 0,
     cmdex: u8 = 0xA5
 };
 
-pub const NvmctrlCtrlB = packed struct(u32) {
+pub const NvmctrlCtrlB = bitpack struct(u32) {
     reserved: u1 = 0,
     rws: u4 = 0,
     reserved2: u3 = 0,
@@ -36,13 +36,13 @@ pub const NvmctrlCtrlB = packed struct(u32) {
     reserved5: u13 = 0
 };
 
-pub const NvmEvCtrl = packed struct(u8) {
+pub const NvmEvCtrl = bitpack struct(u8) {
     autowei: bool = false,
     autowinv: bool = false,
     reserved: u6 = 0
 };
 
-pub const NvmctrlInt = packed struct(u8) {
+pub const NvmctrlInt = bitpack struct(u8) {
     done: bool = false,
     proge: bool = false,
     locke: bool = false,
@@ -52,7 +52,7 @@ pub const NvmctrlInt = packed struct(u8) {
     reserved: u2 = 0
 };
 
-pub const NvmctrlStatus = packed struct(u16) {
+pub const NvmctrlStatus = bitpack struct(u16) {
     prm: bool,
     load: bool,
     ready: bool,
@@ -66,14 +66,14 @@ pub const NvmctrlArray = enum(u2) {
     nvm_rows = 2
 };
 
-pub const NvmctrlAddr = packed struct(u32) {
+pub const NvmctrlAddr = bitpack struct(u32) {
     aoffset: u16 = 0,
     reserved: u6 = 0,
     array: NvmctrlArray = .flash,
     reserved2: u8 = 0
 };
 
-pub const NvmctrlLck = packed struct(u16) {
+pub const NvmctrlLck = bitpack struct(u16) {
     b: bool,
     a: bool,
     s: bool,
@@ -81,7 +81,7 @@ pub const NvmctrlLck = packed struct(u16) {
     key: u8 = 0xA5
 };
 
-pub const NvmctrlParam = packed struct(u32) {
+pub const NvmctrlParam = bitpack struct(u32) {
     flashp: u16,
     psz: u3,
     reserved: u1,

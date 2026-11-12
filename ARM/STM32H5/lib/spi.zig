@@ -5,7 +5,7 @@ const SPI4_BASE = 0x40014C00;
 const SPI5_BASE = 0x44002000;
 const SPI6_BASE = 0x40015000;
 
-pub const SpiCr1 = packed struct(u32) {
+pub const SpiCr1 = bitpack struct(u32) {
     spe: bool = false,
     reserved0: u7 = 0,
     masrx: bool = false,
@@ -45,7 +45,7 @@ pub const Mbr = enum(u3) {
     div256 = 7
 };
 
-pub const SpiCfg1 = packed struct(u32) {
+pub const SpiCfg1 = bitpack struct(u32) {
     dsize: u5 = 7,
     fthlv: u4 = 0,
     udrcfg: bool = false,
@@ -72,7 +72,7 @@ pub const Sp = enum(u3) {
     ti = 1
 };
 
-pub const SpiCfg2 = packed struct(u32) {
+pub const SpiCfg2 = bitpack struct(u32) {
     mssi: u4 = 0,
     midi: u4 = 0,
     reserved0: u5 = 0,
@@ -94,7 +94,7 @@ pub const SpiCfg2 = packed struct(u32) {
     afcntr: bool = false,
 };
 
-pub const SpiIer = packed struct(u32) {
+pub const SpiIer = bitpack struct(u32) {
     rxpie: bool = false,
     txpie: bool = false,
     dxpie: bool = false,
@@ -108,7 +108,7 @@ pub const SpiIer = packed struct(u32) {
     reserved0: u22 = 0,
 };
 
-pub const SpiSr = packed struct(u32) {
+pub const SpiSr = bitpack struct(u32) {
     rxp: bool = false,
     txp: bool = true,
     dxp: bool = false,
@@ -127,7 +127,7 @@ pub const SpiSr = packed struct(u32) {
     ctsize: u16 = 0,
 };
 
-pub const SpiIfcr = packed struct(u32) {
+pub const SpiIfcr = bitpack struct(u32) {
     reserved0: u3 = 0,
     eotc: bool = false,
     txtfc: bool = false,
@@ -169,7 +169,7 @@ pub const Datlen = enum(u2) {
     _32bit = 2
 };
 
-pub const SpiI2scfgr = packed struct(u32) {
+pub const SpiI2scfgr = bitpack struct(u32) {
     i2smod: bool = false,
     i2scfg: I2scfg = .slave_tx,
     i2sstd: I2sstd = .philips,

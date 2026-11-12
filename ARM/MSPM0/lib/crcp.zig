@@ -12,7 +12,7 @@ pub const CrcpGprcmRegs = extern struct {
     stat: u32,
 };
 
-pub const CrcpCtrl = packed struct(u32) {
+pub const CrcpCtrl = bitpack struct(u32) {
     polysize: bool = false,
     bitreverse: bool = false,
     input_endianess: bool = false,

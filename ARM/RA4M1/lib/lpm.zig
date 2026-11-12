@@ -8,7 +8,7 @@ const MSTPCRB_BASE: usize = 0x40047000;
 const MSTPCRC_BASE: usize = 0x40047004;
 const MSTPCRD_BASE: usize = 0x40047008;
 
-pub const Mstpcra = packed struct(u32) {
+pub const Mstpcra = bitpack struct(u32) {
     sram0: bool = false,
     reserved: u5 = 0x1F,
     eccsram: bool = false,
@@ -17,7 +17,7 @@ pub const Mstpcra = packed struct(u32) {
     reserved3: u9 = 0x1FF
 };
 
-pub const Mstpcrb = packed struct(u32) {
+pub const Mstpcrb = bitpack struct(u32) {
     reserved: u2 = 3,
     can0: bool = true,
     reserved2: u5 = 0x1F,
@@ -36,7 +36,7 @@ pub const Mstpcrb = packed struct(u32) {
     sci0: bool = true
 };
 
-pub const Mstpcrc = packed struct(u32) {
+pub const Mstpcrc = bitpack struct(u32) {
     cac: bool = true,
     crc: bool = true,
     reserved: u1 = 1,
@@ -51,7 +51,7 @@ pub const Mstpcrc = packed struct(u32) {
     sce5: bool = true
 };
 
-pub const Mstpcrd = packed struct(u32) {
+pub const Mstpcrd = bitpack struct(u32) {
     reserved: u2 = 3,
     agt1: bool = true,
     agt0: bool = true,
@@ -71,21 +71,21 @@ pub const Mstpcrd = packed struct(u32) {
     opamp: bool = true
 };
 
-pub const Opccr = packed struct(u8) {
+pub const Opccr = bitpack struct(u8) {
     opcm: u2 = 2,
     reserved: u2 = 0,
     opcmtsf: bool = false,
     reserved2: u3 = 0
 };
 
-pub const Sopccr = packed struct(u8) {
+pub const Sopccr = bitpack struct(u8) {
     sopcm: bool = false,
     reserved: u3 = 0,
     sopcmtsf: bool = false,
     reserved2: u3 = 0
 };
 
-pub const Snzcr = packed struct(u8) {
+pub const Snzcr = bitpack struct(u8) {
     rxdreqen: bool = false,
     snzdtcen: bool = false,
     reserved: u5 = 0,

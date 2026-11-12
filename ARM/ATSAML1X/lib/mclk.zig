@@ -1,6 +1,6 @@
 const MCLK_BASE = 0x40000800;
 
-pub const MclkCtrlA = packed struct(u8) {
+pub const MclkCtrlA = bitpack struct(u8) {
     reserved: u2 = 0,
     clsel: bool = false,
     reserved2: u5 = 0
@@ -17,7 +17,7 @@ pub const MclkCpiDiv = enum(u8) {
     div128 = 128
 };
 
-pub const MclkAhbMask = packed struct(u32) {
+pub const MclkAhbMask = bitpack struct(u32) {
     apba: bool = true,
     apbb: bool = true,
     apbc: bool = true,
@@ -31,7 +31,7 @@ pub const MclkAhbMask = packed struct(u32) {
     reserved3: u19 = 0x7FFFF
 };
 
-pub const MclkApbaMask = packed struct(u32) {
+pub const MclkApbaMask = bitpack struct(u32) {
     pac: bool = true,
     pm: bool = true,
     mclk: bool = true,
@@ -49,7 +49,7 @@ pub const MclkApbaMask = packed struct(u32) {
     reserved: u18 = 0x3FFFF
 };
 
-pub const MclkApbbMask = packed struct(u32) {
+pub const MclkApbbMask = bitpack struct(u32) {
     idau: bool = true,
     dsu: bool = true,
     nvmctrl: bool = true,
@@ -58,7 +58,7 @@ pub const MclkApbbMask = packed struct(u32) {
     reserved2: u27 = 0x7FFFFFF
 };
 
-pub const MclkApbcMask = packed struct(u32) {
+pub const MclkApbcMask = bitpack struct(u32) {
     evsys: bool = true,
     sercom0: bool = true,
     sercom1: bool = true,

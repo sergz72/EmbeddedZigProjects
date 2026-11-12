@@ -15,7 +15,7 @@ pub const EndpointStatus = enum {
     invalid_request
 };
 
-pub const UsbFsBaseCtrl = packed struct(u8) {
+pub const UsbFsBaseCtrl = bitpack struct(u8) {
     dma_en: bool = false,
     clr_all: bool = true,
     rst_sie: bool = false,
@@ -25,7 +25,7 @@ pub const UsbFsBaseCtrl = packed struct(u8) {
     host_mode: bool = false
 };
 
-pub const UsbFsIntEn = packed struct(u8) {
+pub const UsbFsIntEn = bitpack struct(u8) {
     bus_rst_or_detect: bool = false,
     transfer: bool = false,
     suspend_wakeup: bool = false,
@@ -36,7 +36,7 @@ pub const UsbFsIntEn = packed struct(u8) {
     reserved: u1 = 0
 };
 
-pub const UsbFsMisSt = packed struct(u8) {
+pub const UsbFsMisSt = bitpack struct(u8) {
     dev_attach: bool,
     dm_level: bool,
     suspended: bool,
@@ -47,7 +47,7 @@ pub const UsbFsMisSt = packed struct(u8) {
     sof_pres: bool
 };
 
-pub const UsbFsIntFg = packed struct(u8) {
+pub const UsbFsIntFg = bitpack struct(u8) {
     bus_rst_or_detect: bool = false,
     transfer: bool = false,
     suspend_wakeup: bool = false,
@@ -65,14 +65,14 @@ pub const UsbFsToken = enum(u2) {
     setup = 3
 };
 
-pub const UsbFsIntSt = packed struct(u8) {
+pub const UsbFsIntSt = bitpack struct(u8) {
     h_res_or_endp: u4,
     token: UsbFsToken,
     tog_ok: bool,
     setup: bool
 };
 
-pub const UsbFsUep41Mod = packed struct(u8) {
+pub const UsbFsUep41Mod = bitpack struct(u8) {
     reserved: u2 = 0,
     ep4_t_en: bool = false,
     ep4_r_en: bool = false,
@@ -82,7 +82,7 @@ pub const UsbFsUep41Mod = packed struct(u8) {
     ep1_r_en: bool = false,
 };
 
-pub const UsbFsUep23Mod = packed struct(u8) {
+pub const UsbFsUep23Mod = bitpack struct(u8) {
     ep2_buf_mod: bool = false,
     reserved: u1 = 0,
     ep2_t_en: bool = false,
@@ -93,7 +93,7 @@ pub const UsbFsUep23Mod = packed struct(u8) {
     ep3_r_en: bool = false,
 };
 
-pub const UsbFsUep567Mod = packed struct(u8) {
+pub const UsbFsUep567Mod = bitpack struct(u8) {
     ep5_t_en: bool = false,
     ep5_r_en: bool = false,
     ep6_t_en: bool = false,
@@ -103,7 +103,7 @@ pub const UsbFsUep567Mod = packed struct(u8) {
     reserved: u2 = 0
 };
 
-pub const UsbFsUdevCtrl = packed struct(u8) {
+pub const UsbFsUdevCtrl = bitpack struct(u8) {
     port_en: bool = false,
     gp_bit: bool = false,
     low_speed: bool = false,
@@ -121,7 +121,7 @@ pub const UsbFsRes = enum(u2) {
     stall = 3
 };
 
-pub const UsbFsUepCtrl32 = packed struct(u32) {
+pub const UsbFsUepCtrl32 = bitpack struct(u32) {
     tx_len: u7 = 0,
     reserved: u9 = 0,
     t_res: UsbFsRes = .ack,
@@ -133,7 +133,7 @@ pub const UsbFsUepCtrl32 = packed struct(u32) {
     reserved3: u8 = 0
 };
 
-pub const UsbFsUepCtrlH = packed struct(u16) {
+pub const UsbFsUepCtrlH = bitpack struct(u16) {
     t_res: UsbFsRes = .ack,
     r_res: UsbFsRes = .ack,
     tog_auto: bool = false,
@@ -143,7 +143,7 @@ pub const UsbFsUepCtrlH = packed struct(u16) {
     reserved2: u8 = 0
 };
 
-pub const UsbFsUepTxLen = packed struct(u16) {
+pub const UsbFsUepTxLen = bitpack struct(u16) {
     tx_len: u7 = 0,
     reserved: u9 = 0
 };

@@ -17,7 +17,7 @@ pub const BANK2_END = 0x080FFFFF;
 pub const BANK3_BASE = 0x08400000;
 pub const BANK3_END = 0x093FFFFF;
 
-pub const FlashSts = packed struct(u32) {
+pub const FlashSts = bitpack struct(u32) {
     obf: bool = false,
     reserved1: u1 = 0,
     prgmerr: bool = false,
@@ -27,7 +27,7 @@ pub const FlashSts = packed struct(u32) {
     reserved3: u26 = 0
 };
 
-pub const FlashCtrl = packed struct(u32) {
+pub const FlashCtrl = bitpack struct(u32) {
     fprgm: bool = false,
     secers: bool = false,
     bankers: bool = false,
@@ -44,7 +44,7 @@ pub const FlashCtrl = packed struct(u32) {
     reserved4: u19 = 0
 };
 
-pub const FlashUsd = packed struct(u32) {
+pub const FlashUsd = bitpack struct(u32) {
     usderr: bool,
     fap: bool,
     ssb: u8,
@@ -53,7 +53,7 @@ pub const FlashUsd = packed struct(u32) {
     reserved: u6
 };
 
-pub const FlashCrcCtrl = packed struct(u32) {
+pub const FlashCrcCtrl = bitpack struct(u32) {
     crc_ss: u12 = 0,
     crc_sn: u12 = 0,
     reserved: u7 = 0,

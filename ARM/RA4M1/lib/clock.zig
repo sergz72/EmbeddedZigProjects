@@ -10,7 +10,7 @@ pub const ClockSckDiv = enum(u3) {
     div64 = 6
 };
 
-pub const ClockSckDivCr = packed struct(u32) {
+pub const ClockSckDivCr = bitpack struct(u32) {
     pckd: ClockSckDiv = .div16,
     reserved: u1 = 0,
     pckc: ClockSckDiv = .div16,
@@ -40,13 +40,13 @@ pub const ClockPllDiv = enum(u2) {
     div4 = 2
 };
 
-pub const ClockPllCr2 = packed struct(u8) {
+pub const ClockPllCr2 = bitpack struct(u8) {
     pllmul: u5 = 7,
     reserved: u1 = 0,
     plldiv: ClockPllDiv = .reserved
 };
 
-pub const ClockStop = packed struct(u8) {
+pub const ClockStop = bitpack struct(u8) {
     stop: bool = true,
     reserved: u7 = 0
 };
@@ -58,7 +58,7 @@ pub const ClockHocoCr2 = enum(u8) {
     f64 = 0x28
 };
 
-pub const ClockOscSf = packed struct(u8) {
+pub const ClockOscSf = bitpack struct(u8) {
     hocosf: bool,
     reserved: u2,
     moscsf: bool,
@@ -67,13 +67,13 @@ pub const ClockOscSf = packed struct(u8) {
     reserved3: u2
 };
 
-pub const ClockOstDcr = packed struct(u8) {
+pub const ClockOstDcr = bitpack struct(u8) {
     ostdie: bool = false,
     reserved: u6 = 0,
     ostde: bool = false
 };
 
-pub const ClockMomCr = packed struct(u8) {
+pub const ClockMomCr = bitpack struct(u8) {
     reserved: u3 = 0,
     modrv1: bool = false,
     reserved2: u2 = 0,
@@ -81,13 +81,13 @@ pub const ClockMomCr = packed struct(u8) {
     reserved3: u1 = 0,
 };
 
-pub const ClockLcdSckCr = packed struct(u8) {
+pub const ClockLcdSckCr = bitpack struct(u8) {
     lcdscksel: u3 = 0,
     reserved: u4 = 0,
     lcdscken: bool = false
 };
 
-pub const ClockCkOcr = packed struct(u8) {
+pub const ClockCkOcr = bitpack struct(u8) {
     ckosel: u3 = 0,
     reserved: u1 = 0,
     ckodiv: u3 = 0,

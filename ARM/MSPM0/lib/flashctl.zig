@@ -16,7 +16,7 @@ pub const FlashCtlError = error {
     Fail
 };
 
-pub const FlashCtlEvtMode = packed struct(u32) {
+pub const FlashCtlEvtMode = bitpack struct(u32) {
     int0_cfg: common.EvtCfg,
     reserved: u30
 };
@@ -40,7 +40,7 @@ pub const FlashCommandSize = enum(u3) {
     bank = 5
 };
 
-pub const FlashCtlCmdType = packed struct(u32) {
+pub const FlashCtlCmdType = bitpack struct(u32) {
     command: FlashCommand = .no_operation,
     reserved: u1 = 0,
     size: FlashCommandSize = .one_word,
@@ -68,7 +68,7 @@ pub const FlashRegion = enum(u4) {
     engr = 8
 };
 
-pub const FlashCtlCmdCtl = packed struct(u32) {
+pub const FlashCtlCmdCtl = bitpack struct(u32) {
     modesel: FlashCommandMode = .read,
     reserved: u5 = 0,
     regionsel: FlashRegion = .main,
@@ -84,14 +84,14 @@ pub const FlashCtlCmdCtl = packed struct(u32) {
     reserved3: u10 = 0
 };
 
-pub const FlashCtlCfgPcnt = packed struct(u32) {
+pub const FlashCtlCfgPcnt = bitpack struct(u32) {
     maxpcntovr: bool = false,
     reserved: u3 = 0,
     maxpcntval: u8 = 0,
     reserved2: u20 = 0
 };
 
-pub const FlashCtlStatCmd = packed struct(u32) {
+pub const FlashCtlStatCmd = bitpack struct(u32) {
     cmddone: bool,
     cmdpass: bool,
     cmdinprogress: bool,
@@ -106,14 +106,14 @@ pub const FlashCtlStatCmd = packed struct(u32) {
     reserved3: u19
 };
 
-pub const FlashCtlStatAddr = packed struct(u32) {
+pub const FlashCtlStatAddr = bitpack struct(u32) {
     bankaddr: u16,
     regionid: u5,
     bankid: u5,
     reserved: u6
 };
 
-pub const FlashCtlStatMode = packed struct(u32) {
+pub const FlashCtlStatMode = bitpack struct(u32) {
     banknotinrd: bool,
     reserved: u7,
     bankmode: u4,
@@ -123,13 +123,13 @@ pub const FlashCtlStatMode = packed struct(u32) {
     reserved3: u14
 };
 
-pub const FlashCtlGblInfo0 = packed struct(u32) {
+pub const FlashCtlGblInfo0 = bitpack struct(u32) {
     sectorsize: u16,
     numbanks: u3,
     reserved: u13
 };
 
-pub const FlashCtlGblInfo1 = packed struct(u32) {
+pub const FlashCtlGblInfo1 = bitpack struct(u32) {
     datawidth: u8,
     eccwidth: u5,
     reserved: u3,
@@ -137,12 +137,12 @@ pub const FlashCtlGblInfo1 = packed struct(u32) {
     reserved2: u13
 };
 
-pub const FlashCtlGblInfo2 = packed struct(u32) {
+pub const FlashCtlGblInfo2 = bitpack struct(u32) {
     dataregisters: u4,
     reserved: u28
 };
 
-pub const FlashBankInfo1 = packed struct(u32) {
+pub const FlashBankInfo1 = bitpack struct(u32) {
     nonmainsize: u8,
     trimsize: u8,
     engrsize: u8,

@@ -1,6 +1,6 @@
 const SYSCFG_BASE: usize = 0x40010000;
 
-pub const SyscfgCfg0 = packed struct(u32) {
+pub const SyscfgCfg0 = bitpack struct(u32) {
     boot_mode: u2,
     reserved0: u2 = 0,
     pa11_pa12_rmp: bool = false,
@@ -15,7 +15,7 @@ pub const SyscfgCfg0 = packed struct(u32) {
     reserved3: u12 = 0
 };
 
-pub const SyscfgCfg2 = packed struct(u32) {
+pub const SyscfgCfg2 = bitpack struct(u32) {
     lockup_lock: bool = false,
     sram_parity_error_lock: bool = false,
     lvd_lock: bool = false,

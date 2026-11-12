@@ -1,6 +1,6 @@
 const RCC_BASE: usize = 0x40021000;
 
-pub const RccCtlr = packed struct(u32) {
+pub const RccCtlr = bitpack struct(u32) {
     hsion: bool,
     hsirdy: bool,
     reserved: u1 = 0,
@@ -61,7 +61,7 @@ pub const RccCfgrMco = enum(u3) {
     pll = 7
 };
 
-pub const RccCfgr0 = packed struct(u32) {
+pub const RccCfgr0 = bitpack struct(u32) {
     sw: RccCfgr0Sw,
     sws: RccCfgr0Sw,
     hpre: RccCfgrHpre,
@@ -73,14 +73,14 @@ pub const RccCfgr0 = packed struct(u32) {
     reserved3: u5
 };
 
-pub const RccCfgrAhbpcEnr = packed struct(u32) {
+pub const RccCfgrAhbpcEnr = bitpack struct(u32) {
     dme1en: bool = false,
     reserved: u1 = 0,
     sramen: bool = false,
     reserved2: u29 = 0
 };
 
-pub const RccCfgrApb2pcEnr = packed struct(u32) {
+pub const RccCfgrApb2pcEnr = bitpack struct(u32) {
     afioen: bool = false,
     reserved: u1 = 0,
     iopaen: bool = false,
@@ -97,7 +97,7 @@ pub const RccCfgrApb2pcEnr = packed struct(u32) {
     reserved6: u17 = 0
 };
 
-pub const RccCfgrApb1pcEnr = packed struct(u32) {
+pub const RccCfgrApb1pcEnr = bitpack struct(u32) {
     tim2en: bool = false,
     reserved: u10 = 0,
     wwdgen: bool = false,

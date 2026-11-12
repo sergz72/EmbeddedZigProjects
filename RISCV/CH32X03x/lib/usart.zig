@@ -3,7 +3,7 @@ const USART2_BASE: usize = 0x40004400;
 const USART3_BASE: usize = 0x40004800;
 const USART4_BASE: usize = 0x40004C00;
 
-pub const UsartStatr = packed struct(u32) {
+pub const UsartStatr = bitpack struct(u32) {
     pe: bool,
     fe: bool,
     ne: bool,
@@ -17,7 +17,7 @@ pub const UsartStatr = packed struct(u32) {
     reserved: u22 = 0
 };
 
-pub const UsartCtlr1 = packed struct(u32) {
+pub const UsartCtlr1 = bitpack struct(u32) {
     sbk: bool = false,
     rwu: bool = false,
     re: bool = false,
@@ -35,7 +35,7 @@ pub const UsartCtlr1 = packed struct(u32) {
     reserved: u18 = 0
 };
 
-pub const UsartCtlr2 = packed struct(u32) {
+pub const UsartCtlr2 = bitpack struct(u32) {
     add: u4 = 0,
     reserved: u1 = 0,
     lbdl: bool = false,
@@ -50,7 +50,7 @@ pub const UsartCtlr2 = packed struct(u32) {
     reserved3: u17 = 0
 };
 
-pub const UsartCtlr3 = packed struct(u32) {
+pub const UsartCtlr3 = bitpack struct(u32) {
     eie: bool = false,
     iren: bool = false,
     irlp: bool = false,

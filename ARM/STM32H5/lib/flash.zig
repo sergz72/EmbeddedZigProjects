@@ -3,7 +3,7 @@ const FLASH_BASE = 0x40022000;
 const FLASH_UNLOCK_KEY1 = 0x45670123;
 const FLASH_UNLOCK_KEY2 = 0xCDEF89AB;
 
-pub const FlashAcr = packed struct(u32) {
+pub const FlashAcr = bitpack struct(u32) {
     latency: u4 = 3,
     wrhighfreq: u2 = 1,
     reserved0: u2 = 0,
@@ -22,7 +22,7 @@ pub const CodeOp = enum(u3) {
     obk_swap = 7
 };
 
-pub const FlashOpsr = packed struct(u32) {
+pub const FlashOpsr = bitpack struct(u32) {
     addr_op: u20,
     reserved0: u1,
     data_op: bool,
@@ -33,14 +33,14 @@ pub const FlashOpsr = packed struct(u32) {
     code_op: CodeOp
 };
 
-pub const FlashOptcr = packed struct(u32) {
+pub const FlashOptcr = bitpack struct(u32) {
     optlock: bool = true,
     optstrt: bool = false,
     reserved0: u29 = 0,
     swap_bank: bool = false,
 };
 
-pub const FlashNssr = packed struct(u32) {
+pub const FlashNssr = bitpack struct(u32) {
     bsy: bool,
     wbne: bool,
     reserved0: u1,
@@ -57,7 +57,7 @@ pub const FlashNssr = packed struct(u32) {
     reserved2: u8
 };
 
-pub const FlashSecsr = packed struct(u32) {
+pub const FlashSecsr = bitpack struct(u32) {
     bsy: bool,
     wbne: bool,
     reserved0: u1,
@@ -73,7 +73,7 @@ pub const FlashSecsr = packed struct(u32) {
     reserved2: u9
 };
 
-pub const FlashNscr = packed struct(u32) {
+pub const FlashNscr = bitpack struct(u32) {
     lock: bool = true,
     pg: bool = false,
     ser: bool = false,
@@ -95,7 +95,7 @@ pub const FlashNscr = packed struct(u32) {
     bksel: bool = false,
 };
 
-pub const FlashSeccr = packed struct(u32) {
+pub const FlashSeccr = bitpack struct(u32) {
     lock: bool = true,
     pg: bool = false,
     ser: bool = false,
@@ -118,7 +118,7 @@ pub const FlashSeccr = packed struct(u32) {
     bksel: bool = false,
 };
 
-pub const FlashNsccr = packed struct(u32) {
+pub const FlashNsccr = bitpack struct(u32) {
     reserved0: u16 = 0,
     clr_eop: bool = false,
     clr_wrperr: bool = false,
@@ -131,7 +131,7 @@ pub const FlashNsccr = packed struct(u32) {
     reserved1: u8 = 0,
 };
 
-pub const FlashSecccr = packed struct(u32) {
+pub const FlashSecccr = bitpack struct(u32) {
     reserved0: u16 = 0,
     clr_eop: bool = false,
     clr_wrperr: bool = false,
@@ -143,13 +143,13 @@ pub const FlashSecccr = packed struct(u32) {
     reserved1: u9 = 0,
 };
 
-pub const FlashPrivcfgr = packed struct(u32) {
+pub const FlashPrivcfgr = bitpack struct(u32) {
     spriv: bool = false,
     nspriv: bool = false,
     reserved0: u30 = 0,
 };
 
-pub const FlashObkcfgr = packed struct(u32) {
+pub const FlashObkcfgr = bitpack struct(u32) {
     lock: bool = false,
     swap_sect_req: bool = false,
     alt_sect: bool = false,
@@ -159,7 +159,7 @@ pub const FlashObkcfgr = packed struct(u32) {
     reserved1: u7 = 0,
 };
 
-pub const FlashHdpextr = packed struct(u32) {
+pub const FlashHdpextr = bitpack struct(u32) {
     hdp1_ext: u7 = 0,
     reserved0: u9 = 0,
     hdp2_ext: u7 = 0,
@@ -178,7 +178,7 @@ pub const FlashBootUbe = enum(u8) {
     user_flash = 0xB4
 };
 
-pub const FlashOptsr = packed struct(u32) {
+pub const FlashOptsr = bitpack struct(u32) {
     bor_lev: FlashBorLev,
     borh_en: bool,
     iwdg_sw: bool,
@@ -202,7 +202,7 @@ pub const FlashTzen = enum(u8) {
     disabled = 0xb4
 };
 
-pub const FlashOptsr2 = packed struct(u32) {
+pub const FlashOptsr2 = bitpack struct(u32) {
     reserved0: u2,
     sram13_rst: bool,
     sram2_rst: bool,
@@ -220,33 +220,33 @@ pub const FlashBootLock = enum(u8) {
     locked = 0xB4
 };
 
-pub const FlashBootr = packed struct(u32) {
+pub const FlashBootr = bitpack struct(u32) {
     lock: FlashBootLock,
     add: u24
 };
 
-pub const FlashSecwm = packed struct(u32) {
+pub const FlashSecwm = bitpack struct(u32) {
     secwm1_strt: u7,
     reserved0: u9 = 0,
     secwm1_end: u7,
     reserved1: u9 = 0,
 };
 
-pub const FlashEdata = packed struct(u32) {
+pub const FlashEdata = bitpack struct(u32) {
     edata1_strt: u3,
     reserved0: u12,
     edata1_en: bool,
     reserved1: u16
 };
 
-pub const FlashHdp = packed struct(u32) {
+pub const FlashHdp = bitpack struct(u32) {
     hdp1_strt: u7,
     reserved0: u9,
     hdp1_end: u7,
     reserved1: u9
 };
 
-pub const FlashEcccorr = packed struct(u32) {
+pub const FlashEcccorr = bitpack struct(u32) {
     addr_ecc: u16 = 0,
     reserved0: u4 = 0,
     obk_ecc: bool = false,
@@ -260,7 +260,7 @@ pub const FlashEcccorr = packed struct(u32) {
     reserved2: u1 = 0,
 };
 
-pub const FlashEccdetr = packed struct(u32) {
+pub const FlashEccdetr = bitpack struct(u32) {
     addr_ecc: u16 = 0,
     reserved0: u4 = 0,
     obk_ecc: bool = false,

@@ -12,7 +12,7 @@ pub const TrngIntIIdx = enum(u32) {
     buffer_ready = 4,
 };
 
-pub const TrngIntInt = packed struct(u32) {
+pub const TrngIntInt = bitpack struct(u32) {
     health_test_failed: bool = false,
     command_failed: bool = false,
     command_done: bool = false,
@@ -62,7 +62,7 @@ pub const TrngCmd = enum(u2) {
     norm_func = 3
 };
 
-pub const TrngCtl = packed struct(u32) {
+pub const TrngCtl = bitpack struct(u32) {
     cmd: TrngCmd = .off,
     reserved: u6 = 0,
     decim_rate: u3 = 0,
@@ -83,7 +83,7 @@ pub const TrngFsmState = enum(u4) {
     test_ana = 0x0B
 };
 
-pub const TrngStat = packed struct(u32) {
+pub const TrngStat = bitpack struct(u32) {
     adap_fail: bool,
     rep_fail: bool,
     reserved: u6,
@@ -93,7 +93,7 @@ pub const TrngStat = packed struct(u32) {
     reserved3: u12
 };
 
-pub const TrngTestResults = packed struct(u32) {
+pub const TrngTestResults = bitpack struct(u32) {
     dig_test: u8,
     ana_test: bool,
     reserved: u23

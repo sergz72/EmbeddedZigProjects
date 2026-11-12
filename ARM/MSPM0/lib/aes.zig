@@ -10,7 +10,7 @@ pub const AesDma2IIdx = enum(u32) {
     dma2 = 4
 };
 
-pub const AesDma2Int = packed struct(u32) {
+pub const AesDma2Int = bitpack struct(u32) {
     reserved: u3 = 0,
     dma2: bool = false,
     reserved2: u28 = 0
@@ -35,7 +35,7 @@ pub const AesDma1IIdx = enum(u32) {
     dma1 = 3
 };
 
-pub const AesDma1Int = packed struct(u32) {
+pub const AesDma1Int = bitpack struct(u32) {
     reserved: u2 = 0,
     dma1: bool = false,
     reserved2: u29 = 0
@@ -60,7 +60,7 @@ pub const AesDma0IIdx = enum(u32) {
     dma0 = 2
 };
 
-pub const AesDma0Int = packed struct(u32) {
+pub const AesDma0Int = bitpack struct(u32) {
     reserved: u1 = 0,
     dma0: bool = false,
     reserved2: u30 = 0
@@ -106,7 +106,7 @@ pub const AesGprcm = extern struct {
     stat: u32,
 };
 
-pub const AesEvtMode = packed struct(u32) {
+pub const AesEvtMode = bitpack struct(u32) {
     int0_cfg: common.EvtCfg = .software_mode,
     evt1_cfg: common.EvtCfg = .hardware_mode,
     evt2_cfg: common.EvtCfg = .hardware_mode,
@@ -133,7 +133,7 @@ pub const AesCmx = enum(u2) {
     cfb = 3
 };
 
-pub const AesActl0 = packed struct(u32) {
+pub const AesActl0 = bitpack struct(u32) {
     opx: AesOpx = .encryption,
     klx: AesKlx = .key_128_bit,
     reserved: u1 = 0,
@@ -146,12 +146,12 @@ pub const AesActl0 = packed struct(u32) {
     reserved4: u16 = 0
 };
 
-pub const AesActl1 = packed struct(u32) {
+pub const AesActl1 = bitpack struct(u32) {
     blkcntx: u8 = 0,
     reserved: u24 = 0
 };
 
-pub const AesAstat = packed struct(u32) {
+pub const AesAstat = bitpack struct(u32) {
     busy: bool = false,
     keywr: bool = false,
     dinwr: bool = false,

@@ -1,13 +1,13 @@
 const OSC32KCTRL_BASE = 0x40001400;
 
-pub const Osc32kInt = packed struct(u32) {
+pub const Osc32kInt = bitpack struct(u32) {
     xosc32krdy: bool = false,
     reserved: u1 = 0,
     clkfail: bool = false,
     reserved2: u29 = 0
 };
 
-pub const Osc32kStatus = packed struct(u32) {
+pub const Osc32kStatus = bitpack struct(u32) {
     xosc32krdy: bool,
     reserved: u1,
     clkfail: bool,
@@ -33,7 +33,7 @@ pub const Xosc32kStartup = enum(u3) {
     _262144 = 6
 };
 
-pub const Xosc32k = packed struct(u16) {
+pub const Xosc32k = bitpack struct(u16) {
     reserved: u1 = 0,
     enable: bool = false,
     xtalen: bool = false,
@@ -48,14 +48,14 @@ pub const Xosc32k = packed struct(u16) {
     reserved4: u3 = 0
 };
 
-pub const Osc32kCfdCtrl = packed struct(u8) {
+pub const Osc32kCfdCtrl = bitpack struct(u8) {
     cfden: bool = false,
     swback: bool = false,
     cfdpresc: bool = false,
     reserved: u5 = 0
 };
 
-pub const OscUlp32k = packed struct(u32) {
+pub const OscUlp32k = bitpack struct(u32) {
     reserved: u5 = 0,
     ulp32ksw: bool = false,
     reserved2: u2 = 0,

@@ -1,6 +1,6 @@
 pub const CRM_BASE = 0x40021000;
 
-pub const CrmCtrl = packed struct(u32) {
+pub const CrmCtrl = bitpack struct(u32) {
     hicken: bool = true,
     hickstbl: bool = true,
     hicktrim: u6 = 0x20,
@@ -41,7 +41,7 @@ pub const CrmApbDiv = enum(u3) {
     div16 = 7
 };
 
-pub const CrmCfg = packed struct(u32) {
+pub const CrmCfg = bitpack struct(u32) {
     sclksel: CrmSclkSel = .hick,
     sclksts: CrmSclkSel = .hick,
     ahbdiv: CrmAhbDiv = .div1,
@@ -59,7 +59,7 @@ pub const CrmCfg = packed struct(u32) {
     reserved3: u1 = 0
 };
 
-pub const CrmClkInt = packed struct(u32) {
+pub const CrmClkInt = bitpack struct(u32) {
     lickstblf: bool = false,
     lextstblf: bool = false,
     hickstblf: bool = false,
@@ -83,7 +83,7 @@ pub const CrmClkInt = packed struct(u32) {
     reserved4: u8 = 0
 };
 
-pub const CrmApb2 = packed struct(u32) {
+pub const CrmApb2 = bitpack struct(u32) {
     scfgcmp: bool = false,
     exint: bool = false,
     reserved1: u7 = 0,
@@ -100,7 +100,7 @@ pub const CrmApb2 = packed struct(u32) {
     reserved5: u13 = 0
 };
 
-pub const CrmApb1 = packed struct(u32) {
+pub const CrmApb1 = bitpack struct(u32) {
     reserved1: u1 = 0,
     tmr3: bool = false,
     reserved2: u2 = 0,
@@ -123,7 +123,7 @@ pub const CrmApb1 = packed struct(u32) {
     reserved10: u3 = 0
 };
 
-pub const CrmAhbEn = packed struct(u32) {
+pub const CrmAhbEn = bitpack struct(u32) {
     dma1en: bool = false,
     reserved1: u1 = 0,
     sramen: bool = true,
@@ -140,7 +140,7 @@ pub const CrmAhbEn = packed struct(u32) {
     reserved6: u9 = 0
 };
 
-pub const CrmBpdc = packed struct(u32) {
+pub const CrmBpdc = bitpack struct(u32) {
     lexten: bool = false,
     lextstbl: bool = false,
     lextbyps: bool = false,
@@ -153,7 +153,7 @@ pub const CrmBpdc = packed struct(u32) {
     reserved3: u15 = 0
 };
 
-pub const CrmCtrlSts = packed struct(u32) {
+pub const CrmCtrlSts = bitpack struct(u32) {
     licken: bool = false,
     lickstbl: bool = false,
     reserved1: u22 = 0,
@@ -167,7 +167,7 @@ pub const CrmCtrlSts = packed struct(u32) {
     lprstf: bool = false
 };
 
-pub const CrmAhbRst = packed struct(u32) {
+pub const CrmAhbRst = bitpack struct(u32) {
     dma1rst: bool = false,
     reserved1: u1 = 0,
     sramrst: bool = false,
@@ -202,7 +202,7 @@ pub const CrmPllRef = enum(u3) {
     _20p83_to_31p255MHz = 5
 };
 
-pub const CrmPll = packed struct(u32) {
+pub const CrmPll = bitpack struct(u32) {
     pllfr: CrmPllFr = .div1,
     reserved1: u1 = 0,
     pllms: u4 = 1,
@@ -225,7 +225,7 @@ pub const CrmClkoutDiv = enum(u4) {
     div512 = 15
 };
 
-pub const CrmMisc1 = packed struct(u32) {
+pub const CrmMisc1 = bitpack struct(u32) {
     hickcal_key: u8 = 0,
     reserved1: u8 = 0,
     clkout_sel: bool = false,
@@ -261,7 +261,7 @@ pub const CrmAutoStepEn = enum(u2) {
     enabled = 3
 };
 
-pub const CrmMisc2 = packed struct(u32) {
+pub const CrmMisc2 = bitpack struct(u32) {
     reserved1: u4 = 0x0D,
     auto_step_en: CrmAutoStepEn = .disabled,
     reserved2: u3 = 0,
@@ -280,7 +280,7 @@ pub const CrmCanClkSel = enum(u2) {
     pclk = 2
 };
 
-pub const CrmPiclks = packed struct(u32) {
+pub const CrmPiclks = bitpack struct(u32) {
     rtc_pclksel: bool = false,
     reserved1: u23 = 0,
     can1_clksel: CrmCanClkSel = .hext,

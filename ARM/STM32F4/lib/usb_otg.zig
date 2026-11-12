@@ -1,7 +1,7 @@
 const USB_OTG_FS_BASE: usize = 0x50000000;
 const USB_OTG_HS_BASE: usize = 0x40040000;
 
-pub const UsbGotgctl = packed struct(u32) {
+pub const UsbGotgctl = bitpack struct(u32) {
     srqscs: bool = false,
     srq: bool = false,
     reserved: u6 = 0,
@@ -17,7 +17,7 @@ pub const UsbGotgctl = packed struct(u32) {
     reserved3: u12 = 0
 };
 
-pub const UsbGotgint = packed struct(u32) {
+pub const UsbGotgint = bitpack struct(u32) {
     reserved: u2 = 0,
     sedet: bool = false,
     reserved2: u5 = 0,
@@ -30,7 +30,7 @@ pub const UsbGotgint = packed struct(u32) {
     reserved4: u12 = 0
 };
 
-pub const UsbGahbcfg = packed struct(u32) {
+pub const UsbGahbcfg = bitpack struct(u32) {
     gintmsk: bool = false,
     reserved: u6 = 0,
     txfelvl: bool = false,
@@ -38,7 +38,7 @@ pub const UsbGahbcfg = packed struct(u32) {
     reserved2: u23 = 0
 };
 
-pub const UsbGusbcfg = packed struct(u32) {
+pub const UsbGusbcfg = bitpack struct(u32) {
     tocal: u3 = 0,
     reserved: u3 = 0,
     physel: bool = true,
@@ -52,7 +52,7 @@ pub const UsbGusbcfg = packed struct(u32) {
     ctxpkt: bool = false
 };
 
-pub const UsbGrstctl = packed struct(u32) {
+pub const UsbGrstctl = bitpack struct(u32) {
     csrst: bool = false,
     hsrst: bool = false,
     fcrst: bool = false,
@@ -64,7 +64,7 @@ pub const UsbGrstctl = packed struct(u32) {
     ahbidl: bool = true
 };
 
-pub const UsbGintsts = packed struct(u32) {
+pub const UsbGintsts = bitpack struct(u32) {
     cmod: bool = false,
     mmis: bool = false,
     otgnt: bool = false,

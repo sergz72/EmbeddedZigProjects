@@ -1,6 +1,6 @@
 const SCB_BASE = 0xE000ED00;
 
-pub const ScbCpuId = packed struct(u32) {
+pub const ScbCpuId = bitpack struct(u32) {
     revision: u4,
     partno: u12,
     reserved: u4,
@@ -8,7 +8,7 @@ pub const ScbCpuId = packed struct(u32) {
     implementer: u8
 };
 
-pub const ScbIcsr = packed struct(u32) {
+pub const ScbIcsr = bitpack struct(u32) {
     vectactive: u9 = 0,
     reserved0: u2 = 0,
     rettobase: bool = false,
@@ -24,7 +24,7 @@ pub const ScbIcsr = packed struct(u32) {
     nmipendset: bool = false
 };
 
-pub const ScbAircr = packed struct(u32) {
+pub const ScbAircr = bitpack struct(u32) {
     vectreset: bool = false,
     vectclractive: bool = false,
     sysresetreq: bool = false,
@@ -35,7 +35,7 @@ pub const ScbAircr = packed struct(u32) {
     vectkey: u16 = 0x5FA
 };
 
-pub const ScbScr = packed struct(u32) {
+pub const ScbScr = bitpack struct(u32) {
     reserved: u1 = 0,
     sleeponexit: bool = false,
     sleepdeep: bool = false,
@@ -44,7 +44,7 @@ pub const ScbScr = packed struct(u32) {
     reserved3: u27 = 0
 };
 
-pub const ScbCfsrParts = packed struct(u32) {
+pub const ScbCfsrParts = bitpack struct(u32) {
     mmfsr: u8,
     bfsr: u8,
     ufsr: u16
@@ -61,7 +61,7 @@ pub const ScbAccess = enum(u2) {
     full_access = 3
 };
 
-pub const ScbCpacr = packed struct(u32) {
+pub const ScbCpacr = bitpack struct(u32) {
     cp0: ScbAccess = .no_access,
     cp1: ScbAccess = .no_access,
     cp2: ScbAccess = .no_access,
@@ -76,7 +76,7 @@ pub const ScbCpacr = packed struct(u32) {
     reserved2: u8 = 0
 };
 
-pub const ScbNsacr = packed struct(u32) {
+pub const ScbNsacr = bitpack struct(u32) {
     cp0: bool,
     cp1: bool,
     cp2: bool,

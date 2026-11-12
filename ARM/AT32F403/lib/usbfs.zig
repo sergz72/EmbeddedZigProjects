@@ -23,7 +23,7 @@ pub const UsbfsEptTransType = enum(u2) {
     interrupt = 3
 };
 
-pub const UsbfsEpt = packed struct(u16) {
+pub const UsbfsEpt = bitpack struct(u16) {
     addr: u4 = 0,
     txsts: UsbfsEptSts = .disabled,
     txdts: bool = false,
@@ -41,7 +41,7 @@ pub const UsbfsEpts = extern struct {
     reserved: u16
 };
 
-pub const UsbfsCtrl = packed struct(u16) {
+pub const UsbfsCtrl = bitpack struct(u16) {
     csrst: bool = true,
     disusb: bool = true,
     lpm: bool = false,
@@ -58,7 +58,7 @@ pub const UsbfsCtrl = packed struct(u16) {
     tcien: bool = false
 };
 
-pub const UsbfsIntsts = packed struct(u16) {
+pub const UsbfsIntsts = bitpack struct(u16) {
     ept_num: u4 = 0,
     inout: bool = false,
     reserved: u3 = 0,
@@ -72,7 +72,7 @@ pub const UsbfsIntsts = packed struct(u16) {
     tc: bool = false
 };
 
-pub const UsbfsSofrnum = packed struct(u16) {
+pub const UsbfsSofrnum = bitpack struct(u16) {
     sofnum: u11,
     lsofnum: u2,
     clck: bool,
@@ -80,24 +80,24 @@ pub const UsbfsSofrnum = packed struct(u16) {
     dpsts: bool
 };
 
-pub const UsbfsDevaddr = packed struct(u16) {
+pub const UsbfsDevaddr = bitpack struct(u16) {
     addr: u7 = 0,
     cen: bool = false,
     reserved: u8 = 0
 };
 
-pub const UsbfsCfg = packed struct(u16) {
+pub const UsbfsCfg = bitpack struct(u16) {
     sofouten: bool = false,
     puo: bool = false,
     reserved: u14 = 0
 };
 
-pub const UsbfsTlen = packed struct(u16) {
+pub const UsbfsTlen = bitpack struct(u16) {
     len: u10,
     reserved: u6
 };
 
-pub const UsbfsRlen = packed struct(u16) {
+pub const UsbfsRlen = bitpack struct(u16) {
     len: u10,
     nblk: u5,
     bsize: bool

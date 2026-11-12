@@ -31,7 +31,7 @@ pub const TcCaptMode = enum(u2) {
     capmax = 2
 };
 
-pub const TcCtrla = packed struct(u32) {
+pub const TcCtrla = bitpack struct(u32) {
     swrst: bool = false,
     enable: bool = false,
     mode: TcMode = .count16,
@@ -61,7 +61,7 @@ pub const TcCmd = enum(u3) {
     readsync = 4
 };
 
-pub const TcCtrlB = packed struct(u8) {
+pub const TcCtrlB = bitpack struct(u8) {
     dir: bool = false,
     lupd: bool = false,
     oneshot: bool = false,
@@ -80,7 +80,7 @@ pub const TcEvAct = enum(u3) {
     pw = 7
 };
 
-pub const TcEvCtrl = packed struct(u16) {
+pub const TcEvCtrl = bitpack struct(u16) {
     evact: TcEvAct = .off,
     reserved: u1 = 0,
     tcinv: bool = false,
@@ -93,7 +93,7 @@ pub const TcEvCtrl = packed struct(u16) {
     reserved4: u2 = 0
 };
 
-pub const TcInt = packed struct(u8) {
+pub const TcInt = bitpack struct(u8) {
     ovf: bool = false,
     err: bool = false,
     reserved: u2 = 0,
@@ -102,7 +102,7 @@ pub const TcInt = packed struct(u8) {
     reserved2: u2 = 0
 };
 
-pub const TcStatus = packed struct(u8) {
+pub const TcStatus = bitpack struct(u8) {
     stop: bool,
     slave: bool,
     reserved: u1,
@@ -119,13 +119,13 @@ pub const TcWave = enum(u8) {
     match_pwm = 3
 };
 
-pub const TcDrvCtrl = packed struct(u8) {
+pub const TcDrvCtrl = bitpack struct(u8) {
     inven0: bool = false,
     inven1: bool = false,
     reserved: u6 = 0
 };
 
-pub const TcSyncBusy = packed struct(u32) {
+pub const TcSyncBusy = bitpack struct(u32) {
     swrst: bool,
     enable: bool,
     ctrlb: bool,

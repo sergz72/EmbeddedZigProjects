@@ -1,6 +1,6 @@
 const EXTI_BASE = 0x44022000;
 
-pub const Exti2 = packed struct(u32) {
+pub const Exti2 = bitpack struct(u32) {
     reserved0: u14 = 0,
     rt46: bool = false,
     reserved1: u3 = 0,
@@ -10,7 +10,7 @@ pub const Exti2 = packed struct(u32) {
     reserved3: u10 = 0,
 };
 
-pub const ExtiLockr = packed struct(u32) {
+pub const ExtiLockr = bitpack struct(u32) {
     lock: bool = false,
     reserved0: u31 = 0,
 };

@@ -2,14 +2,14 @@ const rcc = @import("rcc");
 
 const RNG_BASE: usize = 0x50060800;
 
-pub const RngCr = packed struct(u32) {
+pub const RngCr = bitpack struct(u32) {
     reserved: u2 = 0,
     rngen: bool = false,
     ie: bool = false,
     reserved2: u28 = 0
 };
 
-pub const RngSr = packed struct(u32) {
+pub const RngSr = bitpack struct(u32) {
     drdy: bool,
     cecs: bool,
     secs: bool,

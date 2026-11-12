@@ -1,6 +1,6 @@
 const TRNG_BASE = 0x42002800;
 
-pub const TrngCtrlA = packed struct(u8) {
+pub const TrngCtrlA = bitpack struct(u8) {
     reserved: u1 = 0,
     enable: bool = false,
     reserved2: u4 = 0,

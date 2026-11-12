@@ -2,7 +2,7 @@ const rcc = @import("rcc");
 
 const RNG_BASE = 0x40023C00;
 
-pub const RngCr = packed struct(u32) {
+pub const RngCr = bitpack struct(u32) {
      reserved: u2 = 0,
      /// Random number generator enable
      rngen: bool = false,
@@ -11,7 +11,7 @@ pub const RngCr = packed struct(u32) {
      reserved1: u28 = 0
 };
 
-pub const RngSr = packed struct(u32) {
+pub const RngSr = bitpack struct(u32) {
         /// Data ready
         drdy: bool = false,
         /// Clock error current status

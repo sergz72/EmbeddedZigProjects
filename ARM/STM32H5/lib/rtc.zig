@@ -1,6 +1,6 @@
 const RTC_BASE = 0x44007800;
 
-pub const RtcTr = packed struct(u32) {
+pub const RtcTr = bitpack struct(u32) {
     su: u4 = 0,
     st: u3 = 0,
     reserved0: u1 = 0,
@@ -24,7 +24,7 @@ pub const RtcWeekday = enum(u3) {
     sunday = 7
 };
 
-pub const RtcDr = packed struct(u32) {
+pub const RtcDr = bitpack struct(u32) {
     du: u4 = 1,
     dt: u2 = 0,
     reserved0: u2 = 0,
@@ -53,7 +53,7 @@ pub const RtcBcdu = enum(u3) {
     ss140 = 7,
 };
 
-pub const RtcIcsr = packed struct(u32) {
+pub const RtcIcsr = bitpack struct(u32) {
     reserved0: u2 = 3,
     wutwf: bool = true,
     shpf: bool = false,
@@ -68,14 +68,14 @@ pub const RtcIcsr = packed struct(u32) {
     reserved2: u15 = 0,
 };
 
-pub const RtcPrer = packed struct(u32) {
+pub const RtcPrer = bitpack struct(u32) {
     prediv_s: u15 = 255,
     reserved0: u1 = 1,
     prediv_a: u7 = 127,
     reserved1: u9 = 0,
 };
 
-pub const RtcWutr = packed struct(u32) {
+pub const RtcWutr = bitpack struct(u32) {
     wut: u16 = 65535,
     wutoclr: u16 = 0,
 };
@@ -96,7 +96,7 @@ pub const RtcOsel = enum(u2) {
     wakeup = 3
 };
 
-pub const RtcCr = packed struct(u32) {
+pub const RtcCr = bitpack struct(u32) {
     wucksel: RtcWucksel = .rtc_clock_div16,
     tsedge: bool = false,
     refckon: bool = false,
@@ -128,7 +128,7 @@ pub const RtcCr = packed struct(u32) {
     out2en: bool = false,
 };
 
-pub const RtcPrivcfgr = packed struct(u32) {
+pub const RtcPrivcfgr = bitpack struct(u32) {
     alrapriv: bool = false,
     alrbpriv: bool = false,
     wutpriv: bool = false,
@@ -140,7 +140,7 @@ pub const RtcPrivcfgr = packed struct(u32) {
     reserved1: u16 = 0,
 };
 
-pub const RtcSeccfgr = packed struct(u32) {
+pub const RtcSeccfgr = bitpack struct(u32) {
     alrasec: bool = false,
     alrbsec: bool = false,
     wutsec: bool = false,
@@ -152,7 +152,7 @@ pub const RtcSeccfgr = packed struct(u32) {
     reserved1: u16 = 0,
 };
 
-pub const RtcCalr = packed struct(u32) {
+pub const RtcCalr = bitpack struct(u32) {
     calm: u9 = 0,
     reserved0: u3 = 0,
     lpcal: bool = false,
@@ -162,13 +162,13 @@ pub const RtcCalr = packed struct(u32) {
     reserved1: u16 = 0,
 };
 
-pub const RtcShiftr = packed struct(u32) {
+pub const RtcShiftr = bitpack struct(u32) {
     subfs: u15 = 0,
     reserved0: u16 = 0,
     add1s: bool = false,
 };
 
-pub const RtcTsdr = packed struct(u32) {
+pub const RtcTsdr = bitpack struct(u32) {
     du: u4,
     dt: u2,
     reserved0: u2,
@@ -178,7 +178,7 @@ pub const RtcTsdr = packed struct(u32) {
     reserved1: u16,
 };
 
-pub const RtcAlrmr = packed struct(u32) {
+pub const RtcAlrmr = bitpack struct(u32) {
     su: u4 = 0,
     st: u3 = 0,
     msk1: bool = false,
@@ -195,7 +195,7 @@ pub const RtcAlrmr = packed struct(u32) {
     msk4: bool = false,
 };
 
-pub const RtcAlrmssr = packed struct(u32) {
+pub const RtcAlrmssr = bitpack struct(u32) {
     ss: u15 = 0,
     reserved0: u9 = 0,
     maskss: u6 = 0,
@@ -203,7 +203,7 @@ pub const RtcAlrmssr = packed struct(u32) {
     ssclr: bool = false,
 };
 
-pub const RtcSr = packed struct(u32) {
+pub const RtcSr = bitpack struct(u32) {
     alraf: bool,
     alrbf: bool,
     wutf: bool,
@@ -214,7 +214,7 @@ pub const RtcSr = packed struct(u32) {
     reserved0: u25
 };
 
-pub const RtcOr = packed struct(u32) {
+pub const RtcOr = bitpack struct(u32) {
     out2_rmp: bool = false,
     reserved0: u31 = 0,
 };

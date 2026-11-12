@@ -1,6 +1,6 @@
 const AGT_BASE: usize = 0x40084000;
 
-pub const AgtCr = packed struct(u8) {
+pub const AgtCr = bitpack struct(u8) {
     tstart: bool = false,
     tcstf: bool = false,
     tstop: bool = false,
@@ -28,7 +28,7 @@ pub const AgtTck = enum(u3) {
     agtsclk = 6
 };
 
-pub const AgtMr1 = packed struct(u8) {
+pub const AgtMr1 = bitpack struct(u8) {
     tmod: AgtTmod = .timer,
     tedgpl_both_edges: bool = false,
     tck: AgtTck = .pclkb,
@@ -46,13 +46,13 @@ pub const AgtCks = enum(u3) {
     div128 = 7
 };
 
-pub const AgtMr2 = packed struct(u8) {
+pub const AgtMr2 = bitpack struct(u8) {
     cks: AgtCks,
     reserved: u4 = 0,
     lpm: bool = false
 };
 
-pub const AgtCmSr = packed struct(u8) {
+pub const AgtCmSr = bitpack struct(u8) {
     tcmea: bool = false,
     toea: bool = false,
     topola: bool = false,

@@ -55,7 +55,7 @@ pub const IrqNum = enum(u32) {
     spare_irq_5 = 51
 };
 
-pub const MieRegister = packed struct(u32) {
+pub const MieRegister = bitpack struct(u32) {
     reserved0: u1 = 0,
     ssie: bool = false,           // Bit 1: Supervisor Software
     reserved1: u1 = 0,

@@ -1,6 +1,6 @@
 pub const DMA1_BASE = 0x40020000;
 
-pub const DmaSt = packed struct(u32) {
+pub const DmaSt = bitpack struct(u32) {
     gf1: bool = false,
     fdtf1: bool = false,
     hdtf1: bool = false,
@@ -45,7 +45,7 @@ pub const DmaPl = enum(u2) {
     very_high = 3
 };
 
-pub const DmaChannelCtrl = packed struct(u32) {
+pub const DmaChannelCtrl = bitpack struct(u32) {
     chen: bool = false,
     fdtien: bool = false,
     hdtien: bool = false,

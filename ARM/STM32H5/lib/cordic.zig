@@ -13,7 +13,7 @@ pub const Func = enum(u4) {
     sqrt = 9
 };
 
-pub const CordicCsr = packed struct(u32) {
+pub const CordicCsr = bitpack struct(u32) {
     func: Func = .cos,
     precision: u4 = 5,
     scale: u3 = 0,

@@ -12,7 +12,7 @@ pub const GclkSrc = enum(u5) {
     fdpll96m = 8
 };
 
-pub const GclkGenCtrl = packed struct(u32) {
+pub const GclkGenCtrl = bitpack struct(u32) {
     id: u4 = 0,
     reserved: u4 = 0,
     src: GclkSrc = .xosc,
@@ -66,7 +66,7 @@ pub const GclkChannel = enum(u6) {
     i2s1 = 0x24
 };
 
-pub const GclkClkctrl = packed struct(u16) {
+pub const GclkClkctrl = bitpack struct(u16) {
     id: GclkChannel,
     reserved: u2 = 0,
     gen: u4 = 0,
@@ -75,7 +75,7 @@ pub const GclkClkctrl = packed struct(u16) {
     wrtlock: bool = false
 };
 
-pub const GclkGendiv = packed struct(u32) {
+pub const GclkGendiv = bitpack struct(u32) {
     id: u4 = 0,
     reserved: u4 = 0,
     div: u16 = 0,

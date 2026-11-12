@@ -8,7 +8,7 @@ pub const Cpu = struct {
     pckd_frequency: usize
 };
 
-pub const Prcr = packed struct(u16) {
+pub const Prcr = bitpack struct(u16) {
     prc0: bool = false,
     prc1: bool = false,
     reserved: u1 = 0,

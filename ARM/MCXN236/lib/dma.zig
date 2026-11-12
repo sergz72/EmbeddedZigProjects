@@ -1,7 +1,7 @@
 const DMA0_BASE = 0x40080000;
 const DMA1_BASE = 0x400A0000;
 
-pub const MpCsr = packed struct(u32) {
+pub const MpCsr = bitpack struct(u32) {
     reserved0: u1 = 0,
     edbg: bool = false,
     erca: bool = false,
@@ -18,7 +18,7 @@ pub const MpCsr = packed struct(u32) {
     active: bool = false,
 };
 
-pub const MpEs = packed struct(u32) {
+pub const MpEs = bitpack struct(u32) {
     dbe: bool,
     sbe: bool,
     sge: bool,

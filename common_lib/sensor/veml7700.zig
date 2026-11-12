@@ -34,7 +34,7 @@ pub const VEML7700Gain = enum(u2) {
     _0p25 = 3
 };
 
-pub const VEML7700Config = packed struct(u16) {
+pub const VEML7700Config = bitpack struct(u16) {
     shutdown: bool = false,
     interrupt_enable: bool = false,
     reserved: u2 = 0,
@@ -45,7 +45,7 @@ pub const VEML7700Config = packed struct(u16) {
     reserved3: u3 = 0,
 };
 
-pub const VEML7700PowerSave = packed struct(u16) {
+pub const VEML7700PowerSave = bitpack struct(u16) {
     psm_en: bool = false,
     psm_mode: u2 = 0,
     reserved: u13 = 0

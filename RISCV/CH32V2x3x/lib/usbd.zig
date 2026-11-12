@@ -1,7 +1,7 @@
 const USBD_BASE: usize = 0x40005C00;
 const USBD_BUFFERS: usize = 0x40006000;
 
-pub const UsbdCntr = packed struct(u16) {
+pub const UsbdCntr = bitpack struct(u16) {
     fres: bool = true,
     pwdn: bool = true,
     lpmode: bool = false,
@@ -19,7 +19,7 @@ pub const UsbdCntr = packed struct(u16) {
     ctrm: bool = false
 };
 
-pub const UsbdIstr = packed struct(u16) {
+pub const UsbdIstr = bitpack struct(u16) {
     ep_id: u4 = 0,
     dir: bool = false,
     reserved: u3 = 0,
@@ -33,7 +33,7 @@ pub const UsbdIstr = packed struct(u16) {
     ctr: bool = false,
 };
 
-pub const UsbdFnr = packed struct(u16) {
+pub const UsbdFnr = bitpack struct(u16) {
     f_n: u11,
     lsof: u2,
     lck: bool,
@@ -41,13 +41,13 @@ pub const UsbdFnr = packed struct(u16) {
     rxdp: bool
 };
 
-pub const UsbdDaddr = packed struct(u16) {
+pub const UsbdDaddr = bitpack struct(u16) {
     add: u7  = 0,
     ef: bool = false,
     reserved: u8 = 0
 };
 
-pub const UsbdBtable = packed struct(u16) {
+pub const UsbdBtable = bitpack struct(u16) {
     reserved: u3 = 0,
     blable: u13 = 0
 };
@@ -66,7 +66,7 @@ pub const UsbdEndpointType = enum(u2) {
     interrupt = 3
 };
 
-pub const UsbdEpr = packed struct(u16) {
+pub const UsbdEpr = bitpack struct(u16) {
     ea: u4 = 0,
     stat_tx: UsbdEndpointStatus = .disabled,
     dtog_tx: bool = false,
@@ -93,7 +93,7 @@ pub const Usbd = extern struct {
     btable: UsbdBtable
 };
 
-pub const UsbdCountRx = packed struct(u16) {
+pub const UsbdCountRx = bitpack struct(u16) {
     count: u10,
     num_block: u5 = 0,
     blsize: bool = false

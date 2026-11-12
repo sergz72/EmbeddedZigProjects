@@ -8,7 +8,7 @@ const UART7_BASE = 0x40007800;
 const UART8_BASE = 0x40007C00;
 const UART9_BASE = 0x40008000;
 
-pub const UsartCr1 = packed struct(u32) {
+pub const UsartCr1 = bitpack struct(u32) {
     ue: bool = false,
     uesm: bool = false,
     re: bool = false,
@@ -42,7 +42,7 @@ pub const UsartStopBits = enum(u2) {
     _1p5 = 3
 };
 
-pub const UsartCr2 = packed struct(u32) {
+pub const UsartCr2 = bitpack struct(u32) {
     slven: bool = false,
     reserved0: u2 = 0,
     dis_nss: bool = false,
@@ -85,7 +85,7 @@ pub const Txftcfg = enum(u3) {
     empty = 5
 };
 
-pub const UsartCr3 = packed struct(u32) {
+pub const UsartCr3 = bitpack struct(u32) {
     eie: bool = false,
     iren: bool = false,
     irlp: bool = false,
@@ -114,18 +114,18 @@ pub const UsartCr3 = packed struct(u32) {
     txftcfg: Txftcfg = ._0p125
 };
 
-pub const UsartGtpr = packed struct(u32) {
+pub const UsartGtpr = bitpack struct(u32) {
     psc: u8 = 0,
     gt: u8 = 0,
     reserved0: u16 = 0,
 };
 
-pub const UsartRtor = packed struct(u32) {
+pub const UsartRtor = bitpack struct(u32) {
     rto: u24 = 0,
     blen: u8 = 0,
 };
 
-pub const UsartRqr = packed struct(u32) {
+pub const UsartRqr = bitpack struct(u32) {
     abrrq: bool = false,
     sbkrq: bool = false,
     mmrq: bool = false,
@@ -134,7 +134,7 @@ pub const UsartRqr = packed struct(u32) {
     reserved0: u27 = 0,
 };
 
-pub const UsartIsr = packed struct(u32) {
+pub const UsartIsr = bitpack struct(u32) {
     pe: bool,
     fe: bool,
     ne: bool,
@@ -166,7 +166,7 @@ pub const UsartIsr = packed struct(u32) {
     reserved0: u4
 };
 
-pub const UsartIcr = packed struct(u32) {
+pub const UsartIcr = bitpack struct(u32) {
     pecf: bool = false,
     fecf: bool = false,
     necf: bool = false,

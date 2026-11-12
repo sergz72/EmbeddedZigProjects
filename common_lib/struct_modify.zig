@@ -25,7 +25,7 @@ pub fn struct_modify(reg: anytype, comptime changes: anytype) void {
     reg.* = @bitCast((raw & ~m.clear) | m.set);          // and-not mask, or value, one volatile store
 }
 
-const TestStruct  = packed struct(u32) {
+const TestStruct  = bitpack struct(u32) {
     field1: u8,
     field2: u8,
     field3: u8,

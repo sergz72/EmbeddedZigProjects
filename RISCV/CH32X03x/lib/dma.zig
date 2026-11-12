@@ -6,7 +6,7 @@ pub const DmaSize = enum(u2) {
     _32 = 2
 };
 
-pub const DmaChannelCfgr = packed struct(u32) {
+pub const DmaChannelCfgr = bitpack struct(u32) {
     en: bool = false,
     tcie: bool = false,
     htie: bool = false,
@@ -30,14 +30,14 @@ pub const DmaChannel = extern struct {
     reserved: u32
 };
 
-pub const DmaInterruptFlags = packed struct(u4) {
+pub const DmaInterruptFlags = bitpack struct(u4) {
     gif: bool = false,
     tcif: bool = false,
     htif: bool = false,
     teif: bool = false,
 };
 
-pub const DmaIntfr = packed struct(u32) {
+pub const DmaIntfr = bitpack struct(u32) {
     ch1: DmaInterruptFlags = DmaInterruptFlags{},
     ch2: DmaInterruptFlags = DmaInterruptFlags{},
     ch3: DmaInterruptFlags = DmaInterruptFlags{},

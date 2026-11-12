@@ -1,6 +1,6 @@
 pub const WWDT_BASE = 0x40002C00;
 
-pub const WwdtCtrl = packed struct(u32) {
+pub const WwdtCtrl = bitpack struct(u32) {
     cnt: u7 = 0x7F,
     wwdten: bool = false,
     reserved1: u24 = 0
@@ -13,14 +13,14 @@ pub const WwdtDiv = enum(u2) {
     div32768 = 3
 };
 
-pub const WwdtCfg = packed struct(u32) {
+pub const WwdtCfg = bitpack struct(u32) {
     win: u7 = 0x7F,
     div: WwdtDiv,
     rldien: bool = false,
     reserved1: u22 = 0
 };
 
-pub const WwdtSts = packed struct(u32) {
+pub const WwdtSts = bitpack struct(u32) {
     rldf: bool = false,
     reserved1: u31 = 0
 };

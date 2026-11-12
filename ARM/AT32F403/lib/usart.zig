@@ -7,7 +7,7 @@ const USART6_BASE = 0x40016000;
 const UART7_BASE = 0x40016400;
 const UART8_BASE = 0x40016800;
 
-pub const UsartSts = packed struct(u32) {
+pub const UsartSts = bitpack struct(u32) {
     perr: bool = false,
     ferr: bool = false,
     nerr: bool = false,
@@ -21,7 +21,7 @@ pub const UsartSts = packed struct(u32) {
     reserved1: u22 = 0
 };
 
-pub const UsartCtrl1 = packed struct(u32) {
+pub const UsartCtrl1 = bitpack struct(u32) {
     sbf: bool = false,
     rm: bool = false,
     ren: bool = false,
@@ -46,7 +46,7 @@ pub const UsartStopbn = enum(u2) {
     _1p5 = 3
 };
 
-pub const UsartCtrl2 = packed struct(u32) {
+pub const UsartCtrl2 = bitpack struct(u32) {
     id: u4 = 0,
     reserved1: u1 = 0,
     bfbn: bool = false,
@@ -61,7 +61,7 @@ pub const UsartCtrl2 = packed struct(u32) {
     reserved3: u17 = 0
 };
 
-pub const UsartCtrl3 = packed struct(u32) {
+pub const UsartCtrl3 = bitpack struct(u32) {
     errien: bool = false,
     irdaen: bool = false,
     irdalp: bool = false,
@@ -76,7 +76,7 @@ pub const UsartCtrl3 = packed struct(u32) {
     reserved2: u21 = 0
 };
 
-pub const UsartGdiv = packed struct(u32) {
+pub const UsartGdiv = bitpack struct(u32) {
     isdiv: u8 = 0,
     scgt: u8 = 0,
     reserved1: u16 = 0

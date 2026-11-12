@@ -1,6 +1,6 @@
 const RCU_BASE: usize = 0x40021000;
 
-pub const RcuCtl = packed struct(u32) {
+pub const RcuCtl = bitpack struct(u32) {
     irc8men: bool,
     irc8mstb: bool,
     reserved: u1,
@@ -50,7 +50,7 @@ pub const RcuCfgCkout = enum(u3) {
     plldiv2 = 7
 };
 
-pub const RcuCfg0 = packed struct(u32) {
+pub const RcuCfg0 = bitpack struct(u32) {
     scs: RcuCfg0Sw = RcuCfg0Sw.irc8m,
     scss: RcuCfg0Sw = RcuCfg0Sw.irc8m,
     ahbpsc: RcuCfgAhbPsc = RcuCfgAhbPsc.off,
@@ -69,14 +69,14 @@ pub const RcuCfg0 = packed struct(u32) {
     usbdpsc2: u1 = 0
 };
 
-pub const RcuCfg1 = packed struct(u32) {
+pub const RcuCfg1 = bitpack struct(u32) {
     reserved: u29 = 0,
     adcpsc3: u1 = 0,
     pllpresel: bool = false,
     reserved2: u1 = 0
 };
 
-pub const RcuAhben = packed struct(u32) {
+pub const RcuAhben = bitpack struct(u32) {
     dma0en: bool = false,
     dma1en: bool = false,
     sramspen: bool = true,
@@ -91,7 +91,7 @@ pub const RcuAhben = packed struct(u32) {
     reserved5: u21 = 0
 };
 
-pub const RcuApb2en = packed struct(u32) {
+pub const RcuApb2en = bitpack struct(u32) {
     afen: bool = false,
     reserved: u1 = 0,
     paen: bool = false,
@@ -115,7 +115,7 @@ pub const RcuApb2en = packed struct(u32) {
     reserved6: u10 = 0
 };
 
-pub const RcuApb1en = packed struct(u32) {
+pub const RcuApb1en = bitpack struct(u32) {
     timer1en: bool = false,
     timer2en: bool = false,
     timer3en: bool = false,
@@ -154,7 +154,7 @@ pub const RcuBdctlRtcsrc = enum(u2) {
     xtal_div128 = 3
 };
 
-pub const RcuBdctl = packed struct(u32) {
+pub const RcuBdctl = bitpack struct(u32) {
     lxtalen: bool = false,
     lxtalstb: bool = false,
     lxtalbps: bool = false,
@@ -167,7 +167,7 @@ pub const RcuBdctl = packed struct(u32) {
     reserved3: u15 = 0,
 };
 
-pub const RcuAddCtl = packed struct(u32) {
+pub const RcuAddCtl = bitpack struct(u32) {
     ck48msel: bool = false,
     reserved: u15 = 0,
     irc48men: bool = false,

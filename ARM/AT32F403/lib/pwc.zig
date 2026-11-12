@@ -13,7 +13,7 @@ pub const PwcPvmsel = enum(u3) {
     _2p9v = 7
 };
 
-pub const PwcCtrl = packed struct(u32) {
+pub const PwcCtrl = bitpack struct(u32) {
     vrsel: bool = false,
     lpsel: bool = false,
     clswef: bool = false,
@@ -24,7 +24,7 @@ pub const PwcCtrl = packed struct(u32) {
     reserved5: u23 = 0
 };
 
-pub const PwcCtrlSts = packed struct(u32) {
+pub const PwcCtrlSts = bitpack struct(u32) {
     swef: bool = false,
     sef: bool = false,
     pvmof: bool = false,

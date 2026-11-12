@@ -11,7 +11,7 @@ pub const PmPlsel = enum(u2) {
     pl2 = 2
 };
 
-pub const PmPlCfg = packed struct(u8) {
+pub const PmPlCfg = bitpack struct(u8) {
     plsel: PmPlsel = .pl0,
     reserved: u5 = 0,
     pldis: bool = false
@@ -30,7 +30,7 @@ pub const PmVregsMod = enum(u2) {
     lp = 2
 };
 
-pub const PmStdbyCfg = packed struct(u16) {
+pub const PmStdbyCfg = bitpack struct(u16) {
     pdcfg: bool = false,
     reserved: u3 = 0,
     dpgpdsw: bool = false,

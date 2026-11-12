@@ -37,7 +37,7 @@ pub const GpioInit = struct {
     hslv: bool = false
 };
 
-pub const GpioBsrr = packed struct(u32) {
+pub const GpioBsrr = bitpack struct(u32) {
     bs: u16 = 0,
     br: u16 = 0
 };

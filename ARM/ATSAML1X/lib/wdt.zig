@@ -3,7 +3,7 @@ const WDT_BASE = 0x40002000;
 const WDT_CLEAR = 0xA5;
 const WDT_CLOCK_FREQUENCY = 1024;
 
-pub const WdtCtrla = packed struct(u8) {
+pub const WdtCtrla = bitpack struct(u8) {
     reserved: u1 = 0,
     enable: bool,
     wen: bool,
@@ -41,12 +41,12 @@ pub const WdtEwOffset = enum(u8) {
     cyc8192 = 10
 };
 
-pub const WdtConfig = packed struct(u8) {
+pub const WdtConfig = bitpack struct(u8) {
     per: WdtPer,
     window: WdtPer
 };
 
-pub const WdtSyncBusy = packed struct(u32) {
+pub const WdtSyncBusy = bitpack struct(u32) {
     rserved: u1,
     enable: bool,
     wen: bool,

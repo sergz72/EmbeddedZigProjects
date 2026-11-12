@@ -4,7 +4,7 @@ const I2C1_BASE: usize = 0x40005400;
 const I2C2_BASE: usize = 0x40005800;
 const I2C3_BASE: usize = 0x40005C00;
 
-pub const I2cCr1 = packed struct(u16) {
+pub const I2cCr1 = bitpack struct(u16) {
     pe: bool = false,
     smbus: bool = false,
     reserved: bool = false,
@@ -23,7 +23,7 @@ pub const I2cCr1 = packed struct(u16) {
     swrst: bool = false
 };
 
-pub const I2cCr2 = packed struct(u16) {
+pub const I2cCr2 = bitpack struct(u16) {
     freq: u6 = 0,
     reserved: u2 = 0,
     iterren: bool = false,
@@ -34,19 +34,19 @@ pub const I2cCr2 = packed struct(u16) {
     reserved2: u3 = 0
 };
 
-pub const I2cOar1 = packed struct(u16) {
+pub const I2cOar1 = bitpack struct(u16) {
     add: u10 = 0,
     reserved: u5 = 0,
     addmode: bool = false
 };
 
-pub const I2cOar2 = packed struct(u16) {
+pub const I2cOar2 = bitpack struct(u16) {
     endual: bool = false,
     add: u7 = 0,
     reserved: u8 = 0
 };
 
-pub const I2cSr1 = packed struct(u16) {
+pub const I2cSr1 = bitpack struct(u16) {
     sb: bool,
     addr: bool,
     btf: bool,
@@ -65,7 +65,7 @@ pub const I2cSr1 = packed struct(u16) {
     smbalert: bool = false
 };
 
-pub const I2cSr2 = packed struct(u16) {
+pub const I2cSr2 = bitpack struct(u16) {
     msl: bool = false,
     busy: bool = false,
     tra: bool = false,
@@ -77,14 +77,14 @@ pub const I2cSr2 = packed struct(u16) {
     pec: u8 = 0
 };
 
-pub const I2cCcr = packed struct(u16) {
+pub const I2cCcr = bitpack struct(u16) {
     ccr: u12 = 0,
     reserved: u2 = 0,
     duty: bool = false,
     f_s: bool = false
 };
 
-pub const I2cFltr = packed struct(u16) {
+pub const I2cFltr = bitpack struct(u16) {
     dnf: u4 = 0,
     anoff: bool = false,
     reserved: u11 = 0

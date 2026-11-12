@@ -1,12 +1,12 @@
 const TICKS_BASE: u32 = 0x40108000;
 
-pub const TickCtrl = packed struct(u32) {
+pub const TickCtrl = bitpack struct(u32) {
     enable: bool,
     running: bool,
     _reserved: u30
 };
 
-pub const TickCycles = packed struct(u32) {
+pub const TickCycles = bitpack struct(u32) {
     value: u9,
     _reserved: u23
 };

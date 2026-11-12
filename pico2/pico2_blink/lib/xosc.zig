@@ -12,7 +12,7 @@ pub const XoscEnable = enum(u12) {
     enable = 0xfab
 };
 
-pub const XoscCtrl = packed struct(u32) {
+pub const XoscCtrl = bitpack struct(u32) {
     freq_range: XoscCtrlFreqRange,
     enable: XoscEnable,
     _reserved: u8 = 0
@@ -25,7 +25,7 @@ pub const XoscStatusFreqRange = enum(u2) {
     forty_to_100_mhz = 3
 };
 
-pub const XoscStatus = packed struct(u32) {
+pub const XoscStatus = bitpack struct(u32) {
     freq_range: XoscStatusFreqRange,
     _reserved: u10,
     enabled: bool,
@@ -40,14 +40,14 @@ pub const XoscDormant = enum(u32) {
     wake = 0x77616b65
 };
 
-pub const XoscStartup = packed struct(u32) {
+pub const XoscStartup = bitpack struct(u32) {
     delay: u14,
     reserved: u6,
     x4: bool,
     reserved2: u11 = 0
 };
 
-pub const XoscCount = packed struct(u32) {
+pub const XoscCount = bitpack struct(u32) {
     counter: u16,
     reserved: u16 = 0
 };
@@ -59,18 +59,13 @@ pub const Xosc = extern struct {
     startup: XoscStartup,
     count: XoscCount,
 
-    //todo: fix
-    noinline fn get_status(self: *volatile Xosc) XoscStatus {
-        return self.status;
-    }
-
     pub fn init(self: *volatile Xosc, xosc_freq_range: XoscStatusFreqRange) void {
         const range_int: u12 = @intFromEnum(xosc_freq_range);
         const range: XoscCtrlFreqRange = @enumFromInt(range_int | 0xaa0);
         self.ctrl = XoscCtrl{.freq_range = range, .enable = XoscEnable.enable};
         while (true) {
-            const status = self.get_status();
-            if ((status.freq_range == xosc_freq_range) & status.enabled & status.stable) {
+            const status = self.status;
+            if ((status.freq_range == xosc_freq_range) and status.enabled and status.stable) {
                 break;
             }
         }

@@ -2,7 +2,7 @@ const cpu = @import("cpu");
 
 const RCC_BASE: usize = 0x40021000;
 
-pub const RccCtlr = packed struct(u32) {
+pub const RccCtlr = bitpack struct(u32) {
     hsion: bool,
     hsirdy: bool,
     reserved: u1,
@@ -74,7 +74,7 @@ pub const RccCfgrMco = enum(u4) {
     pll3 = 11
 };
 
-pub const RccCfgr0 = packed struct(u32) {
+pub const RccCfgr0 = bitpack struct(u32) {
     sw: RccCfgr0Sw = RccCfgr0Sw.hsi,
     sws: RccCfgr0Sw = RccCfgr0Sw.hsi,
     hpre: RccCfgrHpre = RccCfgrHpre.off,
@@ -92,7 +92,7 @@ pub const RccCfgr0 = packed struct(u32) {
     adc_duty_gt50: bool = false
 };
 
-pub const RccCfgr2 = packed struct(u32) {
+pub const RccCfgr2 = bitpack struct(u32) {
     prediv1: u4 = 0,
     prediv2: u4 = 0,
     pll2mul: u4 = 0,
@@ -111,7 +111,7 @@ pub const RccCfgr2 = packed struct(u32) {
     usbhssrc_phy: bool = false
 };
 
-pub const RccCfgrAhbpcEnr = packed struct(u32) {
+pub const RccCfgrAhbpcEnr = bitpack struct(u32) {
     dma1en: bool = false,
     dma2en: bool = false,
     sramen: bool = true,
@@ -131,7 +131,7 @@ pub const RccCfgrAhbpcEnr = packed struct(u32) {
     reserved3: u14 = 0
 };
 
-pub const RccCfgrApb2pcEnr = packed struct(u32) {
+pub const RccCfgrApb2pcEnr = bitpack struct(u32) {
     afioen: bool = false,
     reserved: u1 = 0,
     iopaen: bool = false,
@@ -152,7 +152,7 @@ pub const RccCfgrApb2pcEnr = packed struct(u32) {
     reserved6: u11 = 0
 };
 
-pub const RccCfgrApb1pcEnr = packed struct(u32) {
+pub const RccCfgrApb1pcEnr = bitpack struct(u32) {
     tim2en: bool = false,
     tim3en: bool = false,
     tim4en: bool = false,
@@ -191,7 +191,7 @@ pub const RccCfgrRtcsel = enum(u2) {
     hse = 3
 };
 
-pub const RccCfgrBdctlr = packed struct(u32) {
+pub const RccCfgrBdctlr = bitpack struct(u32) {
     lseon: bool = false,
     lserdy: bool = false,
     lsebyp: bool = false,
@@ -203,7 +203,7 @@ pub const RccCfgrBdctlr = packed struct(u32) {
     reserved3: u15 = 0,
 };
 
-pub const RccRstsckr = packed struct(u32) {
+pub const RccRstsckr = bitpack struct(u32) {
     lsion: bool = false,
     lsirdy: bool = false,
     reserved1: u22 = 0,

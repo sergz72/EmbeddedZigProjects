@@ -20,7 +20,7 @@ pub const FlashWtcyc = enum(u3) {
     _upto180MHz = 5
 };
 
-pub const FlashPsr = packed struct(u32) {
+pub const FlashPsr = bitpack struct(u32) {
     wtcyc: FlashWtcyc = ._upto32MHz,
     reserved1: u1 = 0,
     pft_en: bool = true,
@@ -31,7 +31,7 @@ pub const FlashPsr = packed struct(u32) {
     reserved2: u23 = 0
 };
 
-pub const FlashSts = packed struct(u32) {
+pub const FlashSts = bitpack struct(u32) {
     obf: bool = false,
     reserved1: u1 = 0,
     prgmerr: bool = false,
@@ -41,7 +41,7 @@ pub const FlashSts = packed struct(u32) {
     reserved3: u26 = 0
 };
 
-pub const FlashCtrl = packed struct(u32) {
+pub const FlashCtrl = bitpack struct(u32) {
     fprgm: bool = false,
     secers: bool = false,
     bankers: bool = false,
@@ -58,7 +58,7 @@ pub const FlashCtrl = packed struct(u32) {
     reserved4: u19 = 0
 };
 
-pub const FlashUsd = packed struct(u32) {
+pub const FlashUsd = bitpack struct(u32) {
     usderr: bool,
     fap: bool,
     ssb0: u8,
@@ -68,13 +68,13 @@ pub const FlashUsd = packed struct(u32) {
     reserved: u5
 };
 
-pub const FlashFapSts = packed struct(u32) {
+pub const FlashFapSts = bitpack struct(u32) {
     fap: u8,
     nfap: u8,
     reserved1: u16
 };
 
-pub const FlashSlibSts0 = packed struct(u32) {
+pub const FlashSlibSts0 = bitpack struct(u32) {
     btm_ap_enf: bool,
     reserved1: u1,
     em_slib_enf: bool,
@@ -84,26 +84,26 @@ pub const FlashSlibSts0 = packed struct(u32) {
     reserved3: u8
 };
 
-pub const FlashSlib = packed struct(u32) {
+pub const FlashSlib = bitpack struct(u32) {
     slib_ss: u11 = 0,
     slib_inst_ss: u11 = 0,
     slib_es: u10 = 0
 };
 
-pub const FlashSlibMiscSts = packed struct(u32) {
+pub const FlashSlibMiscSts = bitpack struct(u32) {
     slib_pwd_err: bool,
     slib_pwd_ok: bool,
     slib_ulkf: bool,
     reserved1: u29
 };
 
-pub const FlashCrcCtrl = packed struct(u32) {
+pub const FlashCrcCtrl = bitpack struct(u32) {
     crc_sn: u16 = 0,
     crc_strt: bool = false,
     reserved1: u15 = 0,
 };
 
-pub const FlashEmSlibSet = packed struct(u32) {
+pub const FlashEmSlibSet = bitpack struct(u32) {
     em_slib_set: u16 = 0,
     em_slib_iss_set: u8 = 0,
     reserved1: u8 = 0

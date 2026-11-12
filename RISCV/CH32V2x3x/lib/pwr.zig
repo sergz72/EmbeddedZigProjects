@@ -13,7 +13,7 @@ pub const PwrPvdLevel = enum(u3) {
     _3v2 = 7
 };
 
-pub const PwrCtrl = packed struct(u32) {
+pub const PwrCtrl = bitpack struct(u32) {
     lpds: bool = false,
     pdds: bool = false,
     cwuf: bool = false,
@@ -30,7 +30,7 @@ pub const PwrCtrl = packed struct(u32) {
     reserved2: u11 = 0
 };
 
-pub const PwrCsr = packed struct(u32) {
+pub const PwrCsr = bitpack struct(u32) {
     wuf: bool = false,
     sbf: bool = false,
     pvdo: bool = false,

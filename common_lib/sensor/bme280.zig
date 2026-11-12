@@ -27,12 +27,12 @@ const Oversampling = enum(u3) {
     x16 = 5
 };
 
-const CtrlHum = packed struct(u8) {
+const CtrlHum = bitpack struct(u8) {
     osrs_h: Oversampling,
     reserved: u5 = 0
 };
 
-const Status = packed struct(u8) {
+const Status = bitpack struct(u8) {
     im_update: bool,
     reserved: u2,
     measuring: bool,
@@ -45,7 +45,7 @@ const Mode = enum(u2) {
     normal = 3
 };
 
-const Ctrl = packed struct(u8) {
+const Ctrl = bitpack struct(u8) {
     mode: Mode,
     osrs_p: Oversampling,
     osrs_t: Oversampling
@@ -70,7 +70,7 @@ const Filter = enum(u3) {
     x16 = 4
 };
 
-const Config = packed struct(u8) {
+const Config = bitpack struct(u8) {
     spi3w_en: bool,
     filter: Filter,
     t_sb: Standby

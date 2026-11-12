@@ -1,7 +1,7 @@
 const SYSCON0_BASE = 0x40000000;
 
 
-pub const Ahbmatprio = packed struct(u32) {
+pub const Ahbmatprio = bitpack struct(u32) {
     pri_cpu0_cbus: u2 = 0,
     pri_cpu0_sbus: u2 = 0,
     reserved0: u4 = 0,
@@ -13,20 +13,20 @@ pub const Ahbmatprio = packed struct(u32) {
     reserved2: u4 = 0
 };
 
-pub const Cpu0stckcal = packed struct(u32) {
+pub const Cpu0stckcal = bitpack struct(u32) {
     tenms: u24 = 0,
     skew: bool = false,
     noref: bool = false,
     reserved0: u6 = 0,
 };
 
-pub const Nmisrc = packed struct(u32) {
+pub const Nmisrc = bitpack struct(u32) {
     irqcpu0: u8 = 0,
     reserved0: u23 = 0,
     nmiencpu0: bool = false,
 };
 
-pub const Presetctrl0 = packed struct(u32) {
+pub const Presetctrl0 = bitpack struct(u32) {
     reserved0: u9 = 0,
     fmu_rst: bool = false,
     reserved1: u2 = 0,
@@ -49,7 +49,7 @@ pub const Presetctrl0 = packed struct(u32) {
     reserved4: u4 = 0,
 };
 
-pub const Presetctrl1 = packed struct(u32) {
+pub const Presetctrl1 = bitpack struct(u32) {
     mrt_rst: bool = false,
     ostimer_rst: bool = false,
     reserved0: u1 = 0,
@@ -77,7 +77,7 @@ pub const Presetctrl1 = packed struct(u32) {
     smartdma_rst: bool = false,
 };
 
-pub const Presetctrl2 = packed struct(u32) {
+pub const Presetctrl2 = bitpack struct(u32) {
     reserved0: u1 = 0,
     dma1_rst: bool = false,
     reserved1: u2 = 0,
@@ -99,7 +99,7 @@ pub const Presetctrl2 = packed struct(u32) {
     reserved4: u7 = 0,
 };
 
-pub const Presetctrl3 = packed struct(u32) {
+pub const Presetctrl3 = bitpack struct(u32) {
     i3c0_rst: bool = false,
     i3c1_rst: bool = false,
     reserved0: u2 = 0,
@@ -116,7 +116,7 @@ pub const Presetctrl3 = packed struct(u32) {
     reserved3: u7 = 0,
 };
 
-pub const Ahbclkctrl0 = packed struct(u32) {
+pub const Ahbclkctrl0 = bitpack struct(u32) {
     reserved0: u1 = 0,
     rom: bool = true,
     ramb_ctrl: bool = false,
@@ -148,7 +148,7 @@ pub const Ahbclkctrl0 = packed struct(u32) {
     reserved5: u2 = 0,
 };
 
-pub const Ahbclkctrl1 = packed struct(u32) {
+pub const Ahbclkctrl1 = bitpack struct(u32) {
     mrt: bool = false,
     ostimer: bool = false,
     reserved0: u1 = 0,
@@ -178,7 +178,7 @@ pub const Ahbclkctrl1 = packed struct(u32) {
     smartdma: bool = false,
 };
 
-pub const Ahbclkctrl2 = packed struct(u32) {
+pub const Ahbclkctrl2 = bitpack struct(u32) {
     reserved0: u1 = 0,
     dma1: bool = false,
     reserved1: u2 = 0,
@@ -205,7 +205,7 @@ pub const Ahbclkctrl2 = packed struct(u32) {
     reserved6: u2 = 0,
 };
 
-pub const Ahbclkctrl3 = packed struct(u32) {
+pub const Ahbclkctrl3 = bitpack struct(u32) {
     i3c0: bool = false,
     i3c1: bool = false,
     reserved0: u2 = 0,
@@ -279,7 +279,7 @@ pub const Fcclksel = enum(u32) {
     no_clock = 7
 };
 
-pub const Clkdiv = packed struct(u32) {
+pub const Clkdiv = bitpack struct(u32) {
     div: u8 = 0,
     reserved0: u21 = 0,
     reset: bool = false,
@@ -287,27 +287,27 @@ pub const Clkdiv = packed struct(u32) {
     unstab: bool = false,
 };
 
-pub const Slowclkdiv = packed struct(u32) {
+pub const Slowclkdiv = bitpack struct(u32) {
     reserved0: u29 = 0,
     reset: bool = false,
     halt: bool = false,
     unstab: bool = false,
 };
 
-pub const Ahbclkdiv = packed struct(u32) {
+pub const Ahbclkdiv = bitpack struct(u32) {
     div: u8 = 0,
     reserved0: u23 = 0,
     unstab: bool = false,
 };
 
-pub const Frohfdiv = packed struct(u32) {
+pub const Frohfdiv = bitpack struct(u32) {
     div: u8 = 0,
     reserved0: u22 = 0,
     halt: bool = true,
     unstab: bool = false,
 };
 
-pub const Wdt0clkdiv = packed struct(u32) {
+pub const Wdt0clkdiv = bitpack struct(u32) {
     div: u6 = 0,
     reserved0: u23 = 0,
     reset: bool = false,
@@ -315,7 +315,7 @@ pub const Wdt0clkdiv = packed struct(u32) {
     unstab: bool = false,
 };
 
-pub const Adcclkdiv = packed struct(u32) {
+pub const Adcclkdiv = bitpack struct(u32) {
     div: u3 = 0,
     reserved0: u26 = 0,
     reset: bool = false,
@@ -323,7 +323,7 @@ pub const Adcclkdiv = packed struct(u32) {
     unstab: bool = false,
 };
 
-pub const Utickclkdiv = packed struct(u32) {
+pub const Utickclkdiv = bitpack struct(u32) {
     div: u6 = 0,
     reserved0: u23 = 0,
     reset: bool = false,
@@ -331,18 +331,18 @@ pub const Utickclkdiv = packed struct(u32) {
     unstab: bool = false,
 };
 
-pub const ClkoutFrgctrl = packed struct(u32) {
+pub const ClkoutFrgctrl = bitpack struct(u32) {
     div: u8 = 255,
     mult: u8 = 0,
     reserved0: u16 = 0,
 };
 
-pub const Clkunlock = packed struct(u32) {
+pub const Clkunlock = bitpack struct(u32) {
     unlock: bool = false,
     reserved0: u31 = 0,
 };
 
-pub const NvmCtrl = packed struct(u32) {
+pub const NvmCtrl = bitpack struct(u32) {
     dis_flash_spec: bool = false,
     dis_data_spec: bool = false,
     dis_flash_cache: bool = false,
@@ -357,12 +357,12 @@ pub const NvmCtrl = packed struct(u32) {
     reserved2: u14 = 0,
 };
 
-pub const Romcr = packed struct(u32) {
+pub const Romcr = bitpack struct(u32) {
     rom_wait: bool = false,
     reserved0: u31 = 0,
 };
 
-pub const RamInterleave = packed struct(u32) {
+pub const RamInterleave = bitpack struct(u32) {
     interleave: bool = false,
     reserved0: u31 = 0,
 };
@@ -395,7 +395,7 @@ pub const Micfilfclksel = enum(u32) {
     no_clock = 15
 };
 
-pub const Micfilfclkdiv = packed struct(u32) {
+pub const Micfilfclkdiv = bitpack struct(u32) {
     div: u3 = 0,
     reserved0: u26 = 2,
     reset: bool = false,
@@ -422,7 +422,7 @@ pub const Flexcanclksel = enum(u32) {
     no_clock = 7
 };
 
-pub const Ewm0clksel = packed struct(u32) {
+pub const Ewm0clksel = bitpack struct(u32) {
     sel: bool = true,
     reserved0: u31 = 0,
 };
@@ -433,7 +433,7 @@ pub const Wdt1clksel = enum(u32) {
     clk_1m = 3
 };
 
-pub const Wdt1clkdiv = packed struct(u32) {
+pub const Wdt1clkdiv = bitpack struct(u32) {
     div: u6 = 0,
     reserved0: u23 = 2,
     reset: bool = false,
@@ -458,7 +458,7 @@ pub const Cmpfclksel = enum(u32) {
     no_clock = 7
 };
 
-pub const Cmpfclkdiv = packed struct(u32) {
+pub const Cmpfclkdiv = bitpack struct(u32) {
     div: u4 = 0,
     reserved0: u25 = 2,
     reset: bool = false,
@@ -466,14 +466,14 @@ pub const Cmpfclkdiv = packed struct(u32) {
     unstab: bool = false,
 };
 
-pub const Cpustat = packed struct(u32) {
+pub const Cpustat = bitpack struct(u32) {
     cpu0sleeping: bool,
     reserved0: u1,
     cpu0lockup: bool,
     reserved1: u29,
 };
 
-pub const LpcacCtrl = packed struct(u32) {
+pub const LpcacCtrl = bitpack struct(u32) {
     dis_lpcac: bool = true,
     clr_lpcac: bool = false,
     frc_no_alloc: bool = false,
@@ -501,7 +501,7 @@ pub const Saiclksel = enum(u32) {
     no_clock = 7
 };
 
-pub const Saiclkdiv = packed struct(u32) {
+pub const Saiclkdiv = bitpack struct(u32) {
     div: u3 = 0,
     reserved0: u26 = 2,
     reset: bool = false,
@@ -509,7 +509,7 @@ pub const Saiclkdiv = packed struct(u32) {
     unstab: bool = false,
 };
 
-pub const ClockCtrl = packed struct(u32) {
+pub const ClockCtrl = bitpack struct(u32) {
     reserved0: u1 = 1,
     clkin_ena_fm_usbh_lpt: bool = false,
     fro1mhz_ena: bool = false,
@@ -520,7 +520,7 @@ pub const ClockCtrl = packed struct(u32) {
     reserved1: u25 = 1,
 };
 
-pub const Autoclkgateoverride = packed struct(u32) {
+pub const Autoclkgateoverride = bitpack struct(u32) {
     reserved0: u2 = 3,
     ramb_ctrl: bool = true,
     ramc_ctrl: bool = true,
@@ -529,13 +529,13 @@ pub const Autoclkgateoverride = packed struct(u32) {
     reserved1: u26 = 1023,
 };
 
-pub const Autoclkgateoverridec = packed struct(u32) {
+pub const Autoclkgateoverridec = bitpack struct(u32) {
     reserved0: u30 = 0,
     ramx: bool = false,
     rama: bool = false,
 };
 
-pub const Pwm0subctl = packed struct(u32) {
+pub const Pwm0subctl = bitpack struct(u32) {
     clk0_en: bool = false,
     clk1_en: bool = false,
     clk2_en: bool = false,
@@ -548,7 +548,7 @@ pub const Pwm0subctl = packed struct(u32) {
     reserved1: u16 = 0,
 };
 
-pub const Pwm1subctl = packed struct(u32) {
+pub const Pwm1subctl = bitpack struct(u32) {
     clk0_en: bool = false,
     clk1_en: bool = false,
     clk2_en: bool = false,
@@ -561,7 +561,7 @@ pub const Pwm1subctl = packed struct(u32) {
     reserved1: u16 = 0,
 };
 
-pub const Ctimerglobalstarten = packed struct(u32) {
+pub const Ctimerglobalstarten = bitpack struct(u32) {
     ctimer0_clk_en: bool = false,
     ctimer1_clk_en: bool = false,
     ctimer2_clk_en: bool = false,
@@ -570,20 +570,20 @@ pub const Ctimerglobalstarten = packed struct(u32) {
     reserved0: u27 = 0,
 };
 
-pub const EccEnableCtrl = packed struct(u32) {
+pub const EccEnableCtrl = bitpack struct(u32) {
     rama_ecc_enable: bool = true,
     ramb_ramx_ecc_enable: bool = true,
     ramd_ramc_ecc_enable: bool = false,
     reserved0: u29 = 0,
 };
 
-pub const DeviceId0 = packed struct(u32) {
+pub const DeviceId0 = bitpack struct(u32) {
     reserved0: u20,
     rom_rev_minor: u4,
     reserved1: u8,
 };
 
-pub const Dieid = packed struct(u32) {
+pub const Dieid = bitpack struct(u32) {
     minor_revision: u4,
     major_revision: u4,
     mco_num_in_die_id: u20,

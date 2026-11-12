@@ -5,7 +5,7 @@ pub const SupcVregSel = enum(u2) {
     buck = 1
 };
 
-pub const SupcVreg = packed struct(u32) {
+pub const SupcVreg = bitpack struct(u32) {
     reserved: u1 = 0,
     enable: bool = true,
     sel: SupcVregSel = .ldo,

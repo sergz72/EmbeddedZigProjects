@@ -5,7 +5,7 @@ const LPTIM4_BASE = 0x44004C00;
 const LPTIM5_BASE = 0x44005000;
 const LPTIM6_BASE = 0x44005400;
 
-pub const LptimIr = packed struct(u32) {
+pub const LptimIr = bitpack struct(u32) {
     cc1if: bool = false,
     arrm: bool = false,
     exttrig: bool = false,
@@ -26,7 +26,7 @@ pub const LptimIr = packed struct(u32) {
     reserved3: u7 = 0,
 };
 
-pub const LptimDier = packed struct(u32) {
+pub const LptimDier = bitpack struct(u32) {
     cc1ie: bool = false,
     arrmie: bool = false,
     exttrigie: bool = false,
@@ -82,7 +82,7 @@ pub const Trigen = enum(u2) {
     both_edges = 3
 };
 
-pub const LptimCfgr = packed struct(u32) {
+pub const LptimCfgr = bitpack struct(u32) {
     cksel: bool = false,
     ckpol: Ckpol = .rising_edge,
     ckflt: Ckflt = .any_level_change,
@@ -103,7 +103,7 @@ pub const LptimCfgr = packed struct(u32) {
     reserved4: u7 = 0,
 };
 
-pub const LptimCr = packed struct(u32) {
+pub const LptimCr = bitpack struct(u32) {
     enable: bool = false,
     sngstrt: bool = false,
     cntstrt: bool = false,
@@ -112,7 +112,7 @@ pub const LptimCr = packed struct(u32) {
     reserved0: u27 = 0,
 };
 
-pub const LptimCfgr2 = packed struct(u32) {
+pub const LptimCfgr2 = bitpack struct(u32) {
     in1sel: u2 = 0,
     reserved0: u2 = 0,
     in2sel: u2 = 0,
@@ -130,7 +130,7 @@ pub const Icpsc = enum(u2) {
     div8 = 3
 };
 
-pub const LptimCcmr1 = packed struct(u32) {
+pub const LptimCcmr1 = bitpack struct(u32) {
     cc1sel: bool = false,
     cc1e: bool = false,
     cc1p: u2 = 0,

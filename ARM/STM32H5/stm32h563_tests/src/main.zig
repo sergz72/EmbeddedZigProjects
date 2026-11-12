@@ -13,6 +13,8 @@ const i2c_commands = @import("i2c_commands");
 const spi_commands = @import("spi_commands");
 const trng_commands = @import("trng_commands");
 const crc_commands = @import("crc_commands");
+const veml7700_commands = @import("veml7700_commands");
+const scd4x_commands = @import("scd4x_commands");
 const rng = @import("rng");
 const crc = @import("crc");
 
@@ -85,6 +87,8 @@ export fn main() callconv(.c) noreturn {
     spi_commands.registerCommands(hal.sh, hal.spiSendReceive) catch { while (true){} };
     trng_commands.registerCommands(hal.sh, &rng_commands) catch { while (true){} };
     crc_commands.registerCommands(hal.sh, &crc_generators) catch { while (true){} };
+    veml7700_commands.registerCommands(hal.sh, &hal.veml_device) catch { while (true){} };
+    scd4x_commands.registerCommands(hal.sh, &hal.scd_device) catch { while (true){} };
 
     _ = usart_writer.usart_writer.writer.write(hal.getResetCause()) catch { while (true){} };
 

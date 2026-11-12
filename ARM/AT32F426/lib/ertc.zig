@@ -3,7 +3,7 @@ const ERTC_BASE = 0x40002800;
 const ERTC_UNLOCK1 = 0xCA;
 const ERTC_UNLOCK2 = 0x53;
 
-pub const ErtcTime = packed struct(u32) {
+pub const ErtcTime = bitpack struct(u32) {
     su: u4 = 0,
     st: u3 = 0,
     reserved1: u1 = 0,
@@ -26,7 +26,7 @@ pub const ErtcWeekday = enum(u3) {
     Sunday = 7
 };
 
-pub const ErtcDate = packed struct(u32) {
+pub const ErtcDate = bitpack struct(u32) {
     du: u4 = 1,
     dt: u2 = 0,
     reserved1: u2 = 0,
@@ -43,7 +43,7 @@ pub const ErtcOutsel = enum(u2) {
     alarm_a = 1
 };
 
-pub const ErtcCtrl = packed struct(u32) {
+pub const ErtcCtrl = bitpack struct(u32) {
     reserved1: u3 = 0,
     tsedg: bool = false,
     rcden: bool = false,
@@ -66,7 +66,7 @@ pub const ErtcCtrl = packed struct(u32) {
     reserved7: u8 = 0
 };
 
-pub const ErtcSts = packed struct(u32) {
+pub const ErtcSts = bitpack struct(u32) {
     alawf: bool = true,
     reserved1: u2 = 0,
     tadjf: bool = false,
@@ -84,14 +84,14 @@ pub const ErtcSts = packed struct(u32) {
     reserved7: u15 = 0
 };
 
-pub const ErtcDiv = packed struct(u32) {
+pub const ErtcDiv = bitpack struct(u32) {
     divb: u15 = 0xFF,
     reserved1: u1 = 0,
     diva: u7 = 0x7F,
     reserved3: u9 = 0
 };
 
-pub const ErtcAlarm = packed struct(u32) {
+pub const ErtcAlarm = bitpack struct(u32) {
     su: u4 = 0,
     st: u3 = 0,
     mask1: bool = false,
@@ -108,13 +108,13 @@ pub const ErtcAlarm = packed struct(u32) {
     mask4: bool = false
 };
 
-pub const ErtcTadj = packed struct(u32) {
+pub const ErtcTadj = bitpack struct(u32) {
     decsbs: u15 = 0,
     reserved1: u16 = 0,
     add1s: bool = false
 };
 
-pub const ErtcTstm = packed struct(u32) {
+pub const ErtcTstm = bitpack struct(u32) {
     su: u4,
     st: u3,
     reserved1: u1,
@@ -127,7 +127,7 @@ pub const ErtcTstm = packed struct(u32) {
     reserved3: u9
 };
 
-pub const ErtcTsdt = packed struct(u32) {
+pub const ErtcTsdt = bitpack struct(u32) {
     du: u4,
     dt: u2,
     reserved1: u2,
@@ -137,7 +137,7 @@ pub const ErtcTsdt = packed struct(u32) {
     reserved2: u16
 };
 
-pub const ErtcScal = packed struct(u32) {
+pub const ErtcScal = bitpack struct(u32) {
     dec: u9 = 0,
     reserved1: u4 = 0,
     cal16: bool = false,
@@ -146,7 +146,7 @@ pub const ErtcScal = packed struct(u32) {
     reserved2: u16 = 0
 };
 
-pub const ErtcTamp = packed struct(u32) {
+pub const ErtcTamp = bitpack struct(u32) {
     tp1en: bool = false,
     tp1edg: bool = false,
     tpien: bool = false,
@@ -161,7 +161,7 @@ pub const ErtcTamp = packed struct(u32) {
     reserved6: u13 = 0
 };
 
-pub const ErtcAlasbs = packed struct(u32) {
+pub const ErtcAlasbs = bitpack struct(u32) {
     sbs: u15 = 0,
     reserved: u9 = 0,
     sbsmsk: u4 = 0,

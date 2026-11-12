@@ -1,6 +1,6 @@
 const GCLK_BASE = 0x40001c00;
 
-pub const GclkSyncBusy = packed struct(u32) {
+pub const GclkSyncBusy = bitpack struct(u32) {
     swrst: bool,
     reserved: u1,
     genctrl0: bool,
@@ -22,7 +22,7 @@ pub const GclkSrc = enum(u5) {
     fdpll96m = 7
 };
 
-pub const GclkGenCtrl = packed struct(u32) {
+pub const GclkGenCtrl = bitpack struct(u32) {
     src: GclkSrc,
     reserved: u3 = 0,
     genen: bool,
@@ -35,7 +35,7 @@ pub const GclkGenCtrl = packed struct(u32) {
     div: u16 = 0
 };
 
-pub const GclkPchCtrl = packed struct(u32) {
+pub const GclkPchCtrl = bitpack struct(u32) {
     gen: u3 = 0,
     reserved: u3 = 0,
     chen: bool = false,

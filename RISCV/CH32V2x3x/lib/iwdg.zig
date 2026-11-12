@@ -18,7 +18,7 @@ pub const IwdgDiv = enum(u16) {
     div256 = 6
 };
 
-pub const IwdgStatr = packed struct(u16) {
+pub const IwdgStatr = bitpack struct(u16) {
     pvu: bool,
     rvu: bool,
     reserved1: u14

@@ -1,6 +1,6 @@
 pub const IOMUX_BASE = 0x40010000;
 
-pub const IomuxEvtout = packed struct(u32) {
+pub const IomuxEvtout = bitpack struct(u32) {
     selpin: u4 = 0,
     selport: u3 = 0,
     evoen: bool = false,
@@ -15,7 +15,7 @@ pub const ExintPort = enum(u32) {
     E = 4
 };
 
-pub const IomuxRemap = packed struct(u32) {
+pub const IomuxRemap = bitpack struct(u32) {
     spi1_mux_l: u1 = 0,
     i2c1_mux: bool = false,
     usart1_mux: bool = false,
@@ -43,7 +43,7 @@ pub const IomuxRemap = packed struct(u32) {
     spi1_mux_h: bool = false
 };
 
-pub const IomuxRemap2 = packed struct(u32) {
+pub const IomuxRemap2 = bitpack struct(u32) {
     tmr15_mux: bool = false,
     reserved1: u4 = 0,
     tmr9_mux: bool = false,
@@ -60,12 +60,12 @@ pub const IomuxRemap2 = packed struct(u32) {
     reserved3: u10 = 0
 };
 
-pub const IomuxRemap3 = packed struct(u32) {
+pub const IomuxRemap3 = bitpack struct(u32) {
     tmr9_gmux: u4 = 0,
     reserved1: u28 = 0
 };
 
-pub const IomuxRemap4 = packed struct(u32) {
+pub const IomuxRemap4 = bitpack struct(u32) {
     tmr1_gmux: u4 = 0,
     tmr2_gmux: u2 = 0,
     tmr2itr1_gmux: u2 = 0,
@@ -76,7 +76,7 @@ pub const IomuxRemap4 = packed struct(u32) {
     reserved2: u12 = 0
 };
 
-pub const IomuxRemap5 = packed struct(u32) {
+pub const IomuxRemap5 = bitpack struct(u32) {
     usart5_gmux: u4 = 0,
     i2c1_gmux: u4 = 0,
     reserved1: u4 = 0,
@@ -87,7 +87,7 @@ pub const IomuxRemap5 = packed struct(u32) {
     spi4_gmux: u4 = 0
 };
 
-pub const IomuxRemap6 = packed struct(u32) {
+pub const IomuxRemap6 = bitpack struct(u32) {
     can1_gmux: u4 = 0,
     can2_gmux: u4 = 0,
     reserved1: u4 = 0,
@@ -98,7 +98,7 @@ pub const IomuxRemap6 = packed struct(u32) {
     uart4_gmux: u4 = 0,
 };
 
-pub const IomuxRemap7 = packed struct(u32) {
+pub const IomuxRemap7 = bitpack struct(u32) {
     ext_spim_gmux: u3 = 0,
     ext_spim_gen: bool = false,
     adc1_etp_gmux: bool = false,
@@ -116,7 +116,7 @@ pub const IomuxRemap7 = packed struct(u32) {
     reserved5: u4 = 0
 };
 
-pub const IomuxRemap8 = packed struct(u32) {
+pub const IomuxRemap8 = bitpack struct(u32) {
     reserved1: u16 = 0,
     emac_gmux: u2 = 0,
     mii_rmii_sel_gmux: bool = false,

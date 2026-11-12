@@ -1,17 +1,17 @@
-pub const GprcmPwren = packed struct(u32) {
+pub const GprcmPwren = bitpack struct(u32) {
     enable: bool = false,
     reserved: u23 = 0,
     key: u8 = 0x26
 };
 
-pub const GprcmRstctl = packed struct(u32) {
+pub const GprcmRstctl = bitpack struct(u32) {
     resetassert: bool = false,
     resetstkyclr: bool = false,
     reserved: u22 = 0,
     key: u8 = 0xB1
 };
 
-pub const Clksel4 = packed struct(u32) {
+pub const Clksel4 = bitpack struct(u32) {
     reserved: u1 = 0,
     lfclksel: bool = false,
     mfclksel: bool = false,
@@ -19,7 +19,7 @@ pub const Clksel4 = packed struct(u32) {
     reserved2: u28 = 0
 };
 
-pub const Clksel3 = packed struct(u32) {
+pub const Clksel3 = bitpack struct(u32) {
     reserved: u1 = 0,
     lfclksel: bool = false,
     mfclksel: bool = false,
@@ -27,7 +27,7 @@ pub const Clksel3 = packed struct(u32) {
     reserved2: u28 = 0
 };
 
-pub const Clksel2 = packed struct(u32) {
+pub const Clksel2 = bitpack struct(u32) {
     reserved: u2 = 0,
     mfclksel: bool = false,
     busclksel: bool = false,
@@ -45,12 +45,12 @@ pub const ClkDivRatio = enum(u3) {
     div8 = 7
 };
 
-pub const ClkDiv = packed struct(u32) {
+pub const ClkDiv = bitpack struct(u32) {
     ratio: ClkDivRatio = .div1,
     reserved: u29 = 0
 };
 
-pub const PdbgCtl = packed struct(u32) {
+pub const PdbgCtl = bitpack struct(u32) {
     free: bool = true,
     soft: bool = true,
     reserved: u30 = 0

@@ -6,7 +6,7 @@ pub const FlashWaitStates = enum(u4) {
     upto80Mhz = 2
 };
 
-pub const SysctlMclkCfg = packed struct(u32) {
+pub const SysctlMclkCfg = bitpack struct(u32) {
     mdiv: u4 = 0,
     udiv: u2 = 1,
     reserved: u2 = 0,

@@ -16,7 +16,7 @@ pub const CrcRevid = enum(u2) {
     word = 3
 };
 
-pub const CrcCtrl = packed struct(u32) {
+pub const CrcCtrl = bitpack struct(u32) {
     rst: bool = false,
     reserved: u2 = 0,
     poly_size: CrcPolySize = ._32,

@@ -13,7 +13,7 @@ pub const DbgmcuRevId = enum(u16) {
     X = 0x1007
 };
 
-pub const DbgmcuIdcode = packed struct(u32) {
+pub const DbgmcuIdcode = bitpack struct(u32) {
     dev_id: DbgmcuDevId,
     reserved0: u4,
     rev_id: DbgmcuRevId
@@ -26,7 +26,7 @@ pub const DbgmcuTraceMode = enum(u2) {
     sync_port_width_4 = 3
 };
 
-pub const DbgmcuCr = packed struct(u32) {
+pub const DbgmcuCr = bitpack struct(u32) {
     reserved0: u1 = 0,
     dbg_stop: bool = false,
     dbg_standby: bool = false,
@@ -39,7 +39,7 @@ pub const DbgmcuCr = packed struct(u32) {
     reserved3: u15 = 0,
 };
 
-pub const DbgmcuApb1lfzr = packed struct(u32) {
+pub const DbgmcuApb1lfzr = bitpack struct(u32) {
     dbg_tim2_stop: bool = false,
     dbg_tim3_stop: bool = false,
     dbg_tim4_stop: bool = false,
@@ -59,13 +59,13 @@ pub const DbgmcuApb1lfzr = packed struct(u32) {
     reserved2: u8 = 0,
 };
 
-pub const DbgmcuApb1hfzr = packed struct(u32) {
+pub const DbgmcuApb1hfzr = bitpack struct(u32) {
     reserved0: u5 = 0,
     dbg_lptim2_stop: bool = false,
     reserved1: u26 = 0,
 };
 
-pub const DbgmcuApb2fzr = packed struct(u32) {
+pub const DbgmcuApb2fzr = bitpack struct(u32) {
     reserved0: u11 = 0,
     dbg_tim1_stop: bool = false,
     reserved1: u1 = 0,
@@ -77,7 +77,7 @@ pub const DbgmcuApb2fzr = packed struct(u32) {
     reserved3: u13 = 0,
 };
 
-pub const DbgmcuApb3fzr = packed struct(u32) {
+pub const DbgmcuApb3fzr = bitpack struct(u32) {
     reserved0: u10 = 0,
     dbg_i2c3_stop: bool = false,
     dbg_i2c4_stop: bool = false,
@@ -92,7 +92,7 @@ pub const DbgmcuApb3fzr = packed struct(u32) {
     reserved3: u1 = 0,
 };
 
-pub const DbgmcuAhb1fzr = packed struct(u32) {
+pub const DbgmcuAhb1fzr = bitpack struct(u32) {
     dbg_gpdma1_0_stop: bool = false,
     dbg_gpdma1_1_stop: bool = false,
     dbg_gpdma1_2_stop: bool = false,
@@ -127,64 +127,64 @@ pub const DbgmcuAhb1fzr = packed struct(u32) {
     dbg_gpdma2_15_stop: bool = false,
 };
 
-pub const DbgmcuSr = packed struct(u32) {
+pub const DbgmcuSr = bitpack struct(u32) {
     ap_present: u16 = 3,
     ap_enabled: u16 = 1,
 };
 
-pub const DbgmcuDbgAuthAck = packed struct(u32) {
+pub const DbgmcuDbgAuthAck = bitpack struct(u32) {
     host_ack: bool,
     dev_ack: bool,
     reserved0: u30,
 };
 
-pub const DbgmcuPidr4 = packed struct(u32) {
+pub const DbgmcuPidr4 = bitpack struct(u32) {
     jep106con: u4,
     size: u4,
     reserved0: u24,
 };
 
-pub const DbgmcuPidr0 = packed struct(u32) {
+pub const DbgmcuPidr0 = bitpack struct(u32) {
     partnum: u8,
     reserved0: u24,
 };
 
-pub const DbgmcuPidr1 = packed struct(u32) {
+pub const DbgmcuPidr1 = bitpack struct(u32) {
     partnum: u4,
     jep106id: u4,
     reserved0: u24
 };
 
-pub const DbgmcuPidr2 = packed struct(u32) {
+pub const DbgmcuPidr2 = bitpack struct(u32) {
     jep106id: u3,
     jedec: bool,
     revision: u4,
     reserved0: u24
 };
 
-pub const DbgmcuPidr3 = packed struct(u32) {
+pub const DbgmcuPidr3 = bitpack struct(u32) {
     cmod: u4,
     revand: u4,
     reserved0: u24
 };
 
-pub const DbgmcuCidr0 = packed struct(u32) {
+pub const DbgmcuCidr0 = bitpack struct(u32) {
     preamble: u8,
     reserved0: u24
 };
 
-pub const DbgmcuCidr1 = packed struct(u32) {
+pub const DbgmcuCidr1 = bitpack struct(u32) {
     preamble: u4,
     class: u4,
     reserved0: u24,
 };
 
-pub const DbgmcuCidr2 = packed struct(u32) {
+pub const DbgmcuCidr2 = bitpack struct(u32) {
     preamble: u8,
     reserved0: u24,
 };
 
-pub const DbgmcuCidr3 = packed struct(u32) {
+pub const DbgmcuCidr3 = bitpack struct(u32) {
     preamble: u8,
     reserved0: u24,
 };

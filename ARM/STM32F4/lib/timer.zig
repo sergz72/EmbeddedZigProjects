@@ -13,7 +13,7 @@ const TIM12_BASE: usize = 0x40001800;
 const TIM13_BASE: usize = 0x40001C00;
 const TIM14_BASE: usize = 0x40002000;
 
-pub const TimerCr1 = packed struct(u16) {
+pub const TimerCr1 = bitpack struct(u16) {
     cen: bool = false,
     udis: bool = false,
     urs: bool = false,
@@ -25,7 +25,7 @@ pub const TimerCr1 = packed struct(u16) {
     reserved: u6 = 0
 };
 
-pub const TimerCr2 = packed struct(u16) {
+pub const TimerCr2 = bitpack struct(u16) {
     ccpc: bool = false,
     reserved: u1 = 0,
     ccus: bool = false,
@@ -42,7 +42,7 @@ pub const TimerCr2 = packed struct(u16) {
     reserved2: u1 = 0
 };
 
-pub const TimerSmcr = packed struct(u16) {
+pub const TimerSmcr = bitpack struct(u16) {
     sms: u3 = 0,
     reserved: u1 = 0,
     ts: u3 = 0,
@@ -53,7 +53,7 @@ pub const TimerSmcr = packed struct(u16) {
     etp: bool = false
 };
 
-pub const TimerDier = packed struct(u16) {
+pub const TimerDier = bitpack struct(u16) {
     uie: bool = false,
     cc1ie: bool = false,
     cc2ie: bool = false,
@@ -72,7 +72,7 @@ pub const TimerDier = packed struct(u16) {
     reserved: u1 = 0
 };
 
-pub const TimerSr = packed struct(u16) {
+pub const TimerSr = bitpack struct(u16) {
     uif: bool = false,
     cc1if: bool = false,
     cc2if: bool = false,
@@ -89,7 +89,7 @@ pub const TimerSr = packed struct(u16) {
     reserved2: u3 = 0
 };
 
-pub const TimerEgr = packed struct(u16) {
+pub const TimerEgr = bitpack struct(u16) {
     ug: bool = false,
     cc1g: bool = false,
     cc2g: bool = false,
@@ -101,7 +101,7 @@ pub const TimerEgr = packed struct(u16) {
     reserved: u8 = 0
 };
 
-pub const TimerCcmr1Capture = packed struct(u16) {
+pub const TimerCcmr1Capture = bitpack struct(u16) {
     cc1s: u2 = 0,
     ic1psc: u2 = 0,
     ic1f: u4 = 0,
@@ -110,7 +110,7 @@ pub const TimerCcmr1Capture = packed struct(u16) {
     ic2f: u4 = 0
 };
 
-pub const TimerCcmr1Compare = packed struct(u16) {
+pub const TimerCcmr1Compare = bitpack struct(u16) {
     cc1s: u2 = 0,
     oc1fe: bool = false,
     oc1pe: bool = false,
@@ -128,7 +128,7 @@ pub const TimerCcmr1 = extern union {
     compare: TimerCcmr1Compare
 };
 
-pub const TimerCcmr2Capture = packed struct(u16) {
+pub const TimerCcmr2Capture = bitpack struct(u16) {
     cc3s: u2 = 0,
     ic3psc: u2 = 0,
     ic3f: u4 = 0,
@@ -137,7 +137,7 @@ pub const TimerCcmr2Capture = packed struct(u16) {
     ic4f: u4 = 0
 };
 
-pub const TimerCcmr2Compare = packed struct(u16) {
+pub const TimerCcmr2Compare = bitpack struct(u16) {
     cc3s: u2 = 0,
     oc3fe: bool = false,
     oc3pe: bool = false,
@@ -155,7 +155,7 @@ pub const TimerCcmr2 = extern union {
     compare: TimerCcmr2Compare
 };
 
-pub const TimerCcer = packed struct(u16) {
+pub const TimerCcer = bitpack struct(u16) {
     cc1e: bool = false,
     cc1p: bool = false,
     cc1ne: bool = false,
@@ -174,7 +174,7 @@ pub const TimerCcer = packed struct(u16) {
     cc4np: bool = false
 };
 
-pub const TimerBdtr = packed struct(u16) {
+pub const TimerBdtr = bitpack struct(u16) {
     dtg: u8 = 0,
     lock: u2 = 0,
     ossi: bool = false,
@@ -185,7 +185,7 @@ pub const TimerBdtr = packed struct(u16) {
     moe: bool = false
 };
 
-pub const TimerDcr = packed struct(u16) {
+pub const TimerDcr = bitpack struct(u16) {
     dba: u5 = 0,
     reserved: u3 = 0,
     dbl: u5 = 0,

@@ -25,7 +25,7 @@ pub const GpioInit = struct {
     function: GpioFunction
 };
 
-pub const GpioScr = packed struct(u32) {
+pub const GpioScr = bitpack struct(u32) {
     iosb: u16 = 0,
     iocb: u16 = 0
 };

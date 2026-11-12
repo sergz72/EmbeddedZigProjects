@@ -16,7 +16,7 @@ pub const Derdycfg = enum(u3) {
     de_bidir = 7
 };
 
-pub const PssiCr = packed struct(u32) {
+pub const PssiCr = bitpack struct(u32) {
     reserved0: u5 = 0,
     ckpol: bool = false,
     depol: bool = false,
@@ -33,38 +33,38 @@ pub const PssiCr = packed struct(u32) {
     outen: bool = false,
 };
 
-pub const PssiSr = packed struct(u32) {
+pub const PssiSr = bitpack struct(u32) {
     reserved0: u2,
     rtt4b: bool,
     rtt1b: bool,
     reserved1: u28,
 };
 
-pub const PssiRis = packed struct(u32) {
+pub const PssiRis = bitpack struct(u32) {
     reserved0: u1,
     ovr_ris: bool,
     reserved1: u30,
 };
 
-pub const PssiIer = packed struct(u32) {
+pub const PssiIer = bitpack struct(u32) {
     reserved0: u1 = 0,
     ovr_ie: bool = false,
     reserved1: u30 = 0,
 };
 
-pub const PssiMis = packed struct(u32) {
+pub const PssiMis = bitpack struct(u32) {
     reserved0: u1,
     ovr_mis: bool,
     reserved1: u30,
 };
 
-pub const PssiIcr = packed struct(u32) {
+pub const PssiIcr = bitpack struct(u32) {
     reserved0: u1 = 0,
     ovr_isc: bool = false,
     reserved1: u30 = 0,
 };
 
-pub const PssiDr = packed struct(u32) {
+pub const PssiDr = bitpack struct(u32) {
     byte0: u8 = 0,
     byte1: u8 = 0,
     byte2: u8 = 0,

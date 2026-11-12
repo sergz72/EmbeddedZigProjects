@@ -1,6 +1,6 @@
 const RCU_BASE: usize = 0x40021000;
 
-pub const RcuCtl0 = packed struct(u32) {
+pub const RcuCtl0 = bitpack struct(u32) {
     irc8men: bool,
     irc8mstb: bool,
     reserved: u1,
@@ -53,7 +53,7 @@ pub const RcuCfgCkout = enum(u3) {
     plldiv2 = 7
 };
 
-pub const RcuCfg0 = packed struct(u32) {
+pub const RcuCfg0 = bitpack struct(u32) {
     scs: RcuCfg0Sw = RcuCfg0Sw.irc8m,
     scss: RcuCfg0Sw = RcuCfg0Sw.irc8m,
     ahbpsc: RcuCfgAhbPsc = RcuCfgAhbPsc.off,
@@ -70,12 +70,12 @@ pub const RcuCfg0 = packed struct(u32) {
     plldv: bool = false
 };
 
-pub const RcuCfg1 = packed struct(u32) {
+pub const RcuCfg1 = bitpack struct(u32) {
     predv: u3 = 0,
     reserved: u29 = 0
 };
 
-pub const RcuCfg2 = packed struct(u32) {
+pub const RcuCfg2 = bitpack struct(u32) {
     usart0sel: u2 = 0,
     reserved: u6 = 0,
     adcsel: bool = false,
@@ -85,7 +85,7 @@ pub const RcuCfg2 = packed struct(u32) {
     adcpsc2: bool = false
 };
 
-pub const RcuAhben = packed struct(u32) {
+pub const RcuAhben = bitpack struct(u32) {
     dmaen: bool = false,
     reserved: u1 = 0,
     sramspen: bool = true,
@@ -102,7 +102,7 @@ pub const RcuAhben = packed struct(u32) {
     reserved6: u9 = 0
 };
 
-pub const RcuApb2en = packed struct(u32) {
+pub const RcuApb2en = bitpack struct(u32) {
     cfgcmpen: bool = false,
     reserved: u8 = 0,
     adcen: bool = false,
@@ -120,7 +120,7 @@ pub const RcuApb2en = packed struct(u32) {
     reserved7: u9 = 0
 };
 
-pub const RcuApb1en = packed struct(u32) {
+pub const RcuApb1en = bitpack struct(u32) {
     reserved: u1 = 0,
     timer2en: bool = false,
     reserved2: u2 = 0,
@@ -148,7 +148,7 @@ pub const RcuBdctlRtcsrc = enum(u2) {
     xtal_div32 = 3
 };
 
-pub const RcuBdctl = packed struct(u32) {
+pub const RcuBdctl = bitpack struct(u32) {
     lxtalen: bool = false,
     lxtalstb: bool = false,
     lxtalbps: bool = false,
@@ -161,7 +161,7 @@ pub const RcuBdctl = packed struct(u32) {
     reserved3: u15 = 0,
 };
 
-pub const RcuCtl1 = packed struct(u32) {
+pub const RcuCtl1 = bitpack struct(u32) {
     irc28men: bool = false,
     irc28mstb: bool = false,
     reserved: u1 = 0,
@@ -170,7 +170,7 @@ pub const RcuCtl1 = packed struct(u32) {
     reserved2: u16 = 0
 };
 
-pub const RcuRstsck = packed struct(u32) {
+pub const RcuRstsck = bitpack struct(u32) {
     irc40ken: bool = false,
     irc40kstb: bool = false,
     reserved: u21 = 0,

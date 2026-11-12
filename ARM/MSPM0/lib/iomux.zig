@@ -13,7 +13,7 @@ pub const IomuxPf = enum(u6) {
     function9 = 9
 };
 
-pub const IomuxPinCm = packed struct(u32) {
+pub const IomuxPinCm = bitpack struct(u32) {
     pf: IomuxPf = .unconnected,
     reserved: u1 = 0,
     pc: bool = false,

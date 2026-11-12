@@ -27,7 +27,7 @@ pub const UsbUsageType = enum(u2) {
     interrupt = 3
 };
 
-pub const UsbChepr = packed struct(u32) {
+pub const UsbChepr = bitpack struct(u32) {
     ea: u4 = 0,
     stattx: u2 = 0,
     dtogtx: bool = false,
@@ -48,7 +48,7 @@ pub const UsbChepr = packed struct(u32) {
     reserved0: u1 = 0,
 };
 
-pub const UsbCntr = packed struct(u32) {
+pub const UsbCntr = bitpack struct(u32) {
     usbrst: bool = true,
     pdwn: bool = true,
     susprdy: bool = false,
@@ -71,7 +71,7 @@ pub const UsbCntr = packed struct(u32) {
     host: bool = false,
 };
 
-pub const UsbIstr = packed struct(u32) {
+pub const UsbIstr = bitpack struct(u32) {
     idn: u4 = 0,
     dir: bool = false,
     reserved0: u2 = 0,
@@ -92,7 +92,7 @@ pub const UsbIstr = packed struct(u32) {
     reserved2: u1 = 0,
 };
 
-pub const UsbFnr = packed struct(u32) {
+pub const UsbFnr = bitpack struct(u32) {
     fnum: u11 = 0,
     lsof: u2 = 0,
     lck: bool = false,
@@ -101,13 +101,13 @@ pub const UsbFnr = packed struct(u32) {
     reserved0: u16 = 0,
 };
 
-pub const UsbDaddr = packed struct(u32) {
+pub const UsbDaddr = bitpack struct(u32) {
     add: u7 = 0,
     ef: bool = false,
     reserved0: u24 = 0,
 };
 
-pub const UsbLpmcsr = packed struct(u32) {
+pub const UsbLpmcsr = bitpack struct(u32) {
     lpmen: bool = false,
     lpmack: bool = false,
     reserved0: u1 = 0,
@@ -116,7 +116,7 @@ pub const UsbLpmcsr = packed struct(u32) {
     reserved1: u24 = 0,
 };
 
-pub const UsbBcdr = packed struct(u32) {
+pub const UsbBcdr = bitpack struct(u32) {
     bcden: bool = false,
     dcden: bool = false,
     pden: bool = false,
@@ -130,13 +130,13 @@ pub const UsbBcdr = packed struct(u32) {
     reserved1: u16 = 0,
 };
 
-pub const UsbChepTx = packed struct(u32) {
+pub const UsbChepTx = bitpack struct(u32) {
     addr_tx: u16,
     count_tx: u10 = 0,
     reserved0: u6 = 0
 };
 
-pub const UsbChepRx = packed struct(u32) {
+pub const UsbChepRx = bitpack struct(u32) {
     addr_rx: u16,
     count_rx: u10 = 0,
     num_block: u5 = 0,

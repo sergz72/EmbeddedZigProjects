@@ -13,7 +13,7 @@ pub const I2cError = error {
     TimeoutWaitMasterByteTransitted
 };
 
-pub const I2cCtlr1 = packed struct(u16) {
+pub const I2cCtlr1 = bitpack struct(u16) {
     pe: bool = false,
     smbus: bool = false,
     reserved: u1 = 0,
@@ -32,7 +32,7 @@ pub const I2cCtlr1 = packed struct(u16) {
     swrst: bool = false
 };
 
-pub const I2cCtlr2 = packed struct(u16) {
+pub const I2cCtlr2 = bitpack struct(u16) {
     freq: u6 = 0,
     reserved: u2 = 0,
     iterren: bool = false,
@@ -43,19 +43,19 @@ pub const I2cCtlr2 = packed struct(u16) {
     reserved2: u3 = 0
 };
 
-pub const I2cOaddr1 = packed struct(u16) {
+pub const I2cOaddr1 = bitpack struct(u16) {
     address: u10 = 0,
     reserved: u5 = 0,
     addmode_10bit: bool = false
 };
 
-pub const I2cOaddr2 = packed struct(u16) {
+pub const I2cOaddr2 = bitpack struct(u16) {
     endual: bool = false,
     address2: u7 = 0,
     reserved: u8 = 0
 };
 
-pub const I2cStar1 = packed struct(u16) {
+pub const I2cStar1 = bitpack struct(u16) {
     sb: bool,
     addr: bool,
     btf: bool,
@@ -74,7 +74,7 @@ pub const I2cStar1 = packed struct(u16) {
     smbalert: bool
 };
 
-pub const I2cStar2 = packed struct(u16) {
+pub const I2cStar2 = bitpack struct(u16) {
     msl: bool,
     busy: bool,
     tra: bool,
@@ -86,14 +86,14 @@ pub const I2cStar2 = packed struct(u16) {
     pec: u8
 };
 
-pub const I2cCkCfgr = packed struct(u16) {
+pub const I2cCkCfgr = bitpack struct(u16) {
     ccr: u12 = 0,
     reserved: u2 = 0,
     duty_16_9: bool = false,
     fast_mode: bool = false
 };
 
-pub const I2cCkRtr = packed struct(u16) {
+pub const I2cCkRtr = bitpack struct(u16) {
     trise: u6 = 2,
     reserved: u10 = 0
 };

@@ -1,14 +1,14 @@
 const GPT_BASE: usize = 0x40078000;
 const GPT_OPS_BASE: usize = 0x40078FF0;
 
-pub const GptWp = packed struct(u32) {
+pub const GptWp = bitpack struct(u32) {
     wp: bool = false,
     reserved: u7 = 0,
     prkey: u8 = 0xA5,
     reserved2: u16 = 0
 };
 
-pub const GptUddtyc = packed struct(u32) {
+pub const GptUddtyc = bitpack struct(u32) {
     ud: bool = true,
     udf: bool = false,
     reserved: u14 = 0,
@@ -31,7 +31,7 @@ pub const GptTpcs = enum(u3) {
     div1024 = 5
 };
 
-pub const GptCr = packed struct(u32) {
+pub const GptCr = bitpack struct(u32) {
     cst: bool = false,
     reserved: u15 = 0,
     md: u3 = 0,

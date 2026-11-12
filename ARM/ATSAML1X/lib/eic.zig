@@ -1,6 +1,6 @@
 const EIC_BASE = 0x40002800;
 
-pub const EicCtrlA = packed struct(u8) {
+pub const EicCtrlA = bitpack struct(u8) {
     swrst: bool = false,
     enable: bool = false,
     reserved: u2 = 0,
@@ -17,31 +17,31 @@ pub const EicSense = enum(u3) {
     low_level = 5
 };
 
-pub const EicNmiCtrl = packed struct(u8) {
+pub const EicNmiCtrl = bitpack struct(u8) {
     nmisense: EicSense = .no_detection,
     nmifilten: bool = false,
     nmiasynch: bool = false,
     reserved: u3 = 0
 };
 
-pub const EicSyncBusy = packed struct(u32) {
+pub const EicSyncBusy = bitpack struct(u32) {
     swrst: bool,
     enable: bool,
     reserved: u30
 };
 
-pub const EicIntEn = packed struct(u32) {
+pub const EicIntEn = bitpack struct(u32) {
     extint: u8 = 0,
     reserved: u23 = 0,
     nschk: bool = false 
 };
 
-pub const EicChConfig = packed struct(u4) {
+pub const EicChConfig = bitpack struct(u4) {
     sense: EicSense = .no_detection,
     filten: bool = false
 };
 
-pub const EicConfig = packed struct(u32) {
+pub const EicConfig = bitpack struct(u32) {
     ch0: EicChConfig,
     ch1: EicChConfig,
     ch2: EicChConfig,
@@ -52,7 +52,7 @@ pub const EicConfig = packed struct(u32) {
     ch7: EicChConfig,
 };
 
-pub const EicDpPrescaler = packed struct(u32) {
+pub const EicDpPrescaler = bitpack struct(u32) {
     prescaler: u3 = 0,
     states: bool = false,
     reserved: u12 = 0,

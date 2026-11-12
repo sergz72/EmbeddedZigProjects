@@ -1,6 +1,6 @@
 pub const DEBUG_BASE = 0xE0042000;
 
-pub const DebugCtrl = packed struct(u32) {
+pub const DebugCtrl = bitpack struct(u32) {
     sleep_debug: bool = false,
     deepsleep_debug: bool = false,
     standby_debug: bool = false,
@@ -26,7 +26,7 @@ pub const DebugCtrl = packed struct(u32) {
     reserved7: u4 = 0
 };
 
-pub const DebugSerId = packed struct(u32) {
+pub const DebugSerId = bitpack struct(u32) {
     rev_id: u3,
     reserved1: u5,
     ser_id: u8,

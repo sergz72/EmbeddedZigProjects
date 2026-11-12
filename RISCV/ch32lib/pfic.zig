@@ -18,14 +18,14 @@ pub const Interrupt = enum(u8) {
     }
 };
 
-pub const PficCfgr = packed struct(u32) {
+pub const PficCfgr = bitpack struct(u32) {
     reserved: u7 = 0,
     sysreset: bool = false,
     reserved2: u8 = 0,
     keycode: u16 = PFIC_KEY3
 };
 
-pub const PficSctlr = packed struct(u32) {
+pub const PficSctlr = bitpack struct(u32) {
     reserved: u1 = 0,
     sleeponexit: bool = false,
     sleepdeep: bool = false,
@@ -75,8 +75,7 @@ pub const Pfic = extern struct {
     }
 
     pub fn systemReset(self: *volatile Pfic) noreturn {
-        const v = PficCfgr{.sysreset = true};
-        self.cfgr = v;
+        self.cfgr = PficCfgr{.sysreset = true};
         while (true) {
             asm volatile ("wfi");
         }

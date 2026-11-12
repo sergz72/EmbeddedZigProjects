@@ -20,7 +20,7 @@ pub const TmrCmSel = enum(u2) {
     two_way_mode3 = 3
 };
 
-pub const TmrCtrl1 = packed struct(u32) {
+pub const TmrCtrl1 = bitpack struct(u32) {
     tmren: bool = false,
     ovfen: bool = false,
     ovfs: bool = false,
@@ -43,7 +43,7 @@ pub const TmrPtos = enum(u3) {
     c4oraw = 7
 };
 
-pub const TmrCtrl2 = packed struct(u32) {
+pub const TmrCtrl2 = bitpack struct(u32) {
     cbctl: bool = false,
     reserved1: u1 = 0,
     ccfs: bool = false,
@@ -61,7 +61,7 @@ pub const TmrCtrl2 = packed struct(u32) {
     reserved2: u16 = 0
 };
 
-pub const TmrStcCtrl = packed struct(u32) {
+pub const TmrStcCtrl = bitpack struct(u32) {
     smsel: u3 = 0,
     cossel: bool = false,
     stis: u3 = 0,
@@ -74,7 +74,7 @@ pub const TmrStcCtrl = packed struct(u32) {
     reserved2: u15 = 0
 };
 
-pub const TmrIden = packed struct(u32) {
+pub const TmrIden = bitpack struct(u32) {
     ovfien: bool = false,
     c1ien: bool = false,
     c2ien: bool = false ,
@@ -93,7 +93,7 @@ pub const TmrIden = packed struct(u32) {
     reserved1: u17 = 0
 };
 
-pub const TmrISts = packed struct(u32) {
+pub const TmrISts = bitpack struct(u32) {
     ovfif: bool = false,
     c1if: bool = false,
     c2if: bool = false,
@@ -110,7 +110,7 @@ pub const TmrISts = packed struct(u32) {
     reserved2: u19 = 0
 };
 
-pub const TmrSwEvt = packed struct(u32) {
+pub const TmrSwEvt = bitpack struct(u32) {
     ovfswtr: bool = false,
     c1swtr: bool = false,
     c2swtr: bool = false,
@@ -122,7 +122,7 @@ pub const TmrSwEvt = packed struct(u32) {
     reserved: u24 = 0
 };
 
-pub const TmrCm1 = packed struct(u32) {
+pub const TmrCm1 = bitpack struct(u32) {
     c1c: u2 = 0,
     c1oien: bool = false,
     c1oben: bool = false,
@@ -136,7 +136,7 @@ pub const TmrCm1 = packed struct(u32) {
     reserved1: u16 = 0
 };
 
-pub const TmrCm2 = packed struct(u32) {
+pub const TmrCm2 = bitpack struct(u32) {
     c3c: u2 = 0,
     c3oien: bool = false,
     c3oben: bool = false,
@@ -150,7 +150,7 @@ pub const TmrCm2 = packed struct(u32) {
     reserved1: u16 = 0
 };
 
-pub const TmrCctrl = packed struct(u32) {
+pub const TmrCctrl = bitpack struct(u32) {
     c1en: bool = false,
     c1p: bool = false,
     c1cen: bool = false,
@@ -170,14 +170,14 @@ pub const TmrCctrl = packed struct(u32) {
     reserved1: u16
 };
 
-pub const TmrDmaCtrl = packed struct(u32) {
+pub const TmrDmaCtrl = bitpack struct(u32) {
     addr: u5 = 0,
     reserved1: u3 = 0,
     dtb: u5 = 0,
     reserved2: u19 = 0
 };
 
-pub const TmrRmp = packed struct(u32) {
+pub const TmrRmp = bitpack struct(u32) {
     tmr4_ch1_irmp: u2 = 0,
     reserved1: u30 = 0
 };

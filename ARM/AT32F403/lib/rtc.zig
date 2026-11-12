@@ -7,14 +7,14 @@ const RTC_BASE = 0x40002800;
 
 const BPR_CODE = 0x5A5A;
 
-pub const RtcCtrlh = packed struct(u16) {
+pub const RtcCtrlh = bitpack struct(u16) {
     tsien: bool = false,
     taien: bool = false,
     ovfien: bool = false,
     reserved: u13 = 0
 };
 
-pub const RtcCtrll = packed struct(u16) {
+pub const RtcCtrll = bitpack struct(u16) {
     tsf: bool = false,
     taf: bool = false,
     ovff: bool = false,

@@ -7,7 +7,7 @@ pub const BprData = extern struct {
     reserved: u16
 };
 
-pub const BprRtccal = packed struct(u16) {
+pub const BprRtccal = bitpack struct(u16) {
     calval: u7 = 0,
     calout: bool = false,
     outen: bool = false,
@@ -17,13 +17,13 @@ pub const BprRtccal = packed struct(u16) {
     reserved: u4 = 0
 };
 
-pub const BprCtrl = packed struct(u16) {
+pub const BprCtrl = bitpack struct(u16) {
     tpen: bool = false,
     tppol: bool = false,
     reserved: u14 = 0
 };
 
-pub const BprCtrlsts = packed struct(u16) {
+pub const BprCtrlsts = bitpack struct(u16) {
     tpefclr: bool = false,
     tpifclr: bool = false,
     tpien: bool = false,

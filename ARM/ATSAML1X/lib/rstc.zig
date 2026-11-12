@@ -1,6 +1,6 @@
 const RSTC_BASE = 0x40000c00;
 
-pub const RstcRcause = packed struct(u8) {
+pub const RstcRcause = bitpack struct(u8) {
     por: bool,
     bod12: bool,
     bod33: bool,

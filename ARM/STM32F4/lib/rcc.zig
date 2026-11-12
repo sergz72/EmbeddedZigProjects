@@ -1,6 +1,6 @@
 const RCC_BASE: usize = 0x40023800;
 
-pub const RccCr = packed struct(u32) {
+pub const RccCr = bitpack struct(u32) {
     hsion: bool = true,
     hsirdy: bool = false,
     reserved: u1 = 0,
@@ -27,7 +27,7 @@ pub const RccPllCfgrPllp = enum(u2) {
     div8 = 3
 };
 
-pub const RccPllCfgr = packed struct(u32) {
+pub const RccPllCfgr = bitpack struct(u32) {
     pllm: u6 = 0x10,
     plln: u9 = 0xC0,
     reserved: u1 = 0,
@@ -80,7 +80,7 @@ pub const RccCfgrMcoPre = enum(u3) {
     div5 = 7
 };
 
-pub const RccCfgr = packed struct(u32) {
+pub const RccCfgr = bitpack struct(u32) {
     sw: RccCfgrSw = .hsi,
     sws: RccCfgrSw = .hsi,
     hpre: RccCfgrHpre = .off,
@@ -95,7 +95,7 @@ pub const RccCfgr = packed struct(u32) {
     mco2: RccCfgrMco = .hsi
 };
 
-pub const RccAhb1Enr = packed struct(u32) {
+pub const RccAhb1Enr = bitpack struct(u32) {
     gpioaen: bool = false,
     gpioben: bool = false,
     gpiocen: bool = false,
@@ -126,7 +126,7 @@ pub const RccAhb1Enr = packed struct(u32) {
     reserved5: u1 = 0
 };
 
-pub const RccAhb2Enr = packed struct(u32) {
+pub const RccAhb2Enr = bitpack struct(u32) {
     dcmien: bool = false,
     reserved: u3 = 0,
     crypen: bool = false,
@@ -136,12 +136,12 @@ pub const RccAhb2Enr = packed struct(u32) {
     reserved2: u24 = 0
 };
 
-pub const RccAhb3Enr = packed struct(u32) {
+pub const RccAhb3Enr = bitpack struct(u32) {
     fmcen: bool = false,
     reserved: u31 = 0
 };
 
-pub const RccApb1Enr = packed struct(u32) {
+pub const RccApb1Enr = bitpack struct(u32) {
     tim2en: bool = false,
     tim3en: bool = false,
     tim4en: bool = false,
@@ -174,7 +174,7 @@ pub const RccApb1Enr = packed struct(u32) {
     uart8en: bool = false
 };
 
-pub const RccApb2Enr = packed struct(u32) {
+pub const RccApb2Enr = bitpack struct(u32) {
     tim1en: bool = false,
     tim8en: bool = false,
     reserved: u2 = 0,
@@ -208,7 +208,7 @@ pub const RccBdcrRtcSel = enum(u2) {
     hse = 3
 };
 
-pub const RccBdcr = packed struct(u32) {
+pub const RccBdcr = bitpack struct(u32) {
     lseon: bool = false,
     lserdy: bool = false,
     lsebyp: bool = false,
@@ -220,7 +220,7 @@ pub const RccBdcr = packed struct(u32) {
     reserved3: u15 = 0
 };
 
-pub const RccCsr = packed struct(u32) {
+pub const RccCsr = bitpack struct(u32) {
     lsion: bool = false,
     lsirdy: bool,
     reserved: u22 = 0,
@@ -234,7 +234,7 @@ pub const RccCsr = packed struct(u32) {
     lpwrrstf: bool
 };
 
-pub const RccPll2Cfgr = packed struct(u32) {
+pub const RccPll2Cfgr = bitpack struct(u32) {
     reserved: u6 = 0,
     plln: u9 = 0xC0,
     reserved2: u9 = 0,

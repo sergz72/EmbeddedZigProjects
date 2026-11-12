@@ -5,7 +5,7 @@ const I2C2_BASE = 0x40005800;
 const I2C3_BASE = 0x44002800;
 const I2C4_BASE = 0x44002C00;
 
-pub const I2cCr1 = packed struct(u32) {
+pub const I2cCr1 = bitpack struct(u32) {
     pe: bool = false,
     txie: bool = false,
     rxie: bool = false,
@@ -33,7 +33,7 @@ pub const I2cCr1 = packed struct(u32) {
     stopfaclr: bool = false,
 };
 
-pub const I2cCr2 = packed struct(u32) {
+pub const I2cCr2 = bitpack struct(u32) {
     sadd: u10 = 0,
     rd_wrn: bool = false,
     add10: bool = false,
@@ -48,7 +48,7 @@ pub const I2cCr2 = packed struct(u32) {
     reserved0: u5 = 0,
 };
 
-pub const I2cOar1 = packed struct(u32) {
+pub const I2cOar1 = bitpack struct(u32) {
     oa1: u10 = 0,
     oa1mode: bool = false,
     reserved0: u4 = 0,
@@ -56,7 +56,7 @@ pub const I2cOar1 = packed struct(u32) {
     reserved1: u16 = 0,
 };
 
-pub const I2cOar2 = packed struct(u32) {
+pub const I2cOar2 = bitpack struct(u32) {
     reserved0: u1 = 0,
     oa2: u7 = 0,
     oa2msk: u3 = 0,
@@ -65,7 +65,7 @@ pub const I2cOar2 = packed struct(u32) {
     reserved2: u16 = 0,
 };
 
-pub const I2cTimingr = packed struct(u32) {
+pub const I2cTimingr = bitpack struct(u32) {
     scll: u8 = 0,
     sclh: u8 = 0,
     sdadel: u4 = 0,
@@ -74,7 +74,7 @@ pub const I2cTimingr = packed struct(u32) {
     presc: u4 = 0,
 };
 
-pub const I2cTimeoutr = packed struct(u32) {
+pub const I2cTimeoutr = bitpack struct(u32) {
     timeouta: u12 = 0,
     tidle: bool = false,
     reserved0: u2 = 0,
@@ -84,7 +84,7 @@ pub const I2cTimeoutr = packed struct(u32) {
     texten: bool = false,
 };
 
-pub const I2cIsr = packed struct(u32) {
+pub const I2cIsr = bitpack struct(u32) {
     txe: bool = true,
     txis: bool = false,
     rxne: bool = false,
@@ -106,7 +106,7 @@ pub const I2cIsr = packed struct(u32) {
     reserved1: u8 = 0,
 };
 
-pub const I2cIcr = packed struct(u32) {
+pub const I2cIcr = bitpack struct(u32) {
     reserved0: u3 = 0,
     addrcf: bool = false,
     nackcf: bool = false,
@@ -121,7 +121,7 @@ pub const I2cIcr = packed struct(u32) {
     reserved2: u18 = 0,
 };
 
-pub const I2cPecr = packed struct(u32) {
+pub const I2cPecr = bitpack struct(u32) {
     pec: u8 = 0,
     reserved0: u24 = 0,
 };
@@ -129,10 +129,14 @@ pub const I2cPecr = packed struct(u32) {
 pub const I2cError = error {
     TimeoutWaitStopf,
     TimeoutWaitTxis,
+    TimeoutWaitRxne,
+    TimeoutWaitNotBusy,
+    TimeoutWaitTc,
     AcknowledgeFailure,
     UnsupportedSpeed,
     InvalidClock,
-    NoValidTiming
+    NoValidTiming,
+    DataIsTooLarge
 };
 
 pub const I2c = extern struct {
@@ -145,16 +149,14 @@ pub const I2c = extern struct {
     isr: I2cIsr,
     icr: I2cIcr,
     pecr: I2cPecr,
-    rxdr: u8,
-    reserved0: [3]u8,
-    txdr: u8,
-    reserved1: [3]u8,
+    rxdr: u32,
+    txdr: u32,
 
-    pub fn enable(self: *volatile I2c) void {
+    pub inline fn enable(self: *volatile I2c) void {
         self.cr1.pe = true;
     }
 
-    pub fn disable(self: *volatile I2c) void {
+    pub inline fn disable(self: *volatile I2c) void {
         self.cr1.pe = false;
     }
 
@@ -197,7 +199,7 @@ pub const I2c = extern struct {
         });
     }
 
-    fn clearNackStopFlags(self: *volatile I2c) void {
+    inline fn clearNackStopFlags(self: *volatile I2c) void {
         self.icr = I2cIcr{.nackcf = true, .stopcf = true};
     }
 
@@ -232,22 +234,56 @@ pub const I2c = extern struct {
         self.cr2 = cr2;
     }
 
+    fn waitNotBusy(self: *volatile I2c, timeout: usize) I2cError!void {
+        if (!try self.waitEvent(checkNotBusy, timeout, false)) {
+            return I2cError.TimeoutWaitNotBusy;
+        }
+    }
+
     pub fn write(self: *volatile I2c, address: u10, data: []const u8, timeout: usize) I2cError!void {
-        _ = self;
-        _ = address;
-        _ = data;
-        _ = timeout;
+        if (data.len > 255) return I2cError.DataIsTooLarge;
+        try self.waitNotBusy(timeout);
+        self.transferConfig(address, @truncate(data.len), false, true, true, false);
+        for (data) |byte| {
+            if (!try self.waitEvent(checkTxis, timeout, true)) {
+                return I2cError.TimeoutWaitTxis;
+            }
+            self.txdr = byte;
+        }
+        if (!try self.waitEvent(checkStopf, timeout, true)) {
+            return I2cError.TimeoutWaitStopf;
+        }
+        self.clearNackStopFlags();
     }
 
     pub fn transfer(self: *volatile I2c, address: u10, wdata: []const u8, rdata: []u8, timeout: usize) I2cError!void {
-        _ = self;
-        _ = address;
-        _ = wdata;
-        _ = rdata;
-        _ = timeout;
+        if (wdata.len > 255 or rdata.len > 255) return I2cError.DataIsTooLarge;
+        try self.waitNotBusy(timeout);
+        self.transferConfig(address, @truncate(wdata.len), false, false, true, false);
+        for (wdata) |byte| {
+            if (!try self.waitEvent(checkTxis, timeout, true)) {
+                return I2cError.TimeoutWaitTxis;
+            }
+            self.txdr = byte;
+        }
+        if (!try self.waitEvent(checkTc, timeout, true)) {
+            return I2cError.TimeoutWaitTc;
+        }
+        self.transferConfig(address, @truncate(rdata.len), true, true, true, false);
+        for (rdata) |*byte| {
+            if (!try self.waitEvent(checkRxne, timeout, false)) {
+                return I2cError.TimeoutWaitRxne;
+            }
+            byte.* = @truncate(self.rxdr);
+        }
+        if (!try self.waitEvent(checkStopf, timeout, true)) {
+            return I2cError.TimeoutWaitStopf;
+        }
+        self.clearNackStopFlags();
     }
 
     pub fn scan(self: *volatile I2c, address: u10, timeout: usize) I2cError!void {
+        try self.waitNotBusy(timeout);
         self.transferConfig(address, 0, false, true, true, false);
         if (!try self.waitEvent(checkStopf, timeout, true)) {
             return I2cError.TimeoutWaitStopf;
@@ -256,18 +292,39 @@ pub const I2c = extern struct {
     }
 
     pub fn read(self: *volatile I2c, address: u10, data: []u8, timeout: usize) I2cError!void {
-        _ = self;
-        _ = address;
-        _ = data;
-        _ = timeout;
+        if (data.len > 255) return I2cError.DataIsTooLarge;
+        try self.waitNotBusy(timeout);
+        self.transferConfig(address, @truncate(data.len), true, true, true, false);
+        for (data) |*byte| {
+            if (!try self.waitEvent(checkRxne, timeout, false)) {
+                return I2cError.TimeoutWaitRxne;
+            }
+            byte.* = @truncate(self.rxdr);
+        }
+        if (!try self.waitEvent(checkStopf, timeout, true)) {
+            return I2cError.TimeoutWaitStopf;
+        }
+        self.clearNackStopFlags();
     }
 
     fn checkTxis(self: *volatile I2c) bool {
         return self.isr.txis;
     }
 
+    fn checkRxne(self: *volatile I2c) bool {
+        return self.isr.rxne;
+    }
+
     fn checkStopf(self: *volatile I2c) bool {
         return self.isr.stopf;
+    }
+
+    fn checkTc(self: *volatile I2c) bool {
+        return self.isr.tc;
+    }
+
+    fn checkNotBusy(self: *volatile I2c) bool {
+        return !self.isr.busy;
     }
 };
 

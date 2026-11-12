@@ -5,13 +5,13 @@ const PORT3_BASE = 0x40119000;
 const PORT4_BASE = 0x4011A000;
 const PORT5_BASE = 0x40042000;
 
-pub const Verid = packed struct(u32) {
+pub const Verid = bitpack struct(u32) {
     feature: u16,
     minor: u8,
     major: u8,
 };
 
-pub const Gpclr = packed struct(u32) {
+pub const Gpclr = bitpack struct(u32) {
     gpwd: u16 = 0,
     gpwe0: bool = false,
     gpwe1: bool = false,
@@ -31,7 +31,7 @@ pub const Gpclr = packed struct(u32) {
     gpwe15: bool = false,
 };
 
-pub const Gpchr = packed struct(u32) {
+pub const Gpchr = bitpack struct(u32) {
     gpwd: u16 = 0,
     gpwe16: bool = false,
     gpwe17: bool = false,
@@ -51,12 +51,12 @@ pub const Gpchr = packed struct(u32) {
     gpwe31: bool = false,
 };
 
-pub const Config = packed struct(u32) {
+pub const Config = bitpack struct(u32) {
     range: bool = false,
     reserved0: u31 = 0,
 };
 
-pub const Edfr = packed struct(u32) {
+pub const Edfr = bitpack struct(u32) {
     edf0: bool,
     edf1: bool,
     edf2: bool,
@@ -87,7 +87,7 @@ pub const Edfr = packed struct(u32) {
     reserved1: u2,
 };
 
-pub const Edier = packed struct(u32) {
+pub const Edier = bitpack struct(u32) {
     edie0: bool = false,
     edie1: bool = false,
     edie2: bool = false,
@@ -118,27 +118,27 @@ pub const Edier = packed struct(u32) {
     reserved1: u2 = 0,
 };
 
-pub const Edcr = packed struct(u32) {
+pub const Edcr = bitpack struct(u32) {
     edhc: bool = false,
     edlc: bool = false,
     reserved0: u30 = 0,
 };
 
-pub const Calib0 = packed struct(u32) {
+pub const Calib0 = bitpack struct(u32) {
     ncal: u6 = 0,
     reserved0: u10 = 0,
     pcal: u6 = 0,
     reserved1: u10 = 0,
 };
 
-pub const Calib1 = packed struct(u32) {
+pub const Calib1 = bitpack struct(u32) {
     ncal: u6 = 0,
     reserved0: u10 = 0,
     pcal: u6 = 0,
     reserved1: u10 = 0,
 };
 
-pub const Pcr = packed struct(u32) {
+pub const Pcr = bitpack struct(u32) {
     ps: bool = false,
     pe: bool = false,
     reserved0: u1 = 0,

@@ -3,7 +3,7 @@ const cpu = @import("cpu");
 pub const I2C1_BASE = 0x40005400;
 pub const I2C2_BASE = 0x40005800;
 
-pub const I2cCtrl1 = packed struct(u16) {
+pub const I2cCtrl1 = bitpack struct(u16) {
     i2cen: bool = false,
     permode: bool = false,
     reserved1: u1 = 0,
@@ -22,7 +22,7 @@ pub const I2cCtrl1 = packed struct(u16) {
     reset: bool = false
 };
 
-pub const I2cCtrl2 = packed struct(u16) {
+pub const I2cCtrl2 = bitpack struct(u16) {
     clkfreq: u8 = 0,
     errien: bool = false,
     evtien: bool = false,
@@ -32,19 +32,19 @@ pub const I2cCtrl2 = packed struct(u16) {
     reserved1: u3 = 0
 };
 
-pub const I2cOaddr1 = packed struct(u16) {
+pub const I2cOaddr1 = bitpack struct(u16) {
     addr1: u10,
     reserved1: u5 = 0,
     addr1mode: bool = false
 };
 
-pub const I2cOaddr2 = packed struct(u16) {
+pub const I2cOaddr2 = bitpack struct(u16) {
     addr2en: bool = false,
     addr2: u7,
     reserved1: u8 = 0
 };
 
-pub const I2cSts1 = packed struct(u16) {
+pub const I2cSts1 = bitpack struct(u16) {
     startf: bool = false,
     addr7f: bool = false,
     tdc: bool = false,
@@ -63,7 +63,7 @@ pub const I2cSts1 = packed struct(u16) {
     alertf: bool = false
 };
 
-pub const I2cSts2 = packed struct(u16) {
+pub const I2cSts2 = bitpack struct(u16) {
     trmode: bool,
     busyf: bool,
     dirf: bool,
@@ -75,7 +75,7 @@ pub const I2cSts2 = packed struct(u16) {
     pecval: u8
 };
 
-pub const I2cClkctrl = packed struct(u16) {
+pub const I2cClkctrl = bitpack struct(u16) {
     speed: u12 = 0,
     reserved1: u2 = 0,
     dutymode: bool = false,

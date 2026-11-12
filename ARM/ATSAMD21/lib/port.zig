@@ -2,7 +2,7 @@ const PORTS_BASE = 0x41004400;
 
 const PORT_GROUP_NUMBER = 2;
 
-pub const PortWrConfig = packed struct(u32) {
+pub const PortWrConfig = bitpack struct(u32) {
     pinmask: u16 = 0,
     pmuxen: bool = false,
     inen: bool = false,
@@ -27,12 +27,12 @@ pub const PortFunction = enum(u4) {
     H = 7
 };
 
-pub const PortPmux = packed struct(u8) {
+pub const PortPmux = bitpack struct(u8) {
     pmuxe: PortFunction = .A,
     pmuxo: PortFunction = .A
 };
 
-pub const PortPinCfg = packed struct(u8) {
+pub const PortPinCfg = bitpack struct(u8) {
     pmuxen: bool = false,
     inen: bool = false,
     pullen: bool = false,

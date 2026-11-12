@@ -12,7 +12,7 @@ pub const SpiPsc = enum(u3) {
     div256 = 7
 };
 
-pub const SpiCtl0 = packed struct(u32) {
+pub const SpiCtl0 = bitpack struct(u32) {
     ckph: bool = false,
     ckpl: bool = false,
     mstmod: bool = false,
@@ -30,7 +30,7 @@ pub const SpiCtl0 = packed struct(u32) {
     reserved: u16 = 0
 };
 
-pub const SpiCtl1 = packed struct(u32) {
+pub const SpiCtl1 = bitpack struct(u32) {
     dmaren: bool = false,
     dmaten: bool = false,
     nssdrv: bool = false,
@@ -46,7 +46,7 @@ pub const SpiCtl1 = packed struct(u32) {
     reserved2: u17 = 0
 };
 
-pub const SpiStat = packed struct(u32) {
+pub const SpiStat = bitpack struct(u32) {
     rbne: bool,
     tbe: bool,
     i2sch: bool,
@@ -61,7 +61,7 @@ pub const SpiStat = packed struct(u32) {
     reserved: u19
 };
 
-pub const SpiI2sCtl = packed struct(u32) {
+pub const SpiI2sCtl = bitpack struct(u32) {
     chlen: bool = false,
     dtlen: u2 = 0,
     ckpl: bool = false,
@@ -74,14 +74,14 @@ pub const SpiI2sCtl = packed struct(u32) {
     reserved2: u20 = 0
 };
 
-pub const SpiI2sPsc = packed struct(u32) {
+pub const SpiI2sPsc = bitpack struct(u32) {
     div: u8 = 0,
     of: bool = false,
     mckoen: bool = false,
     reserved: u22 = 0
 };
 
-pub const SpiQctl = packed struct(u32) {
+pub const SpiQctl = bitpack struct(u32) {
     qmod: bool = false,
     qrd: bool = false,
     io23_drv: bool = false,

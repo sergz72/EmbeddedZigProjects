@@ -1,13 +1,13 @@
 const AFIO_BASE: usize = 0x40010000;
 
-pub const AfioEcr = packed struct(u32) {
+pub const AfioEcr = bitpack struct(u32) {
     pin: u4,
     port: u3,
     evoe: bool,
     reserved: u24
 };
 
-pub const AfioPcfr1 = packed struct(u32) {
+pub const AfioPcfr1 = bitpack struct(u32) {
     spi1_rm: u2 = 0,
     i2c1_rm: u3 = 0,
     usart1_rm: u2 = 0,
@@ -28,7 +28,7 @@ pub const AfioExtiPort = enum(u2) {
     portc = 3
 };
 
-pub const AfioExtiCr1 = packed struct(u32) {
+pub const AfioExtiCr1 = bitpack struct(u32) {
     exti0: AfioExtiPort = .porta,
     exti1: AfioExtiPort = .porta,
     exti2: AfioExtiPort = .porta,
@@ -47,7 +47,7 @@ pub const AfioExtiCr1 = packed struct(u32) {
     exti15: AfioExtiPort = .porta
 };
 
-pub const AfioExtiCr2 = packed struct(u32) {
+pub const AfioExtiCr2 = bitpack struct(u32) {
     exti16: AfioExtiPort = .porta,
     exti17: AfioExtiPort = .porta,
     exti18: AfioExtiPort = .porta,
@@ -66,7 +66,7 @@ pub const AfioUsbPu = enum(u2) {
     _1k5 = 3
 };
 
-pub const AfioCtlr = packed struct(u32) {
+pub const AfioCtlr = bitpack struct(u32) {
     udm_pue: AfioUsbPu = .gpio,
     udp_pue: AfioUsbPu = .gpio,
     reserved: u2 = 0,

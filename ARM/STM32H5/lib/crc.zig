@@ -16,7 +16,7 @@ pub const CrcPolySize = enum(u2) {
     _7 = 3
 };
 
-pub const CrcCr = packed struct(u32) {
+pub const CrcCr = bitpack struct(u32) {
     reset: bool = false,
     reserved0: u2 = 0,
     polysize: CrcPolySize = ._32,

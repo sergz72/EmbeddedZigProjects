@@ -20,7 +20,7 @@ pub const IwdgPr = enum(u32) {
     div1024 = 8
 };
 
-pub const IwdgSr = packed struct(u32) {
+pub const IwdgSr = bitpack struct(u32) {
     pvu: bool,
     rvu: bool,
     wvu: bool,
@@ -32,7 +32,7 @@ pub const IwdgSr = packed struct(u32) {
     reserved2: u17
 };
 
-pub const IwdgEwcr = packed struct(u32) {
+pub const IwdgEwcr = bitpack struct(u32) {
     ewit: u12 = 0,
     reserved0: u2 = 0,
     ewic: bool = false,
