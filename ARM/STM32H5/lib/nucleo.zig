@@ -101,7 +101,6 @@ const SPI_CS_PIN_INIT: gpio.GpioInit = .{
     .mode = .output,
     .speed = .very_high
 };
-const SPI_BAUD = 1000000;
 
 var led_green_alternate: bool = undefined;
 var rcc_init = rcc.RccInit{};
@@ -212,7 +211,7 @@ pub fn initArduinoI2c() void {
     };
 }
 
-pub fn initArduinoSPI() void {
+pub fn initArduinoSPI(spi_baud: usize, comm: spi.Comm) void {
     rcc.rcc.hpenr.ahb2.gpioaen = true;
     rcc.rcc.hpenr.ahb2.gpioben = true;
     rcc.rcc.hpenr.ahb2.gpioden = true;
@@ -221,7 +220,7 @@ pub fn initArduinoSPI() void {
     SPI_TX_PORT.init(SPI_TX_PIN_MASK, SPI_OUT_PINS_INIT);
     SPI_CLK_PORT.init(SPI_CLK_PIN_MASK, SPI_OUT_PINS_INIT);
     SPI_RX_PORT.init(SPI_RX_PIN_MASK, SPI_RX_PIN_INIT);
-    SPI_INSTANCE.initMasterSoftwareCs(SPI_BAUD, cpu.cpu.apb2_frequency);
+    SPI_INSTANCE.initMasterSoftwareCs(spi_baud, cpu.cpu.pclk2_frequency, comm);
     SPI_CS_PORT.setPins(SPI_CS_PIN_MASK); // cs is 1
     SPI_CS_PORT.init(SPI_CS_PIN_MASK, SPI_CS_PIN_INIT);
 }

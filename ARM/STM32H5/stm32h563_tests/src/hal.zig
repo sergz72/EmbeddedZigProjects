@@ -56,6 +56,7 @@ export fn SystemInit() callconv(.c) void {
     rng.rng.init();
     rcc.rcc.hpenr.ahb1.crcen = true;
     board.initArduinoI2c();
+    board.initArduinoSPI(1000000, .full_duplex);
 }
 
 pub fn ledToggle() void {
@@ -136,11 +137,8 @@ pub fn vemlWrite(reg: u8, data: u16) bool {
 
 pub fn spiSendReceive(channel: usize, wdata: []const u8, rdata: []u8) bool {
     _ = channel;
-    //_ = spi1CsSet(@ptrFromInt(1), false);
-    //SPI_INSTANCE.sendReceivePoll8(wdata, rdata);
-    //_ = spi1CsSet(@ptrFromInt(1), true);
-    //return true;
-    _ = wdata;
-    _ = rdata;
-    return false;
+    board.arduinoSpiCsSet(false);
+    board.SPI_INSTANCE.sendReceivePoll8(wdata, rdata);
+    board.arduinoSpiCsSet(true);
+    return true;
 }

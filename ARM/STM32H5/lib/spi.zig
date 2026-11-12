@@ -228,19 +228,19 @@ pub const Spi = extern struct {
                 mbr = .div64;
             } else if (div <= 128) {
                 mbr = .div128;
-            } else if (div <= 256) {
-                mbr = .div256;
-            } else if (div <= 512) {
-                mbr = .div512;
             } else {
-                mbr = .div1024;
+                mbr = .div256;
             }
             self.cfg1 = SpiCfg1{ .mbr = mbr };
         } else {
             self.cfg1 = SpiCfg1{ .bpass = true };
         }
-        self.cfg2 = SpiCfg2{ .ssm = true, .master = true, .comm = comm };
-        self.cr1 = SpiCr1{.ssi = true, .spe = true};
+        self.cr1.ssi = true;
+        self.cfg2.ssm = true;
+        self.cfg2.comm = comm;
+        self.cfg2.master = true;
+        self.cr1.spe = true;
+        self.cr1.cstart = true;
     }
 
     pub fn sendPoll8(self: *volatile Spi, data: []const u8) void {
@@ -248,12 +248,13 @@ pub const Spi = extern struct {
             while (!self.sr.txp) {
                 asm volatile ("nop");
             }
-            self.dr.b = b;
+            self.txdr.b = b;
             while (!self.sr.rxp) {
                 asm volatile ("nop");
             }
-            _ = self.dr.b;
+            _ = self.rxdr.b;
         }
+        self.waitForTransferComplete();
     }
 
     pub fn sendPoll8Simplex(self: *volatile Spi, data: []const u8) void {
@@ -261,15 +262,15 @@ pub const Spi = extern struct {
             while (!self.sr.txp) {
                 asm volatile ("nop");
             }
-            self.dr.b = b;
+            self.txdr.b = b;
         }
+        self.waitForTransferComplete();
     }
 
     pub fn waitForTransferComplete(self: *volatile Spi) void {
         while (!self.sr.txc) {
             asm volatile ("nop");
         }
-        self.ifcr.eotc = true;
     }
 
     pub fn sendReceivePoll8(self: *volatile Spi, data_in: []const u8, data_out: []u8) void {
@@ -277,12 +278,13 @@ pub const Spi = extern struct {
             while (!self.sr.txp) {
                 asm volatile ("nop");
             }
-            self.dr.b = b;
+            self.txdr.b = b;
             while (!self.sr.rxp) {
                 asm volatile ("nop");
             }
-            data_out[idx] = self.dr.b;
+            data_out[idx] = self.rxdr.b;
         }
+        self.waitForTransferComplete();
     }
 
     pub fn receivePoll8(self: *volatile Spi, data_out: []u8) void {
@@ -290,12 +292,13 @@ pub const Spi = extern struct {
             while (!self.sr.txp) {
                 asm volatile ("nop");
             }
-            self.dr.b = 0;
+            self.txdr.b = 0;
             while (!self.sr.rxp) {
                 asm volatile ("nop");
             }
-            d.* = self.dr.b;
+            d.* = self.rxdr.b;
         }
+        self.waitForTransferComplete();
     }
 };
 
