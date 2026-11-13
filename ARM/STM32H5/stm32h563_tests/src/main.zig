@@ -17,6 +17,7 @@ const veml7700_commands = @import("veml7700_commands");
 const scd4x_commands = @import("scd4x_commands");
 const rng = @import("rng");
 const crc = @import("crc");
+const rtc_commands = @import("rtc_commands");
 
 const shell_init = shell.ShellInit{
     .max_commands = 50,
@@ -89,6 +90,7 @@ export fn main() callconv(.c) noreturn {
     crc_commands.registerCommands(hal.sh, &crc_generators) catch { while (true){} };
     veml7700_commands.registerCommands(hal.sh, &hal.veml_device) catch { while (true){} };
     scd4x_commands.registerCommands(hal.sh, &hal.scd_device) catch { while (true){} };
+    rtc_commands.registerCommands(hal.sh) catch { while (true){} };
 
     _ = usart_writer.usart_writer.writer.write(hal.getResetCause()) catch { while (true){} };
 

@@ -33,7 +33,7 @@ pub const RtcDr = bitpack struct(u32) {
     dt: u2 = 0,
     reserved0: u2 = 0,
     mu: u4 = 1,
-    mt: bool = false,
+    mt: u1 = 0,
     wdu: RtcWeekday = .monday,
     yu: u4 = 0,
     yt: u4 = 0,
@@ -177,7 +177,7 @@ pub const RtcTsdr = bitpack struct(u32) {
     dt: u2,
     reserved0: u2,
     mu: u4,
-    mt: bool,
+    mt: u1,
     wdu: RtcWeekday,
     reserved1: u16,
 };
@@ -273,7 +273,7 @@ pub const Rtc = extern struct {
     pub fn enterInit(self: *volatile Rtc, timeout: usize) RtcError!void {
         if (self.icsr.initf) return;
         self.icsr.init = true;
-        for (0..timeout) |counter| {
+        for (0..timeout) |_| {
             if (self.icsr.initf) return;
         }
         return InternalRtcError.Timeout;
@@ -284,15 +284,15 @@ pub const Rtc = extern struct {
     }
 
     fn waitSync(self: *volatile Rtc, timeout: usize) RtcError!void {
-        for (0..timeout) |counter| {
+        for (0..timeout) |_| {
             if (self.icsr.rsf) return;
         }
         return InternalRtcError.Timeout;
     }
 
-    pub fn init(self: *volatile Rtc, drv: rcc.LseDrv, timeout: usize) RtcError!void {
-        rcc.rcc.apb3enr.rtcen = true;
-        if (rcc.bdcr.rtcen and rtc.icsr.inits) {
+    pub fn init(self: *volatile Rtc, drv: rcc.RccLseDrv, timeout: usize) RtcError!void {
+        rcc.rcc.hpenr.apb3.rtcapben = true;
+        if (rcc.rcc.bdcr.rtcen and self.icsr.inits) {
             return;
         }
         pwr.pwr.unlockBackupDomain();
@@ -303,7 +303,7 @@ pub const Rtc = extern struct {
         rcc.rcc.bdcr.rtcen = true;
 
         self.unlock();
-        defer self.lock()
+        defer self.lock();
         try self.enterInit(timeout);
         self.dr = RtcDr{.yu = 6, .yt = 2}; // year field should be not 0 to set inits flag. Setting year 2026
         self.exitInit();
@@ -312,36 +312,36 @@ pub const Rtc = extern struct {
 
     pub fn setTime(self: *volatile Rtc, data: *generic_rtc.RtcData, timeout: usize) RtcError!void {
         try data.validate();
-        const wd = @backingInt(data.weekday);
+        var wd: u3 = @truncate(@backingInt(data.wday));
         if (wd == 0) {
             wd = 7;
         }
         const month = @backingInt(data.month);
-        const mu = month / 10;
-        const mt = month % 10;
+        const mu = month % 10;
+        const mt = month / 10;
         const year = data.year - 2000;
         pwr.pwr.unlockBackupDomain();
         defer pwr.pwr.lockBackupDomain();
         self.unlock();
-        defer self.lock()
+        defer self.lock();
         try self.enterInit(timeout);
         self.tr = RtcTr{
-            .hu = data.hour / 10,
-            .ht = data.hour % 10,
-            .mu = data.minute / 10,
-            .mt = data.minute % 10,
-            .su = data.second / 10,
-            .st = data.second % 10,
+            .hu = @truncate(data.hours % 10),
+            .ht = @truncate(data.hours / 10),
+            .mnu = @truncate(data.minutes % 10),
+            .mnt = @truncate(data.minutes / 10),
+            .su = @truncate(data.seconds % 10),
+            .st = @truncate(data.seconds / 10),
         };
         self.dr = RtcDr{
-            .yu = year / 10,
-            .yt = year % 10,
-            .mu = mu,
-            .mt = mt,
-            .du = data.day / 10,
-            .dt = data.day % 10,
+            .yu = @truncate(year % 10),
+            .yt = @truncate(year / 10),
+            .mu = @truncate(mu),
+            .mt = @truncate(mt),
+            .du = @truncate(data.day % 10),
+            .dt = @truncate(data.day / 10),
             .wdu = @bitCast(wd),
-        }
+        };
         self.exitInit();
         try self.waitSync(timeout);
     }
@@ -353,20 +353,20 @@ pub const Rtc = extern struct {
             const tr2 = self.tr;
             const dr2 = self.dr;
             if (tr == tr2 and dr == dr2) {
-                var weekday = @backingInt(dr.wdu);
+                var weekday = @as(u8, @backingInt(dr.wdu));
                 if (weekday == 7) {
                     weekday = 0;
                 }
-                rtc_data.second = tr.su * 10 + tr.st;
-                rtc_data.minute = tr.mu * 10 + tr.mt;
-                rtc_data.hour = tr.hu * 10 + tr.ht;
-                rtc_data.day = dr.du * 10 + dr.dt;
-                rtc_data.month = @bitcast(dr.mu * 10 + dr.mt);
-                rtc_data.year = dr.yu * 10 + dr.yt + 2000;
-                rtc_data.weekday = @bitcast(weekday);
-                rtc_data.buildYday();
+                rtc_data.seconds = @as(u8, tr.st) * 10 + tr.su;
+                rtc_data.minutes = @as(u8, tr.mnt) * 10 + tr.mnu;
+                rtc_data.hours = @as(u8, tr.ht) * 10 + tr.hu;
+                rtc_data.day = @as(u8, dr.dt) * 10 + dr.du;
+                rtc_data.month = @bitCast(@as(u8, dr.mt) * 10 + dr.mu);
+                rtc_data.year = @as(u32, dr.yt) * 10 + dr.yu + 2000;
+                rtc_data.wday = @bitCast(weekday);
+                rtc_data.buildYDay();
                 return;
-            };
+            }
         }
     }
 };

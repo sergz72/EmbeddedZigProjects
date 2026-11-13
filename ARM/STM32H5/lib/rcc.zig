@@ -418,15 +418,29 @@ pub const RccEnr = extern struct{
     reserved14: u32,
 };
 
+pub const RccLseDrv = enum(u2) {
+    low = 0,
+    medium_low = 1,
+    medium_high = 2,
+    high = 3
+};
+
+pub const RccRtcSel = enum(u2) {
+    off = 0,
+    lse = 1,
+    lsi = 2,
+    hse = 3
+};
+
 pub const RccBdcr = bitpack struct(u32) {
     lseon: bool = false,
     lserdy: bool = false,
     lsebyp: bool = false,
-    lsedrv: u2 = 0,
+    lsedrv: RccLseDrv = .low,
     lsecsson: bool = false,
     lsecssd: bool = false,
     lseext: bool = false,
-    rtcsel: u2 = 0,
+    rtcsel: RccRtcSel = .off,
     _r0: u5 = 0,
     rtcen: bool = false,
     vswrst: bool = false,
@@ -882,7 +896,7 @@ pub const Rcc = extern struct {
         }
     }
 
-    pub fn lseOn(self: *volatile Rcc, drv: LseDrv) void {
+    pub fn lseOn(self: *volatile Rcc, drv: RccLseDrv) void {
         self.bdcr.lsedrv = drv;
         self.bdcr.lseon = true;
         while (!self.bdcr.lserdy) {

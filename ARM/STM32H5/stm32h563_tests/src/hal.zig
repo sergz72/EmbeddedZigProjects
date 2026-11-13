@@ -13,8 +13,11 @@ const rng = @import("rng");
 const scd4x = @import("scd4x");
 const veml = @import("veml7700");
 const iwdg = @import("iwdg");
+const rtc = @import("rtc");
 
 const TIMER_INSTANCE = tim.tim7;
+
+const RTC_TIMEOUT = 100000;
 
 var led_status: bool = undefined;
 
@@ -63,6 +66,7 @@ export fn SystemInit() callconv(.c) void {
     rcc.rcc.hpenr.ahb1.crcen = true;
     board.initArduinoI2c();
     board.initArduinoSPI(1000000, .full_duplex);
+    rtc.rtc.init(.low, RTC_TIMEOUT) catch { while (true){} };
     if (!iwdg.iwdg.init(10000)) {
         while (true) {}
     }

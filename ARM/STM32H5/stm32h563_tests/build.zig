@@ -129,6 +129,23 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const generic_rtc = b.addModule("generic_rtc", .{
+        .root_source_file = b.path("../../../common_lib/rtc/generic_rtc.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const rtc = b.addModule("rtc", .{
+        .root_source_file = b.path("../lib/rtc.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "rcc", .module = rcc },
+            .{ .name = "pwr", .module = pwr },
+            .{ .name = "generic_rtc", .module = generic_rtc }
+        },
+    });
+
     const usb_device = b.addModule("usb_device", .{
         .root_source_file = b.path("../../../common_lib/usb/usb_device.zig"),
         .target = target,
@@ -287,6 +304,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "scd4x", .module = scd4x },
             .{ .name = "veml7700", .module = veml7700 },
             .{ .name = "iwdg", .module = iwdg },
+            .{ .name = "rtc", .module = rtc }
         },
     });
 
@@ -371,6 +389,17 @@ pub fn build(b: *std.Build) !void {
         }
     });
 
+    const rtc_commands = b.addModule("rtc_commands", .{
+        .root_source_file = b.path("../lib/shell_commands/rtc_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "rtc", .module = rtc },
+            .{ .name = "generic_rtc", .module = generic_rtc }
+        }
+    });
+
     const exe = b.addExecutable(.{
         .name = "stm32h563_tests.elf",
         .root_module = b.createModule(.{
@@ -397,6 +426,7 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "crc", .module = crc },
                 .{ .name = "scd4x_commands", .module = scd4x_commands },
                 .{ .name = "veml7700_commands", .module = veml7700_commands },
+                .{ .name = "rtc_commands", .module = rtc_commands }
             },
         }),
     });

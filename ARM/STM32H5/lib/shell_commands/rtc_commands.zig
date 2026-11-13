@@ -3,6 +3,8 @@ const shell = @import("shell");
 const rtc = @import("rtc");
 const generic_rtc = @import("generic_rtc");
 
+const RTC_TIMEOUT = 100000;
+
 const date_get_command = shell.ShellCommand{
     .name = "date_get",
     .help = "date_get",
@@ -19,7 +21,10 @@ const date_set_command = shell.ShellCommand{
 
 fn dateGetHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isize {
     var rtc_data: generic_rtc.RtcData = undefined;
-    rtc.rtc.getTime(&rtc_data);
+    rtc.rtc.getTime(&rtc_data) catch |err| {
+        try parameters.writer.print("{s}\n", .{ @errorName(err) });
+        return 1;
+    };
     try parameters.writer.print("{d}.{s}.{d:0>2} {d}:{d:0>2}:{d:0>2} weekday={s} yday={d}\n", .{
         rtc_data.day, @tagName(rtc_data.month), rtc_data.year, rtc_data.hours, rtc_data.minutes,
         rtc_data.seconds, @tagName(rtc_data.wday), rtc_data.yday
@@ -61,7 +66,7 @@ fn dateSetHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!
         try parameters.writer.print("{s}\n", .{ @errorName(err) });
         return 9;
     };
-    rtc.rtc.setTime(&rtc_data) catch |err| {
+    rtc.rtc.setTime(&rtc_data, RTC_TIMEOUT) catch |err| {
         try parameters.writer.print("{s}\n", .{ @errorName(err)});
         return 10;
     };
