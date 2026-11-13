@@ -805,6 +805,36 @@ pub const Rcc = extern struct {
     rsr: RccRsr,
     reserved13: [7]u32,
     privcfgr: RccPrivcfgr,
+
+    pub fn lsiOn(self: *volatile Rcc) void {
+        self.bdcr.lsion = true;
+        while (!self.bdcr.lsirdy) {
+            asm volatile("nop");
+        }
+    }
+
+    pub fn lseOn(self: *volatile Rcc, drv: Lsedrv) void {
+        self.bdcr.lsedrv = drv;
+        self.bdcr.lseon = true;
+        while (!self.bdcr.lserdy) {
+            asm volatile("nop");
+        }
+    }
+
+    pub fn hseOn(self: *volatile Rcc, hsebyp: bool) void {
+        self.cr1.hsebyp = hsebyp;
+        self.cr1.hseon = true;
+        while (!self.cr1.hserdy) {
+            asm volatile ("nop");
+        }
+    }
+
+    pub fn clockSwitch(self: *volatile Rcc, sw: Sw) void {
+        self.cfgr1.sw = sw;
+        while (self.cfgr1.sws != sw) {
+            asm volatile ("nop");
+        }
+    }
 };
 
 pub const rcc: *volatile Rcc = @ptrFromInt(RCC_BASE);

@@ -74,8 +74,7 @@ pub const Interrupt = enum(u8) {
     TIM8_BRK_TERR_IERR    =  72, // TIM8 Break interrupt/TIM8 Transition error/TIM8 Index error                  
     TIM8_UPD              =  73, // TIM8 Update interrupt                                                        
     TIM8_TRGI_COM_DIR_IDX =  74, // TIM8 trigger and commutation interrupt/TIM8 Direction Change interrupt/TIM8
-                                            Index                                                                        
-    TIM8_CC               =  75, // TIM8 capture compare interrupt                                               
+    TIM8_CC               =  75, // TIM8 capture compare interrupt
     COMP1                 =  76, // COMP global interrupt                                                        
     DAC1                  =  77, // DAC1 global interrupt                                                        
     LPDMA2_CH0            =  78, // LPDMA2 channel0 global interrupt                                             
