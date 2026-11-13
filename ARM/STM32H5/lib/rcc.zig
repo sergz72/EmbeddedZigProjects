@@ -882,6 +882,14 @@ pub const Rcc = extern struct {
         }
     }
 
+    pub fn lseOn(self: *volatile Rcc, drv: LseDrv) void {
+        self.bdcr.lsedrv = drv;
+        self.bdcr.lseon = true;
+        while (!self.bdcr.lserdy) {
+            asm volatile("nop");
+        }
+    }
+
     pub fn hsi48On(self: *volatile Rcc) void {
         self.cr.hsi48on = true;
         while (!self.cr.hsi48rdy) {
@@ -1073,6 +1081,11 @@ pub const Rcc = extern struct {
     pub fn enableUsbClock(self: *volatile Rcc, source: UsbfsSel) void {
         self.ccipr4.usbfssel = source;
         self.hpenr.apb2.usbfsen = true;
+    }
+
+    pub fn backupDomainReset(self: *volatile Rcc) void {
+        self.bdcr.vswrst = true;
+        self.bdcr.vswrst = false;
     }
 };
 

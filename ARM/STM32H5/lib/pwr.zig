@@ -266,6 +266,14 @@ pub const Pwr = extern struct {
             }
         }
     }
+
+    pub fn unlockBackupDomain(self: *volatile Pwr) void {
+        self.dbpcr = PwrDbpcr{.dbp = true};
+    }
+
+    pub fn lockBackupDomain(self: *volatile Pwr) void {
+        self.dbpcr = PwrDbpcr{};
+    }
 };
 
 pub const pwr: *volatile Pwr = @ptrFromInt(PWR_BASE);
