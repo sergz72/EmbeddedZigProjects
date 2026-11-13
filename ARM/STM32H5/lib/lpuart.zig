@@ -144,21 +144,6 @@ pub const LpuartIcr = bitpack struct(u32) {
     reserved4: u11 = 0,
 };
 
-pub const Prescaler = enum(u4) {
-    B_0x0 = 0,
-    B_0x1 = 1,
-    B_0x2 = 2,
-    B_0x3 = 3,
-    B_0x4 = 4,
-    B_0x5 = 5,
-    B_0x6 = 6,
-    B_0x7 = 7,
-    B_0x8 = 8,
-    B_0x9 = 9,
-    B_0xA = 10,
-    B_0xB = 11,
-};
-
 pub const LpuartPresc = enum(u32) {
     div1 = 0,
     div2 = 1,

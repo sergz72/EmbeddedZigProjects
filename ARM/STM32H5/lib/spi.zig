@@ -20,20 +20,6 @@ pub const SpiCr1 = bitpack struct(u32) {
     reserved1: u15 = 0,
 };
 
-pub const Dsize = enum(u5) {
-    B_0x0 = 0,
-    B_0x1 = 1,
-    B_0x2 = 2,
-    B_0x3 = 3,
-    B_0x4 = 4,
-    B_0x5 = 5,
-    B_0x6 = 6,
-    B_0x7 = 7,
-    B_0x1D = 29,
-    B_0x1E = 30,
-    B_0x1F = 31,
-};
-
 pub const Mbr = enum(u3) {
     div2 = 0,
     div4 = 1,
@@ -311,5 +297,5 @@ pub const spi6: *volatile Spi = @ptrFromInt(SPI6_BASE);
 
 test "sizeof test" {
     const std = @import("std");
-    try std.testing.expectEqual(0x400, @sizeOf(Spi));
+    try std.testing.expectEqual(0x54, @sizeOf(Spi));
 }
