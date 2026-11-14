@@ -7,12 +7,8 @@ const LPSPI5_BASE = 0x400B5000;
 const LPSPI6_BASE = 0x400B6000;
 const LPSPI7_BASE = 0x400B7000;
 
-pub const Feature = enum(u16) {
-    STANDARD = 4,
-};
-
 pub const Verid = bitpack struct(u32) {
-    feature: Feature = .STANDARD,
+    feature: u16,
     minor: u8,
     major: u8,
 };
@@ -83,25 +79,25 @@ pub const Cfgr0 = bitpack struct(u32) {
 };
 
 pub const Pcspol = enum(u4) {
-    DISCARDED = 0,
-    STORED = 1,
+    discarded = 0,
+    stored = 1,
 };
 
 pub const Matcfg = enum(u3) {
-    DISABLED = 0,
-    ENABLED_FIRSTDATAMATCH = 2,
-    ENABLED_ANYDATAMATCH = 3,
-    ENABLED_DATAMATCH_100 = 4,
-    ENABLED_DATAMATCH_101 = 5,
-    ENABLED_DATAMATCH_110 = 6,
-    ENABLED_DATAMATCH_111 = 7,
+    disabled = 0,
+    enabled_firstdatamatch = 2,
+    enabled_anydatamatch = 3,
+    enabled_datamatch_100 = 4,
+    enabled_datamatch_101 = 5,
+    enabled_datamatch_110 = 6,
+    enabled_datamatch_111 = 7,
 };
 
 pub const Pincfg = enum(u2) {
-    SIN_IN_SOUT_OUT = 0,
-    SIN_BOTH_IN_OUT = 1,
-    SOUT_BOTH_IN_OUT = 2,
-    SOUT_IN_SIN_OUT = 3,
+    sin_in_sout_out = 0,
+    sin_both_in_out = 1,
+    sout_both_in_out = 2,
+    sout_in_sin_out = 3,
 };
 
 pub const Cfgr1 = bitpack struct(u32) {
@@ -111,22 +107,14 @@ pub const Cfgr1 = bitpack struct(u32) {
     nostall: bool = false,
     partial: bool = false,
     reserved0: u3 = 0,
-    pcspol: Pcspol = .DISCARDED,
+    pcspol: Pcspol = .discarded,
     reserved1: u4 = 0,
-    matcfg: Matcfg = .DISABLED,
+    matcfg: Matcfg = .disabled,
     reserved2: u5 = 0,
-    pincfg: Pincfg = .SIN_IN_SOUT_OUT,
+    pincfg: Pincfg = .sin_in_sout_out,
     outcfg: bool = false,
     pcscfg: bool = false,
     reserved3: u4 = 0,
-};
-
-pub const Dmr0 = bitpack struct(u32) {
-    match0: u32 = 0,
-};
-
-pub const Dmr1 = bitpack struct(u32) {
-    match1: u32 = 0,
 };
 
 pub const Ccr = bitpack struct(u32) {
@@ -158,48 +146,37 @@ pub const Fsr = bitpack struct(u32) {
 };
 
 pub const Width = enum(u2) {
-    ONEBIT = 0,
-    TWOBIT = 1,
-    FOURBIT = 2,
-};
-
-pub const Pcs = enum(u2) {
-    TX_PCS0 = 0,
-    TX_PCS1 = 1,
-    TX_PCS2 = 2,
-    TX_PCS3 = 3,
+    onebit = 0,
+    twobit = 1,
+    fourbit = 2,
 };
 
 pub const Prescale = enum(u3) {
-    DIVIDEBY1 = 0,
-    DIVIDEBY2 = 1,
-    DIVIDEBY4 = 2,
-    DIVIDEBY8 = 3,
-    DIVIDEBY16 = 4,
-    DIVIDEBY32 = 5,
-    DIVIDEBY64 = 6,
-    DIVIDEBY128 = 7,
+    div1 = 0,
+    div2 = 1,
+    div4 = 2,
+    div8 = 3,
+    div16 = 4,
+    div32 = 5,
+    div64 = 6,
+    div128 = 7,
 };
 
 pub const Tcr = bitpack struct(u32) {
     framesz: u12 = 31,
     reserved0: u4 = 0,
-    width: Width = .ONEBIT,
+    width: Width = .onebit,
     txmsk: bool = false,
     rxmsk: bool = false,
     contc: bool = false,
     cont: bool = false,
     bysw: bool = false,
     lsbf: bool = false,
-    pcs: Pcs = .TX_PCS0,
+    pcs: u2 = 0,
     reserved1: u1 = 0,
-    prescale: Prescale = .DIVIDEBY1,
+    prescale: Prescale = .div1,
     cpha: bool = false,
     cpol: bool = false,
-};
-
-pub const Tdr = bitpack struct(u32) {
-    data: u32 = 0,
 };
 
 pub const Rsr = bitpack struct(u32) {
@@ -208,62 +185,47 @@ pub const Rsr = bitpack struct(u32) {
     reserved0: u30,
 };
 
-pub const Rdr = bitpack struct(u32) {
-    data: u32,
-};
-
-pub const Rdror = bitpack struct(u32) {
-    data: u32,
-};
-
-pub const Tcbr = bitpack struct(u32) {
-    data: u32 = 0,
-};
-
-pub const Tdbr[%s] = bitpack struct(u32) {
-    data: u32 = 0,
-};
-
-pub const Rdbr[%s] = bitpack struct(u32) {
-    data: u32,
-};
-
-pub const LPSPI0 = extern struct {
+pub const Lpspi = extern struct {
     verid: Verid,
     param: Param,
-    reserved0: [8]u8,
+    reserved0: [2]u32,
     cr: Cr,
     sr: Sr,
     ier: Ier,
     der: Der,
     cfgr0: Cfgr0,
     cfgr1: Cfgr1,
-    reserved1: [8]u8,
-    dmr0: Dmr0,
-    dmr1: Dmr1,
-    reserved2: [8]u8,
+    reserved1: [2]u32,
+    dmr0: u32,
+    dmr1: u32,
+    reserved2: [2]u32,
     ccr: Ccr,
     ccr1: Ccr1,
-    reserved3: [16]u8,
+    reserved3: [4]u32,
     fcr: Fcr,
     fsr: Fsr,
     tcr: Tcr,
-    tdr: Tdr,
-    reserved4: [8]u8,
+    tdr: u32,
+    reserved4: [2]u32,
     rsr: Rsr,
-    rdr: Rdr,
-    rdror: Rdror,
-    reserved5: [896]u8,
-    tcbr: Tcbr,
-    tdbr[%s]: Tdbr[%s],
-    reserved6: [508]u8,
-    rdbr[%s]: Rdbr[%s],
+    rdr: u32,
+    rdror: u32,
+    reserved5: [224]u32,
+    tcbr: u32,
+    tdbr: [128]u32,
+    rdbr: [128]u32,
 };
 
-pub const lpspi0: *volatile LPSPI0 = @ptrFromInt(LPSPI0_BASE);
+pub const lpspi0: *volatile Lpspi = @ptrFromInt(LPSPI0_BASE);
+pub const lpspi1: *volatile Lpspi = @ptrFromInt(LPSPI1_BASE);
+pub const lpspi2: *volatile Lpspi = @ptrFromInt(LPSPI2_BASE);
+pub const lpspi3: *volatile Lpspi = @ptrFromInt(LPSPI3_BASE);
+pub const lpspi4: *volatile Lpspi = @ptrFromInt(LPSPI4_BASE);
+pub const lpspi5: *volatile Lpspi = @ptrFromInt(LPSPI5_BASE);
+pub const lpspi6: *volatile Lpspi = @ptrFromInt(LPSPI6_BASE);
+pub const lpspi7: *volatile Lpspi = @ptrFromInt(LPSPI7_BASE);
 
 test "sizeof test" {
     const std = @import("std");
-    try std.testing.expectEqual(0x800, @sizeOf(LPSPI0));
-
+    try std.testing.expectEqual(0x800, @sizeOf(Lpspi));
 }

@@ -183,5 +183,4 @@ pub const port5: *volatile Port = @ptrFromInt(PORT5_BASE);
 test "sizeof test" {
     const std = @import("std");
     try std.testing.expectEqual(0xF8, @sizeOf(Port));
-
 }

@@ -374,6 +374,14 @@ pub const Scg = extern struct {
         syscon.syscon0.ahbclkctrlset2 = syscon.Ahbclkctrl2{.scg = true};
     }
 
+    pub fn enableLdo(self: *volatile Scg) void {
+        self.trimUnlock();
+        self.ldocsr.ldoen = true;
+        while (!self.ldocsr.vout_ok) {
+            asm volatile ("nop");
+        }
+    }
+
     pub fn enableXosc(self: *volatile Scg, frequency: usize) void {
         if (frequency <= 20000000) {
             self.sosccfg = Sosccfg{
@@ -413,6 +421,10 @@ pub const Scg = extern struct {
         }
     }
 
+    pub fn trimUnlock(self: *volatile Scg) void {
+        self.trim_lock = TrimLock{.trim_unlock = true, .ifr_disable = false, .trim_lock_key = 0x5A5A};
+    }
+
     pub fn pllInit(self: *volatile Scg, pll1: bool, source: Source, source_frequency: usize, output_frequency: usize) bool {
         const fi = source_frequency / 2;
         var m: usize = PLL_VCO_MIN_FREQUENCY / fi;
@@ -429,7 +441,7 @@ pub const Scg = extern struct {
                 pll.ndiv = Pllndiv{.ndiv = 2};
                 pll.mdiv = Pllmdiv{.mdiv = @truncate(m)};
                 pll.pdiv = Pllpdiv{.pdiv = @truncate(f / output_frequency / 2)};
-                self.trim_lock = TrimLock{.trim_unlock = true, .ifr_disable = false, .trim_lock_key = 0x5A5A};
+                self.trimUnlock();
                 pll.lock_cnfg = PlllockCnfg{.lock_time = @truncate(fi / 2000 + 300)};
                 pll.csr = Pllcsr{
                     .pwren = true,

@@ -24,13 +24,22 @@ public static class ZigStructCreator
         var lines = new List<string>();
         lines.Add($"const {peripheral.Name.ToUpper()}_BASE = 0x{peripheral.BaseAddress.Value:X};");
         lines.Add("");
-        if (peripheral.Registers == null || peripheral.Registers.Value.Registers == null)
-            return lines;
+        foreach (var cluster in peripheral.Registers?.Clusters ?? Enumerable.Empty<Cluster>())
+            CreateStruct(cluster, lines);
+        CreateStruct(peripheral, lines);
+        AddInstance(lines, peripheral.Name, peripheral.Addresses.Size.Value);
+        return lines;
+    }
+    
+    private static void CreateStruct(IPeripheral peripheral, List<string> lines)
+    {
+        if (peripheral.GetRegisters() == null)
+            return;
         var peripheralLines = new List<string>();
-        peripheralLines.Add($"pub const {peripheral.Name} = extern struct {{");
+        peripheralLines.Add($"pub const {peripheral.GetName()} = extern struct {{");
         uint offset = 0;
         var resIdx = 0;
-        foreach (var register in peripheral.Registers.Value.Registers.OrderBy(r => r.AddressOffset.Value))
+        foreach (var register in peripheral.GetRegisters()!.OrderBy(r => r.AddressOffset.Value))
         {
             var regLines = new List<string>();
             var rw = register.Access != "read-only";
@@ -44,7 +53,7 @@ public static class ZigStructCreator
             }
             offset = register.AddressOffset.Value + register.Size.Value / 8;
             peripheralLines.Add($"    {pfName}: {rName},");
-            regLines.Add($"pub const {rName} = packed struct(u{register.Size.Value}) {{");
+            regLines.Add($"pub const {rName} = bitpack struct(u{register.Size.Value}) {{");
             uint nextBit = 0;
             _reservedIdx = 0;
             var resetValue  = register.ResetValue?.Value ?? 0;
@@ -81,8 +90,6 @@ public static class ZigStructCreator
         lines.AddRange(peripheralLines);
         lines.Add("};");
         lines.Add("");
-        AddInstance(lines, peripheral.Name, peripheral.Addresses.Size.Value);
-        return lines;
     }
 
     private static string BuildFieldStruct(List<string> lines, Field field, uint resetValue, bool rw)

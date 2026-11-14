@@ -8,12 +8,12 @@ const LPI2C6_BASE = 0x400B6800;
 const LPI2C7_BASE = 0x400B7800;
 
 pub const Feature = enum(u16) {
-    MASTER_ONLY = 2,
-    MASTER_AND_SLAVE = 3,
+    master_only = 2,
+    master_and_slave = 3,
 };
 
 pub const Verid = bitpack struct(u32) {
-    feature: Feature = .MASTER_AND_SLAVE,
+    feature: Feature = .master_and_slave,
     minor: u8,
     major: u8,
 };
@@ -90,39 +90,39 @@ pub const Mcfgr0 = bitpack struct(u32) {
 };
 
 pub const Prescale = enum(u3) {
-    DIVIDE_BY_1 = 0,
-    DIVIDE_BY_2 = 1,
-    DIVIDE_BY_4 = 2,
-    DIVIDE_BY_8 = 3,
-    DIVIDE_BY_16 = 4,
-    DIVIDE_BY_32 = 5,
-    DIVIDE_BY_64 = 6,
-    DIVIDE_BY_128 = 7,
+    div1 = 0,
+    div2 = 1,
+    div4 = 2,
+    div8 = 3,
+    div16 = 4,
+    div32 = 5,
+    div64 = 6,
+    div128 = 7
 };
 
 pub const Matcfg = enum(u3) {
-    DISABLED = 0,
-    FIRST_DATA_WORD_EQUALS_MATCH0_OR_MATCH1 = 2,
-    ANY_DATA_WORD_EQUALS_MATCH0_OR_MATCH1 = 3,
-    FIRST_DATA_WORD_MATCH0_AND_SECOND_DATA_WORD_MATCH1 = 4,
-    ANY_DATA_WORD_MATCH0_NEXT_DATA_WORD_MATCH1 = 5,
-    FIRST_DATA_WORD_AND_MATCH1_EQUALS_MATCH0_AND_MATCH1 = 6,
-    ANY_DATA_WORD_AND_MATCH1_EQUALS_MATCH0_AND_MATCH1 = 7,
+    disabled = 0,
+    first_data_word_equals_match0_or_match1 = 2,
+    any_data_word_equals_match0_or_match1 = 3,
+    first_data_word_match0_and_second_data_word_match1 = 4,
+    any_data_word_match0_next_data_word_match1 = 5,
+    first_data_word_and_match1_equals_match0_and_match1 = 6,
+    any_data_word_and_match1_equals_match0_and_match1 = 7,
 };
 
 pub const Pincfg = enum(u3) {
-    OPEN_DRAIN_2_PIN = 0,
-    OUTPUT_2_PIN_ONLY = 1,
-    PUSH_PULL_2_PIN = 2,
-    PUSH_PULL_4_PIN = 3,
-    OPEN_DRAIN_2_PIN_W_LPI2C_SLAVE = 4,
-    OUTPUT_2_PIN_ONLY_W_LPI2C_SLAVE = 5,
-    PUSH_PULL_2_PIN_W_LPI2C_SLAVE = 6,
-    PUSH_PULL_4_PIN_W_LPI2C_SLAVE = 7,
+    open_drain_2_pin = 0,
+    output_2_pin_only = 1,
+    push_pull_2_pin = 2,
+    push_pull_4_pin = 3,
+    open_drain_2_pin_w_lpi2c_slave = 4,
+    output_2_pin_only_w_lpi2c_slave = 5,
+    push_pull_2_pin_w_lpi2c_slave = 6,
+    push_pull_4_pin_w_lpi2c_slave = 7,
 };
 
 pub const Mcfgr1 = bitpack struct(u32) {
-    prescale: Prescale = .DIVIDE_BY_1,
+    prescale: Prescale = .div1,
     reserved0: u5 = 0,
     autostop: bool = false,
     ignack: bool = false,
@@ -130,9 +130,9 @@ pub const Mcfgr1 = bitpack struct(u32) {
     stopcfg: bool = false,
     startcfg: bool = false,
     reserved1: u3 = 0,
-    matcfg: Matcfg = .DISABLED,
+    matcfg: Matcfg = .disabled,
     reserved2: u5 = 0,
-    pincfg: Pincfg = .OPEN_DRAIN_2_PIN,
+    pincfg: Pincfg = .open_drain_2_pin,
     reserved3: u5 = 0,
 };
 
@@ -195,19 +195,19 @@ pub const Mfsr = bitpack struct(u32) {
 };
 
 pub const Cmd = enum(u3) {
-    TRANSMIT_DATA_7_THROUGH_0 = 0,
-    RECEIVE_DATA_7_THROUGH_0_PLUS_ONE = 1,
-    GENERATE_STOP_CONDITION = 2,
-    RECEIVE_AND_DISCARD_DATA_7_THROUGH_0_PLUS_ONE = 3,
-    GENERATE_START_AND_TRANSMIT_ADDRESS_IN_DATA_7_THROUGH_0 = 4,
-    GENERATE_START_AND_TRANSMIT_ADDRESS_IN_DATA_7_THROUGH_0_EXPECT_NACK = 5,
-    GENERATE_START_AND_TRANSMIT_ADDRESS_IN_DATA_7_THROUGH_0_USING_HIGH_SPEED_MODE = 6,
-    GENERATE_START_AND_TRANSMIT_ADDRESS_IN_DATA_7_THROUGH_0_USING_HIGH_SPEED_MODE_EXPECT_NACK = 7,
+    transmit_data_7_through_0 = 0,
+    receive_data_7_through_0_plus_one = 1,
+    generate_stop_condition = 2,
+    receive_and_discard_data_7_through_0_plus_one = 3,
+    generate_start_and_transmit_address_in_data_7_through_0 = 4,
+    generate_start_and_transmit_address_in_data_7_through_0_expect_nack = 5,
+    generate_start_and_transmit_address_in_data_7_through_0_using_high_speed_mode = 6,
+    generate_start_and_transmit_address_in_data_7_through_0_using_high_speed_mode_expect_nack = 7,
 };
 
 pub const Mtdr = bitpack struct(u32) {
     data: u8 = 0,
-    cmd: Cmd = .TRANSMIT_DATA_7_THROUGH_0,
+    cmd: Cmd = .transmit_data_7_through_0,
     reserved0: u21 = 0,
 };
 
@@ -291,14 +291,14 @@ pub const Scfgr0 = bitpack struct(u32) {
 };
 
 pub const Addrcfg = enum(u3) {
-    ADDRESS_MATCH0_7_BIT = 0,
-    ADDRESS_MATCH0_10_BIT = 1,
-    ADDRESS_MATCH0_7_BIT_OR_ADDRESS_MATCH1_7_BIT = 2,
-    ADDRESS_MATCH0_10_BIT_OR_ADDRESS_MATCH1_10_BIT = 3,
-    ADDRESS_MATCH0_7_BIT_OR_ADDRESS_MATCH1_10_BIT = 4,
-    ADDRESS_MATCH0_10_BIT_OR_ADDRESS_MATCH1_7_BIT = 5,
-    FROM_ADDRESS_MATCH0_7_BIT_TO_ADDRESS_MATCH1_7_BIT = 6,
-    FROM_ADDRESS_MATCH0_10_BIT_TO_ADDRESS_MATCH1_10_BIT = 7,
+    address_match0_7_bit = 0,
+    address_match0_10_bit = 1,
+    address_match0_7_bit_or_address_match1_7_bit = 2,
+    address_match0_10_bit_or_address_match1_10_bit = 3,
+    address_match0_7_bit_or_address_match1_10_bit = 4,
+    address_match0_10_bit_or_address_match1_7_bit = 5,
+    from_address_match0_7_bit_to_address_match1_7_bit = 6,
+    from_address_match0_10_bit_to_address_match1_10_bit = 7,
 };
 
 pub const Scfgr1 = bitpack struct(u32) {
@@ -315,7 +315,7 @@ pub const Scfgr1 = bitpack struct(u32) {
     ignack: bool = false,
     hsmen: bool = false,
     reserved1: u2 = 0,
-    addrcfg: Addrcfg = .ADDRESS_MATCH0_7_BIT,
+    addrcfg: Addrcfg = .address_match0_7_bit,
     reserved2: u5 = 0,
     rxall: bool = false,
     rscfg: bool = false,
@@ -377,23 +377,23 @@ pub const Srdror = bitpack struct(u32) {
     reserved1: u16,
 };
 
-pub const Mtcbr[%s] = bitpack struct(u32) {
+pub const Mtcbr = bitpack struct(u32) {
     data: u8 = 0,
     cmd: u3 = 0,
     reserved0: u21 = 0,
 };
 
-pub const Mtdbr[%s] = bitpack struct(u32) {
+pub const Mtdbr = bitpack struct(u32) {
     data0: u8 = 0,
     data1: u8 = 0,
     data2: u8 = 0,
     data3: u8 = 0,
 };
 
-pub const LPI2C0 = extern struct {
+pub const Lpi2c = extern struct {
     verid: Verid,
     param: Param,
-    reserved0: [8]u8,
+    reserved0: [2]u32,
     mcr: Mcr,
     msr: Msr,
     mier: Mier,
@@ -402,21 +402,21 @@ pub const LPI2C0 = extern struct {
     mcfgr1: Mcfgr1,
     mcfgr2: Mcfgr2,
     mcfgr3: Mcfgr3,
-    reserved1: [16]u8,
+    reserved1: [4]u32,
     mdmr: Mdmr,
-    reserved2: [4]u8,
+    reserved2: u32,
     mccr0: Mccr0,
-    reserved3: [4]u8,
+    reserved3: u32,
     mccr1: Mccr1,
-    reserved4: [4]u8,
+    reserved4: u32,
     mfcr: Mfcr,
     mfsr: Mfsr,
     mtdr: Mtdr,
-    reserved5: [12]u8,
+    reserved5: [3]u32,
     mrdr: Mrdr,
-    reserved6: [4]u8,
+    reserved6: u32,
     mrdror: Mrdror,
-    reserved7: [148]u8,
+    reserved7: [37]u32,
     scr: Scr,
     ssr: Ssr,
     sier: Sier,
@@ -424,27 +424,32 @@ pub const LPI2C0 = extern struct {
     scfgr0: Scfgr0,
     scfgr1: Scfgr1,
     scfgr2: Scfgr2,
-    reserved8: [20]u8,
+    reserved8: [5]u32,
     samr: Samr,
-    reserved9: [12]u8,
+    reserved9: [3]u32,
     sasr: Sasr,
     star: Star,
-    reserved10: [8]u8,
+    reserved10: [2]u32,
     stdr: Stdr,
-    reserved11: [12]u8,
+    reserved11: [3]u32,
     srdr: Srdr,
-    reserved12: [4]u8,
+    reserved12: u32,
     srdror: Srdror,
-    reserved13: [132]u8,
-    mtcbr[%s]: Mtcbr[%s],
-    reserved14: [508]u8,
-    mtdbr[%s]: Mtdbr[%s],
+    reserved13: [33]u32,
+    mtcbr: [128]Mtcbr,
+    mtdbr: [253]Mtdbr,
 };
 
-pub const lpi2c0: *volatile LPI2C0 = @ptrFromInt(LPI2C0_BASE);
+pub const lpi2c0: *volatile Lpi2c = @ptrFromInt(LPI2C0_BASE);
+pub const lpi2c1: *volatile Lpi2c = @ptrFromInt(LPI2C1_BASE);
+pub const lpi2c2: *volatile Lpi2c = @ptrFromInt(LPI2C2_BASE);
+pub const lpi2c3: *volatile Lpi2c = @ptrFromInt(LPI2C3_BASE);
+pub const lpi2c4: *volatile Lpi2c = @ptrFromInt(LPI2C4_BASE);
+pub const lpi2c5: *volatile Lpi2c = @ptrFromInt(LPI2C5_BASE);
+pub const lpi2c6: *volatile Lpi2c = @ptrFromInt(LPI2C6_BASE);
+pub const lpi2c7: *volatile Lpi2c = @ptrFromInt(LPI2C7_BASE);
 
 test "sizeof test" {
     const std = @import("std");
-    try std.testing.expectEqual(0x7F4, @sizeOf(LPI2C0));
-
+    try std.testing.expectEqual(0x7F4, @sizeOf(Lpi2c));
 }

@@ -9,17 +9,44 @@ public struct AddressBlock
     [XmlElement("offset")] public HexUInt Offset;
     [XmlElement("size")] public HexUInt Size;
 }
-public struct Peripheral
+
+public interface IPeripheral
+{
+    string GetName();
+    string GetDescription();
+    Register[]? GetRegisters();
+}
+
+public struct Peripheral: IPeripheral
 {
     [XmlElement("name")] public string Name;
     [XmlElement("description")] public string Description;
     [XmlElement("baseAddress")] public HexUInt BaseAddress;
     [XmlElement("addressBlock")] public AddressBlock Addresses;
     [XmlElement("registers")] public RegisterList? Registers;
+    
+    public string GetName() => Name;
+    public string GetDescription() => Description;
+    public Register[]? GetRegisters() => Registers?.Registers;
+}
+
+public struct Cluster: IPeripheral
+{
+    [XmlElement("dim")] public HexUInt Dim;
+    [XmlElement("dimIncrement")] public HexUInt DimIncrement;
+    [XmlElement("name")] public string Name;
+    [XmlElement("description")] public string Description;
+    [XmlElement("addressOffset")] public HexUInt AddressOffset;
+    [XmlElement("register")] public Register[] Registers;
+    
+    public string GetName() => Name;
+    public string GetDescription() => Description;
+    public Register[]? GetRegisters() => Registers;
 }
 
 public struct RegisterList
 {
+    [XmlElement("cluster")] public Cluster[] Clusters;
     [XmlElement("register")] public Register[] Registers;
 }
 
