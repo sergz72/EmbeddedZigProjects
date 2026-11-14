@@ -46,6 +46,10 @@ pub inline fn ledGreenOff() void {
     LED_GPIO.setPins(LED_GREEN_GPIO_PIN_MASK);
 }
 
+pub inline fn ledGreenToggle() void {
+    LED_GPIO.togglePins(LED_GREEN_GPIO_PIN_MASK);
+}
+
 pub inline fn ledBlueOn() void {
     LED_GPIO.clearPins(LED_BLUE_GPIO_PIN_MASK);
 }
@@ -54,12 +58,20 @@ pub inline fn ledBlueOff() void {
     LED_GPIO.setPins(LED_BLUE_GPIO_PIN_MASK);
 }
 
+pub inline fn ledBlueToggle() void {
+    LED_GPIO.togglePins(LED_BLUE_GPIO_PIN_MASK);
+}
+
 pub inline fn ledRedOn() void {
     LED_GPIO.clearPins(LED_RED_GPIO_PIN_MASK);
 }
 
 pub inline fn ledRedOff() void {
     LED_GPIO.setPins(LED_RED_GPIO_PIN_MASK);
+}
+
+pub inline fn ledRedToggle() void {
+    LED_GPIO.togglePins(LED_RED_GPIO_PIN_MASK);
 }
 
 pub fn getSW2() bool {

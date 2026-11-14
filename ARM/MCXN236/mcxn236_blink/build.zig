@@ -116,9 +116,11 @@ pub fn build(b: *std.Build) !void {
             .target = target,
             .optimize = optimize,
             .imports = &.{
-                .{ .name = "system_timer", .module = system_timer },
+                .{ .name = "syscon", .module = syscon },
                 .{ .name = "board", .module = board },
                 .{ .name = "ctimer", .module = ctimer },
+                .{ .name = "nvic", .module = nvic },
+                .{ .name = "interrupts", .module = interrupts }
             },
         }),
     });
