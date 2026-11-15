@@ -55,12 +55,12 @@
 
 void SystemPreInit (void)
 {
-#if ((__FPU_PRESENT == 1) && (__FPU_USED == 1))
+//#if ((__FPU_PRESENT == 1) && (__FPU_USED == 1))
   SCB->CPACR |= ((3UL << 10*2) | (3UL << 11*2));    /* set CP10, CP11 Full Access in Secure mode */
   #if defined (__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE == 3U)
   SCB_NS->CPACR |= ((3UL << 10*2) | (3UL << 11*2));    /* set CP10, CP11 Full Access in Non-secure mode */
   #endif /* (__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE == 3U) */
-#endif /* ((__FPU_PRESENT == 1) && (__FPU_USED == 1)) */
+//#endif /* ((__FPU_PRESENT == 1) && (__FPU_USED == 1)) */
 
 
   SCB->CPACR |= ((3UL << 0*2) | (3UL << 1*2));    /* set CP0, CP1 Full Access in Secure mode (enable PowerQuad) */

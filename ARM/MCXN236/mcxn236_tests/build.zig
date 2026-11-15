@@ -94,6 +94,18 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const lpi2c = b.addModule("lpi2c", .{
+        .root_source_file = b.path("../lib/lpi2c.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const lpspi = b.addModule("lpspi", .{
+        .root_source_file = b.path("../lib/lpspi.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const scb = b.addModule("scb", .{
         .root_source_file = b.path("../../lib/scb.zig"),
         .target = target,
@@ -135,6 +147,8 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "port", .module = port },
             .{ .name = "interrupts", .module = interrupts },
             .{ .name = "lpuart", .module = lpuart },
+            .{ .name = "lpi2c", .module = lpi2c },
+            .{ .name = "lpspi", .module = lpspi },
             .{ .name = "scg", .module = scg },
             .{ .name = "vbat", .module = vbat },
             .{ .name = "system_timer", .module = system_timer },
@@ -144,6 +158,24 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "cpu", .module = cpu },
             .{ .name = "usart_writer", .module = usart_writer },
         },
+    });
+
+    const scd4x = b.addModule("scd4x", .{
+        .root_source_file = b.path("../../../common_lib/sensor/scd4x.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "system_timer", .module = system_timer }
+        }
+    });
+
+    const veml7700 = b.addModule("veml7700", .{
+        .root_source_file = b.path("../../../common_lib/sensor/veml7700.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "system_timer", .module = system_timer }
+        }
     });
 
     const hal = b.addModule("hal", .{
@@ -159,6 +191,8 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "scb", .module = scb },
             .{ .name = "shell", .module = shell },
             .{ .name = "fmu", .module = fmu },
+            .{ .name = "scd4x", .module = scd4x },
+            .{ .name = "veml7700", .module = veml7700 },
         }
     });
 
@@ -204,6 +238,26 @@ pub fn build(b: *std.Build) !void {
         }
     });
 
+    const veml7700_commands = b.addModule("veml7700_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/veml7700_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "veml7700", .module = veml7700 }
+        }
+    });
+
+    const scd4x_commands = b.addModule("scd4x_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/scd4x_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "scd4x", .module = scd4x }
+        }
+    });
+
     const exe = b.addExecutable(.{
         .name = "mcxn236_tests.elf",
         .root_module = b.createModule(.{
@@ -220,6 +274,8 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "flash_commands", .module = flash_commands },
                 .{ .name = "i2c_commands", .module = i2c_commands },
                 .{ .name = "spi_commands", .module = spi_commands },
+                .{ .name = "scd4x_commands", .module = scd4x_commands },
+                .{ .name = "veml7700_commands", .module = veml7700_commands },
             }
         }),
     });

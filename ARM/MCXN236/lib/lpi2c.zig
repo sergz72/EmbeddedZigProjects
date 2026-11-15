@@ -205,10 +205,15 @@ pub const Cmd = enum(u3) {
     generate_start_and_transmit_address_in_data_7_through_0_using_high_speed_mode_expect_nack = 7,
 };
 
-pub const Mtdr = bitpack struct(u32) {
+pub const Mtdrc = bitpack struct(u32) {
     data: u8 = 0,
     cmd: Cmd = .transmit_data_7_through_0,
     reserved0: u21 = 0,
+};
+
+pub const Mtdr = extern union {
+    data: u8,
+    data_and_command: Mtdrc
 };
 
 pub const Mrdr = bitpack struct(u32) {
@@ -390,6 +395,21 @@ pub const Mtdbr = bitpack struct(u32) {
     data3: u8 = 0,
 };
 
+pub const I2cError = error{
+    Nack,
+    ArbitrationLost,
+    FifoError,
+    PinLowTimeout,
+    Timeout,
+    InvalidLength,
+    RateNotReachable
+};
+
+const I2cTiming = struct {
+    prescale: Prescale,
+    mccr0: Mccr0
+};
+
 pub const Lpi2c = extern struct {
     verid: Verid,
     param: Param,
@@ -438,7 +458,174 @@ pub const Lpi2c = extern struct {
     reserved13: [33]u32,
     mtcbr: [128]Mtcbr,
     mtdbr: [253]Mtdbr,
+
+    pub fn init(self: *volatile Lpi2c, baud: usize, i2c_clock: usize) I2cError!void {
+        const timing = try calcTiming(baud, i2c_clock);
+        self.mcfgr1 = Mcfgr1{.prescale = timing.prescale};
+        self.mccr0 = timing.mccr0;
+        self.mcr = Mcr{.men = true};
+    }
+
+    inline fn clearErrors(self: *volatile Lpi2c) void {
+        self.msr = Msr{.alf = true, .ndf = true, .pltf = true, .fef = true};
+    }
+
+    fn flushFifos(self: *volatile Lpi2c) void {
+        self.mcr.rtf = true;
+        self.mcr.rrf = true;
+    }
+
+    fn generateStop(self: *volatile Lpi2c, timeout: usize) I2cError!void {
+        if (self.msr.mbf) {
+            self.mtdr.data_and_command = Mtdrc{.cmd = .generate_stop_condition};
+            for (0..timeout) |_| {
+                if (!self.msr.mbf) {
+                    self.msr = Msr{.sdf = true};
+                    return;
+                }
+            }
+            return I2cError.Timeout;
+        }
+        self.msr = Msr{.sdf = true};
+    }
+
+    fn recover(self: *volatile Lpi2c, timeout: usize) I2cError!void {
+        self.clearErrors();
+        self.flushFifos();
+        try self.generateStop(timeout);
+    }
+
+    fn waitStop(self: *volatile Lpi2c, timeout: usize) I2cError!void {
+        for (0..timeout) |_| {
+            const msr = self.msr;
+            checkStatus(msr) catch |err| {
+                try self.recover(timeout);
+                return err;
+            };
+            if (msr.sdf) {
+                self.msr = Msr{.sdf = true};
+                return;
+            }
+        }
+        return I2cError.Timeout;
+    }
+
+    pub fn scan(self: *volatile Lpi2c, address: u8, timeout: usize) I2cError!void {
+        self.mtdr.data_and_command = Mtdrc{.cmd = .generate_start_and_transmit_address_in_data_7_through_0, .data = address << 1};
+        self.mtdr.data_and_command = Mtdrc{.cmd = .generate_stop_condition};
+        try self.waitStop(timeout);
+    }
+
+    pub fn pushCommand(self: *volatile Lpi2c, cmd: Mtdrc, timeout: usize) I2cError!void {
+        while (true) {
+            checkStatus(self.msr) catch |err| {
+                try self.recover(timeout);
+                return err;
+            };
+            if (self.mfsr.txcount < 4) break;
+        }
+        self.mtdr.data_and_command = cmd;
+    }
+
+    pub fn write(self: *volatile Lpi2c, address: u8, data: []const u8, timeout: usize) I2cError!void {
+        self.mtdr.data_and_command = Mtdrc{.cmd = .generate_start_and_transmit_address_in_data_7_through_0, .data = address << 1};
+        for (data) |b| {
+            try self.pushCommand(Mtdrc{.cmd = .transmit_data_7_through_0, .data = b}, timeout);
+        }
+        try self.pushCommand(Mtdrc{.cmd = .generate_stop_condition}, timeout);
+        try self.waitStop(timeout);
+    }
+
+    pub fn transfer(self: *volatile Lpi2c, address: u8, wdata: []const u8, rdata: []u8, timeout: usize) I2cError!void {
+        self.mtdr.data_and_command = Mtdrc{.cmd = .generate_start_and_transmit_address_in_data_7_through_0, .data = address << 1};
+        for (wdata) |b| {
+            try self.pushCommand(Mtdrc{.cmd = .transmit_data_7_through_0, .data = b}, timeout);
+        }
+        try self.read(address, rdata, timeout);
+    }
+
+    pub fn read(self: *volatile Lpi2c, address: u8, data: []u8, timeout: usize) I2cError!void {
+        try self.pushCommand(Mtdrc{.cmd = .generate_start_and_transmit_address_in_data_7_through_0, .data = (address << 1) | 1}, timeout);
+        var l = data.len;
+        var idx: usize = 0;
+        while (l != 0) {
+            const tr = @min(l, 256);
+            try self.pushCommand(Mtdrc{.cmd = .receive_data_7_through_0_plus_one, .data = @truncate(tr - 1)}, timeout);
+            var ll = l;
+            l -= tr;
+            while (ll != 0) {
+                checkStatus(self.msr) catch |err| {
+                    try self.recover(timeout);
+                    return err;
+                };
+                while (self.mfsr.rxcount != 0) {
+                    data[idx] = self.mrdr.data;
+                    idx += 1;
+                    ll -= 1;
+                }
+            }
+        }
+        try self.pushCommand(Mtdrc{.cmd = .generate_stop_condition}, timeout);
+        try self.waitStop(timeout);
+    }
 };
+
+fn checkStatus(msr: Msr) I2cError!void {
+    if (msr.ndf) return I2cError.Nack;
+    if (msr.alf) return I2cError.ArbitrationLost;
+    if (msr.fef) return I2cError.FifoError;
+    if (msr.pltf) return I2cError.PinLowTimeout;
+}
+
+fn calcTiming(baud: usize, i2c_clock: usize) I2cError!I2cTiming {
+    var period = i2c_clock / baud;
+    var div: usize = 1;
+    var prescale = Prescale.div1;
+    if (period < 8) return I2cError.RateNotReachable;
+    if (period > 105) {
+        div = period / 105;
+        if (period % 105 != 0) div += 1;
+        if (div > 128) return I2cError.RateNotReachable;
+        if (div > 1) {
+            if (div == 2) {
+                prescale = Prescale.div2;
+            } else if (div <= 4) {
+                div = 4;
+                prescale = Prescale.div4;
+            } else if (div <= 8) {
+                div = 8;
+                prescale = Prescale.div8;
+            } else if (div <= 16) {
+                div = 16;
+                prescale = Prescale.div16;
+            } else if (div <= 32) {
+                div = 32;
+                prescale = Prescale.div32;
+            } else if (div <= 64) {
+                div = 64;
+                prescale = Prescale.div64;
+            } else {
+                div = 128;
+                prescale = Prescale.div128;
+            }
+        }
+        period /= div;
+    }
+
+    const lo = period * 6 / 10;
+    const hi = period  - lo;
+    const sethold = hi;
+    const datavd = hi / 2;
+    return I2cTiming{
+        .prescale = prescale,
+        .mccr0 = Mccr0{
+            .clklo = @truncate(lo),
+            .clkhi = @truncate(hi),
+            .sethold = @truncate(sethold),
+            .datavd = @truncate(datavd)
+        }
+    };
+}
 
 pub const lpi2c0: *volatile Lpi2c = @ptrFromInt(LPI2C0_BASE);
 pub const lpi2c1: *volatile Lpi2c = @ptrFromInt(LPI2C1_BASE);
@@ -452,4 +639,24 @@ pub const lpi2c7: *volatile Lpi2c = @ptrFromInt(LPI2C7_BASE);
 test "sizeof test" {
     const std = @import("std");
     try std.testing.expectEqual(0x7F4, @sizeOf(Lpi2c));
+}
+
+test "calcTiming test 100k@12Mhz" {
+    const std = @import("std");
+    const timing = calcTiming(100_000, 12_000_000) catch unreachable;
+    try std.testing.expectEqual(Prescale.div2, timing.prescale);
+    try std.testing.expectEqual(36, timing.mccr0.clklo);
+    try std.testing.expectEqual(24, timing.mccr0.clkhi);
+    try std.testing.expectEqual(24, timing.mccr0.sethold);
+    try std.testing.expectEqual(12, timing.mccr0.datavd);
+}
+
+test "calcTiming test 100k@48Mhz" {
+    const std = @import("std");
+    const timing = calcTiming(100_000, 48_000_000) catch unreachable;
+    try std.testing.expectEqual(Prescale.div8, timing.prescale);
+    try std.testing.expectEqual(36, timing.mccr0.clklo);
+    try std.testing.expectEqual(24, timing.mccr0.clkhi);
+    try std.testing.expectEqual(24, timing.mccr0.sethold);
+    try std.testing.expectEqual(12, timing.mccr0.datavd);
 }
