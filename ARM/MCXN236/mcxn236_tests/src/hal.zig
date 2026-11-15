@@ -88,13 +88,10 @@ pub fn i2cScan(channel: usize, address: u10) [2]u8 {
 
 pub fn spiSendReceive(channel: usize, wdata: []const u8, rdata: []u8) bool {
     _ = channel;
-    //board.arduinoSpiCsSet(false);
-    //board.SPI_INSTANCE.sendReceivePoll8(wdata, rdata);
-    //board.arduinoSpiCsSet(true);
-    //return true;
-    _ = wdata;
-    _ = rdata;
-    return false;
+    board.arduinoSpiCsSet(false);
+    board.ARDUINO_SPI_INSTANCE.sendReceivePoll8(wdata, rdata);
+    board.arduinoSpiCsSet(true);
+    return true;
 }
 
 pub fn scdRead(data: []u8) bool {

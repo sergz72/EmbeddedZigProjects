@@ -53,6 +53,7 @@ pub const I2C_TIMEOUT = 10000;
 const I2C_SPEED = 100000;
 
 const ARDUINO_SPI_PORT = port.port1;
+const ARDUINO_SPI_GPIO = gpio.gpio1;
 pub const ARDUINO_SPI_INSTANCE = lpspi.lpspi3;
 //--------------------------
 const ARDUINO_SPI_RX_PIN = 2;
@@ -183,7 +184,7 @@ pub fn initArduinoI2c() void {
     ARDUINO_I2C_PORT.pcr[ARDUINO_I2C_SCL_PIN] = port.Pcr{.mux = 2, .ibe = true, .ode = true, .pe = true, .ps = true};
     ARDUINO_I2C_PORT.pcr[ARDUINO_I2C_SDA_PIN] = port.Pcr{.mux = 2, .ibe = true, .ode = true, .pe = true, .ps = true};
     lp_flexcomm.lp_flexcomm5.pselid = lp_flexcomm.Pselid{.persel = .i2c};
-    lpi2c.lpi2c5.init(100000, cpu.cpu.current_frequency) catch {
+    ARDUINO_I2C_INSTANCE.init(100000, cpu.cpu.current_frequency) catch {
         while(true) {}
     };
 }
@@ -194,7 +195,11 @@ pub fn initArduinoSpi() void {
     syscon.syscon0.fcclksel[3] = .pll_div;
     syscon.syscon0.lp_flexcommclkdiv[3] = syscon.Clkdiv{.halt = false};
     lp_flexcomm.lp_flexcomm3.pselid = lp_flexcomm.Pselid{.persel = .spi};
-    //lpspi.lpspi3.init();
+    ARDUINO_I2C_PORT.pcr[ARDUINO_SPI_CLK_PIN] = port.Pcr{.mux = 2, .ibe = true};
+    ARDUINO_I2C_PORT.pcr[ARDUINO_SPI_TX_PIN] = port.Pcr{.mux = 2, .ibe = true};
+    ARDUINO_I2C_PORT.pcr[ARDUINO_SPI_RX_PIN] = port.Pcr{.mux = 2, .ibe = true, .pe = true, .ps = true};
+    ARDUINO_SPI_GPIO.setAsOutput(ARDUINO_SPI_CS_PIN_MASK);
+    ARDUINO_SPI_INSTANCE.initMasterSoftwareCs(1000000, cpu.cpu.current_frequency);
 }
 
 pub fn initFlashSpi() void {
@@ -213,16 +218,17 @@ pub fn initSensorI2c() void {
     SENSOR_I2C_PORT.pcr[SENSOR_I2C_SCL_PIN] = port.Pcr{.mux = 2, .ibe = true, .ode = true, .pe = true, .ps = true};
     SENSOR_I2C_PORT.pcr[SENSOR_I2C_SDA_PIN] = port.Pcr{.mux = 2, .ibe = true, .ode = true, .pe = true, .ps = true};
     lp_flexcomm.lp_flexcomm2.pselid = lp_flexcomm.Pselid{.persel = .i2c};
-    //todo: implement sensor i2c init
+    SENSOR_I2C_INSTANCE.init(100000, cpu.cpu.current_frequency) catch {
+        while(true) {}
+    };
 }
 
 pub fn arduinoSpiCsSet(state: bool) void {
-    _ = state;
-    //if (state) {
-    //    SPI_CS_PORT.setPins(SPI_CS_PIN_MASK);
-    //} else {
-    //    SPI_CS_PORT.clearPins(SPI_CS_PIN_MASK);
-    //}
+    if (state) {
+        ARDUINO_SPI_GPIO.setPins(ARDUINO_SPI_CS_PIN_MASK);
+    } else {
+        ARDUINO_SPI_GPIO.clearPins(ARDUINO_SPI_CS_PIN_MASK);
+    }
 }
 
 pub fn init() void {
