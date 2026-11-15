@@ -354,6 +354,13 @@ pub const Lpuart = extern struct {
         };
         self.ctrl = Ctrl{ .re = true, .te = true, .rie = true };
     }
+
+    pub fn write(self: *volatile Lpuart, byte: u8) void {
+        while (!self.stat.tdre) {
+            asm volatile("nop");
+        }
+        self.data.data8 = byte;
+    }
 };
 
 pub const lpuart0: *volatile Lpuart = @ptrFromInt(LPUART0_BASE);

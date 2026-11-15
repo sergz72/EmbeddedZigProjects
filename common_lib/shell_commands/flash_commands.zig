@@ -31,9 +31,13 @@ fn flashReadHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Erro
         try parameters.writer.print("invalid address {s}\n", .{parameters.argv[0]});
         return 1;
     };
+    if (address == 0) {
+        _ = try parameters.writer.write("adddress 0 is not allowed\n");
+        return 2;
+    }
     const size = std.fmt.parseInt(usize, parameters.argv[1], 0) catch {
         try parameters.writer.print("invalid size {s}\n", .{parameters.argv[1]});
-        return 1;
+        return 3;
     };
     const ptr: [*]const u8 = @ptrFromInt(address);
     const data = ptr[0..size];

@@ -12,6 +12,7 @@ const interrupts = @import("interrupts");
 const cpu = @import("cpu");
 const lpi2c = @import("lpi2c");
 const lpspi = @import("lpspi");
+const usart_writer = @import("usart_writer");
 
 const LED_GPIO = gpio.gpio4;
 const LED_RED_GPIO_PIN = 18;
@@ -33,8 +34,6 @@ const UART_TX_PIN = 9;
 const UART_TX_PIN_MASK = 1 << UART_TX_PIN;
 
 pub const panic = std.debug.no_panic;
-
-extern fn SystemPreInit() callconv(.c) void;
 
 var usart_callback: *const fn(u8) void = undefined;
 
@@ -119,26 +118,52 @@ pub fn initUart(baud: usize, callback: *const fn(u8) void) void {
     lp_flexcomm.lp_flexcomm4.pselid = lp_flexcomm.Pselid{.persel = .uart};
     lpuart.lpuart4.init(baud, cpu.cpu.current_frequency);
     nvic.nvic.enableInterrupt(interrupts.Interrupt.LP_FLEXCOMM4.toU8());
+    usart_writer.usart_writer.writeCharFunc = uartWrite;
 }
 
 pub fn initArduinoI2c() void {
-    syscon.syscon0.ahbclkctrlset0 = syscon.Ahbclkctrl0{.port0 = true};
-    syscon.syscon0.ahbclkctrlset1 = syscon.Ahbclkctrl1{.fc0 = true};
-    lp_flexcomm.lp_flexcomm0.pselid = lp_flexcomm.Pselid{.persel = .i2c};
-    lpi2c.lpi2c0.init();
+    //syscon.syscon0.ahbclkctrlset0 = syscon.Ahbclkctrl0{.port0 = true};
+    //syscon.syscon0.ahbclkctrlset1 = syscon.Ahbclkctrl1{.fc0 = true};
+    //lp_flexcomm.lp_flexcomm0.pselid = lp_flexcomm.Pselid{.persel = .i2c};
+    //lpi2c.lpi2c0.init();
 }
 
 pub fn initArduinoSpi() void {
-    syscon.syscon0.ahbclkctrlset0 = syscon.Ahbclkctrl0{.port0 = true};
-    syscon.syscon0.ahbclkctrlset1 = syscon.Ahbclkctrl1{.fc1 = true};
-    lp_flexcomm.lp_flexcomm1.pselid = lp_flexcomm.Pselid{.persel = .spi};
-    lpspi.lpspi1.init();
+    //syscon.syscon0.ahbclkctrlset0 = syscon.Ahbclkctrl0{.port0 = true};
+    //syscon.syscon0.ahbclkctrlset1 = syscon.Ahbclkctrl1{.fc1 = true};
+    //lp_flexcomm.lp_flexcomm1.pselid = lp_flexcomm.Pselid{.persel = .spi};
+    //lpspi.lpspi1.init();
 }
 
-export fn SystemInit() callconv(.c) void {
-    SystemPreInit();
+pub fn initFlashSpi() void {
+    //todo: implement flash spi init
+}
+
+pub fn initLightSensor() void {
+    //todo: implement light sensor init
+}
+
+pub fn initSensorI2c() void {
+    //todo: implement sensor i2c init
+}
+
+pub fn arduinoSpiCsSet(state: bool) void {
+    _ = state;
+    //if (state) {
+    //    SPI_CS_PORT.setPins(SPI_CS_PIN_MASK);
+    //} else {
+    //    SPI_CS_PORT.clearPins(SPI_CS_PIN_MASK);
+    //}
+}
+
+pub fn init() void {
+    cpu.SystemPreInit();
     initGpio();
     initClock();
+}
+
+pub fn uartWrite(byte: u8) void {
+    UART_INSTANCE.write(byte);
 }
 
 export fn LP_FLEXCOMM4_IRQHandler() callconv(.c) void {
