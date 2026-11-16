@@ -1,6 +1,5 @@
 const SYSCON0_BASE = 0x40000000;
 
-
 pub const Ahbmatprio = bitpack struct(u32) {
     pri_cpu0_cbus: u2 = 0,
     pri_cpu0_sbus: u2 = 0,
@@ -307,7 +306,7 @@ pub const Frohfdiv = bitpack struct(u32) {
     unstab: bool = false,
 };
 
-pub const Wdt0clkdiv = bitpack struct(u32) {
+pub const Wdtclkdiv = bitpack struct(u32) {
     div: u6 = 0,
     reserved0: u23 = 0,
     reset: bool = false,
@@ -431,14 +430,6 @@ pub const Wdt1clksel = enum(u32) {
     fro16k = 0,
     fro_hf_div = 1,
     clk_1m = 3
-};
-
-pub const Wdt1clkdiv = bitpack struct(u32) {
-    div: u6 = 0,
-    reserved0: u23 = 2,
-    reset: bool = false,
-    halt: bool = true,
-    unstab: bool = false,
 };
 
 pub const Ostimerclksel = enum(u32) {
@@ -643,7 +634,7 @@ pub const Syscon = extern struct {
     ahbclkdiv: Ahbclkdiv,
     clkoutdiv: Clkdiv,
     frohfdiv: Frohfdiv,
-    wdt0clkdiv: Wdt0clkdiv,
+    wdt0clkdiv: Wdtclkdiv,
     reserved18: u32,
     adc0clkdiv: Clkdiv,
     reserved19: [11]u32,
@@ -685,7 +676,7 @@ pub const Syscon = extern struct {
     reserved32: [9]u32,
     ewm0clksel: Ewm0clksel,
     wdt1clksel: Wdt1clksel,
-    wdt1clkdiv: Wdt1clkdiv,
+    wdt1clkdiv: Wdtclkdiv,
     ostimerclksel: Ostimerclksel,
     reserved33: [3]u32,
     cmp0fclksel: Cmpfclksel,

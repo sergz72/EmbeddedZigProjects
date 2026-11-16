@@ -9,6 +9,8 @@ const scb = @import("scb");
 const fmu = @import("fmu");
 const scd4x = @import("scd4x");
 const veml = @import("veml7700");
+const cmc = @import("cmc");
+const wwdt = @import("wwdt");
 
 pub var timer_interrupt: bool = undefined;
 pub var sh: *shell.Shell = undefined;
@@ -32,6 +34,15 @@ fn initTimer() void {
     nvic.nvic.enableInterrupt(interrupts.Interrupt.CTIMER0.toU8());
 }
 
+fn initWwdt0() void {
+    syscon.syscon0.ahbclkctrlset0.wwdt0 = true;
+    syscon.syscon0.wdt0clkdiv = syscon.Wdtclkdiv{.halt = false};
+    if (!wwdt.wwdt0.init(10000, 1000000)) {
+        board.ledRedOn();
+        while (true) {}
+    }
+}
+
 export fn SystemInit() callconv(.c) void {
     board.init();
     board.initUart(115200, uart_callback);
@@ -41,6 +52,7 @@ export fn SystemInit() callconv(.c) void {
     board.initLightSensor();
     board.initSensorI2c();
     initTimer();
+    initWwdt0();
 }
 
 pub fn startTimer() void {
@@ -69,11 +81,11 @@ pub fn reboot() void {
 }
 
 pub fn wdtReset() void {
-    //iwdg.iwdg.reload();
+    wwdt.wwdt0.reload();
 }
 
 pub fn getResetCause() []const u8 {
-    return "Unknown";//rcc.rcc.getResetCause();
+    return cmc.cmc0.getResetCause();
 }
 
 pub fn i2cScan(channel: usize, address: u10) [2]u8 {

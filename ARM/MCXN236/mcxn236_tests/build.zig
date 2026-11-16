@@ -106,6 +106,21 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const cmc = b.addModule("cmc", .{
+        .root_source_file = b.path("../lib/cmc.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const wwdt = b.addModule("wwdt", .{
+        .root_source_file = b.path("../lib/wwdt.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "nvic", .module = nvic }
+        },
+    });
+
     const scb = b.addModule("scb", .{
         .root_source_file = b.path("../../lib/scb.zig"),
         .target = target,
@@ -193,6 +208,8 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "fmu", .module = fmu },
             .{ .name = "scd4x", .module = scd4x },
             .{ .name = "veml7700", .module = veml7700 },
+            .{ .name = "cmc", .module = cmc },
+            .{ .name = "wwdt", .module = wwdt },
         }
     });
 

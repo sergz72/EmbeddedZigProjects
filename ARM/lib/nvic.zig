@@ -38,6 +38,34 @@ pub const Nvic = extern struct {
     }
 };
 
+pub inline fn getPrimask() u32 {
+    return asm volatile ("mrs %[result], primask"
+        : [result] "=r" (-> u32),
+        :
+        : .{ .memory = true });
+}
+
+pub inline fn setPrimask(primask: u32) void {
+    asm volatile ("msr primask, %[val]"
+        :
+        : [val] "r" (primask),
+        : .{ .memory = true });
+}
+
+pub inline fn disableIrq() void {
+    asm volatile ("cpsid i"
+        :
+        :
+        : .{ .memory = true });
+}
+
+pub inline fn enableIrq() void {
+    asm volatile ("cpsie i"
+        :
+        :
+        : .{ .memory = true });
+}
+
 pub const nvic: *volatile Nvic = @ptrFromInt(NVIC_BASE);
 
 test "sizeof test" {
