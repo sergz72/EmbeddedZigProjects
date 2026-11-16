@@ -91,7 +91,10 @@ pub fn build(b: *std.Build) !void {
     const fmu = b.addModule("fmu", .{
         .root_source_file = b.path("../lib/fmu.zig"),
         .target = target,
-        .optimize = optimize
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "nvic", .module = nvic }
+        },
     });
 
     const lpi2c = b.addModule("lpi2c", .{
@@ -301,7 +304,7 @@ pub fn build(b: *std.Build) !void {
     exe.link_gc_sections = true;
     exe.function_sections = true;
     exe.data_sections = true;
-    exe.lto = .full;                     // Whole-program optimization & inlining
+    //exe.lto = .full;                     // Whole-program optimization & inlining
 
     exe.root_module.addAssemblyFile(b.path("../startup_MCXN236.S"));
 

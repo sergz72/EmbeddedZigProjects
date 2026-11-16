@@ -60,20 +60,15 @@ pub fn startTimer() void {
 }
 
 pub fn flashWrite(address: usize, data: []u8) fmu.FmuError!void {
-    //flash.flash.flashUnlock();
-    //defer flash.flash.flashLock();
-    //try flash.flash.write(address, data);
-    _ = address;
-    _ = data;
-    return fmu.FmuError.Timeout;
+    if (data.len > 64) {
+        try fmu.fmu0.writePages(address, data);
+    } else {
+        try fmu.fmu0.writePhrases(address, data);
+    }
 }
 
 pub fn flashSectorErase(address: usize) fmu.FmuError!void {
-    //flash.flash.flashUnlock();
-    //defer flash.flash.flashLock();
-    //try flash.flash.sectorErase(address);
-    _ = address;
-    return fmu.FmuError.Timeout;
+    try fmu.fmu0.sectorErase(address);
 }
 
 pub fn reboot() void {
