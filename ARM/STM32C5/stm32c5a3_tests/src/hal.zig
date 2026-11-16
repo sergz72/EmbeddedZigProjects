@@ -14,6 +14,7 @@ const scd4x = @import("scd4x");
 const veml = @import("veml7700");
 const iwdg = @import("iwdg");
 const rtc = @import("rtc");
+const dbgmcu = @import("dbgmcu");
 
 const TIMER_INSTANCE = tim.tim7;
 
@@ -55,13 +56,14 @@ export fn SystemInit() callconv(.c) void {
     led_status = false;
     board.init(false);
     initClock();
-    board.initUsart(115200, &usart_callback, false);
+    board.initUsart(115200, &usart_callback, true);
     initTimer();
     rng.rng.init();
     rcc.rcc.ahb1enr.crcen = true;
     board.initArduinoI2c();
     board.initArduinoSPI(1000000, .full_duplex);
     rtc.rtc.init(.low, RTC_TIMEOUT) catch { while (true){} };
+    dbgmcu.dbgmcu.apb1lfzr.dbg_iwdg_stop = true;
     if (!iwdg.iwdg.init(10000)) {
         while (true) {}
     }

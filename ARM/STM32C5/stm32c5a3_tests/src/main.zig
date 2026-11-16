@@ -28,7 +28,7 @@ const shell_init = shell.ShellInit{
     .source_init = &.{
         shell.ShellSourceInit{
             .writer = &usart_writer.usart_writer.writer,
-            .echo_func = board.usartWrite
+            .echo_func = board.shellWriteCharDma
         },
         shell.ShellSourceInit{
             .writer = &usb_writer.usb_writer.writer,

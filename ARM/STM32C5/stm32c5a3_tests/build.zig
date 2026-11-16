@@ -22,6 +22,12 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const dbgmcu = b.addModule("dbgmcu", .{
+        .root_source_file = b.path("../lib/dbgmcu.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const gpio = b.addModule("gpio", .{
         .root_source_file = b.path("../lib/gpio.zig"),
         .target = target,
@@ -296,6 +302,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "rtc", .module = rtc },
             .{ .name = "scb", .module = scb },
             .{ .name = "flash", .module = flash },
+            .{ .name = "dbgmcu", .module = dbgmcu }
         },
     });
 
