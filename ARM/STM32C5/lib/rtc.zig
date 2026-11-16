@@ -290,17 +290,17 @@ pub const Rtc = extern struct {
         return InternalRtcError.Timeout;
     }
 
-    pub fn init(self: *volatile Rtc, drv: rcc.RccLseDrv, timeout: usize) RtcError!void {
-        rcc.rcc.hpenr.apb3.rtcapben = true;
-        if (rcc.rcc.bdcr.rtcen and self.icsr.inits) {
+    pub fn init(self: *volatile Rtc, drv: rcc.Lsedrv, timeout: usize) RtcError!void {
+        rcc.rcc.apb3enr.rtcapben = true;
+        if (rcc.rcc.rtccr.rtcen and self.icsr.inits) {
             return;
         }
-        pwr.pwr.unlockBackupDomain();
-        defer pwr.pwr.lockBackupDomain();
-        rcc.rcc.backupDomainReset();
+        pwr.pwr.unlockRtcDomain();
+        defer pwr.pwr.lockRtcDomain();
+        rcc.rcc.rtcReset();
         rcc.rcc.lseOn(drv);
-        rcc.rcc.bdcr.rtcsel = .lse;
-        rcc.rcc.bdcr.rtcen = true;
+        rcc.rcc.rtccr.rtcsel = .lse;
+        rcc.rcc.rtccr.rtcen = true;
 
         self.unlock();
         defer self.lock();
@@ -320,8 +320,8 @@ pub const Rtc = extern struct {
         const mu = month % 10;
         const mt = month / 10;
         const year = data.year - 2000;
-        pwr.pwr.unlockBackupDomain();
-        defer pwr.pwr.lockBackupDomain();
+        pwr.pwr.unlockRtcDomain();
+        defer pwr.pwr.lockRtcDomain();
         self.unlock();
         defer self.lock();
         try self.enterInit(timeout);

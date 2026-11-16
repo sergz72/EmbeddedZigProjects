@@ -267,17 +267,17 @@ pub const Flash = extern struct {
     hdp2r_prg: FlashHdp,
 
     pub fn flashUnlock(self: *volatile Flash) void {
-        self.nskeyr = FLASH_UNLOCK_KEY1;
-        self.nskeyr = FLASH_UNLOCK_KEY2;
+        self.keyr = FLASH_UNLOCK_KEY1;
+        self.keyr = FLASH_UNLOCK_KEY2;
     }
 
     pub fn flashLock(self: *volatile Flash) void {
-        self.nscr.lock = true;
+        self.cr.lock = true;
     }
 
     pub fn wait(self: *volatile Flash, timeout: usize) FlashError!void {
         for (0..timeout) |_| {
-            const sts = self.nssr;
+            const sts = self.sr;
             if (sts.wrperr) {
                 return FlashError.WriteProtectionError;
             }

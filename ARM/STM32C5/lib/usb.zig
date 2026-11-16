@@ -1,17 +1,9 @@
 const usb_device = @import("usb_device");
-const gpio = @import("gpio");
 const rcc = @import("rcc");
 const nvic = @import("nvic");
 const interrupts = @import("interrupts");
-const pwr = @import("pwr");
 
 const USB_BASE = 0x40016000;
-
-const USB_PORT = gpio.gpioa;
-const USB_DM_PIN = 11;
-const USB_DM_PIN_MASK: u16 = 1 << USB_DM_PIN;
-const USB_DP_PIN = 12;
-const USB_DP_PIN_MASK: u16 = 1 << USB_DP_PIN;
 
 pub const UsbDeviceEndpointStatus = enum(u2) {
     disabled = 0,
@@ -231,15 +223,7 @@ pub const Usb = extern struct {
         self.setEndpointRxStatus(ep_no, if (halt) .stall else .valid);
     }
 
-    pub fn devicePreinit(self: *volatile Usb, usb_clock_source: rcc.UsbfsSel) void {
-        rcc.rcc.hpenr.ahb2.gpioaen = true;
-        pwr.pwr.enableUsbPower();
-        const init_data: gpio.GpioInit = .{
-            .mode = .alternate,
-            .speed = .very_high,
-            .alternate = 10
-        };
-        USB_PORT.init(USB_DP_PIN_MASK | USB_DM_PIN_MASK, init_data);
+    pub fn devicePreinit(self: *volatile Usb, usb_clock_source: rcc.Ck48sel) void {
         rcc.rcc.enableUsbClock(usb_clock_source);
         nvic.nvic.enableInterrupt(interrupts.Interrupt.USB_DRD_FS.toU8());
 

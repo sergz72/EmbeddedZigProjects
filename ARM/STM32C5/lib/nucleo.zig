@@ -166,7 +166,7 @@ pub fn usartDmaInit(buffer_size: usize, allocator: std.mem.Allocator) error{OutO
     try dma_sender_instance.init(buffer_size, allocator);
     rcc.rcc.ahb1enr.lpdma1en = true;
     lpdma.lpdma1.channels[0].initMemoryToPeripheral8(@intFromPtr(&USART_INSTANCE.tdr), .usart2_tx);
-    nvic.nvic.enableInterrupt(interrupts.Interrupt.LPDMA1_Channel0.toU8());
+    nvic.nvic.enableInterrupt(interrupts.Interrupt.LPDMA1_CH0.toU8());
 }
 
 pub fn initUsart(baud: u32, callback: *const fn(u8) void, use_dma: bool) void {
@@ -260,7 +260,7 @@ fn usartDmaStart(data: []const u8) usize {
     return data.len;
 }
 
-export fn LPDMA1_Channel0_IRQHandler() callconv(.c) void {
+export fn LPDMA1_CH0_IRQHandler() callconv(.c) void {
     lpdma.lpdma1.channels[0].clearInterruptFlags();
     dma_sender_instance.dmaDone();
 }

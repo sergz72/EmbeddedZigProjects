@@ -275,7 +275,7 @@ pub const LpdmaChannel = extern struct {
         self.cr = LpdmaCr{.reset = true};
         self.cr = LpdmaCr{.tcie = true, .dteie = true};
         self.tr1 = LpdmaTr1{.sinc = true};
-        self.tr2 = LpdmaTr2{.dreq = true, .reqsel = reqsel};
+        self.tr2 = LpdmaTr2{.breq = true, .reqsel = reqsel};
         self.dar = peripheral_address;
     }
 

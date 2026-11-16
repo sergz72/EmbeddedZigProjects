@@ -3,7 +3,7 @@ const PWR_BASE = 0x44020800;
 pub const Lpms = enum(u2) {
     stop0 = 0,
     stop1 = 1,
-    standby = 2
+    standby = 2,
 };
 
 pub const PwrPmcr = bitpack struct(u32) {
@@ -66,9 +66,9 @@ pub const PwrWusr = bitpack struct(u32) {
 };
 
 pub const Wuppupd = enum(u2) {
-    floating = 0,
+    no_pullup = 0,
     pullup = 1,
-    pulldown = 2,
+    pulldown = 2
 };
 
 pub const PwrWucr = bitpack struct(u32) {
@@ -88,14 +88,14 @@ pub const PwrWucr = bitpack struct(u32) {
     wupp6: bool = false,
     wupp7: bool = false,
     reserved1: u1 = 0,
-    wuppupd1: Wuppupd = .floating,
-    wuppupd2: Wuppupd = .floating,
-    wuppupd3: Wuppupd = .floating,
-    wuppupd4: Wuppupd = .floating,
-    wuppupd5: Wuppupd = .floating,
-    wuppupd6: Wuppupd = .floating,
-    wuppupd7: Wuppupd = .floating,
-    reserved2: u2 = 0
+    wuppupd1: Wuppupd = .no_pullup,
+    wuppupd2: Wuppupd = .no_pullup,
+    wuppupd3: Wuppupd = .no_pullup,
+    wuppupd4: Wuppupd = .no_pullup,
+    wuppupd5: Wuppupd = .no_pullup,
+    wuppupd6: Wuppupd = .no_pullup,
+    wuppupd7: Wuppupd = .no_pullup,
+    reserved2: u2 = 0,
 };
 
 pub const PwrIoretr = bitpack struct(u32) {
@@ -127,6 +127,14 @@ pub const Pwr = extern struct {
     ioretr: PwrIoretr,
     reserved4: [44]u32,
     privcfgr: PwrPrivcfgr,
+
+    pub fn unlockRtcDomain(self: *volatile Pwr) void {
+        self.rtccr = PwrRtccr{.drtcp = true};
+    }
+
+    pub fn lockRtcDomain(self: *volatile Pwr) void {
+        self.rtccr = PwrRtccr{};
+    }
 };
 
 pub const pwr: *volatile Pwr = @ptrFromInt(PWR_BASE);

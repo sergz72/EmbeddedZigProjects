@@ -807,16 +807,16 @@ pub const Rcc = extern struct {
     privcfgr: RccPrivcfgr,
 
     pub fn lsiOn(self: *volatile Rcc) void {
-        self.bdcr.lsion = true;
-        while (!self.bdcr.lsirdy) {
+        self.rtccr.lsion = true;
+        while (!self.rtccr.lsirdy) {
             asm volatile("nop");
         }
     }
 
     pub fn lseOn(self: *volatile Rcc, drv: Lsedrv) void {
-        self.bdcr.lsedrv = drv;
-        self.bdcr.lseon = true;
-        while (!self.bdcr.lserdy) {
+        self.rtccr.lsedrv = drv;
+        self.rtccr.lseon = true;
+        while (!self.rtccr.lserdy) {
             asm volatile("nop");
         }
     }
@@ -834,6 +834,28 @@ pub const Rcc = extern struct {
         while (self.cfgr1.sws != sw) {
             asm volatile ("nop");
         }
+    }
+
+    pub fn getResetCause(self: *volatile Rcc) []const u8 {
+        const rsr = self.rsr;
+        self.rsr.rmvf = true; // Clear reset flags after reading
+        if (rsr.lpwrrstf) return "Low Power Reset";
+        if (rsr.wwdgrstf) return "WWDG Reset";
+        if (rsr.iwdgrstf) return "IWDG Reset";
+        if (rsr.sftrstf) return "Software Reset";
+        if (rsr.borrstf) return "BOR Reset";
+        if (rsr.pinrstf) return "PIN Reset";
+        return "Unknown Reset Cause";
+    }
+
+    pub fn enableUsbClock(self: *volatile Rcc, source: Ck48sel) void {
+        self.ccipr2.ck48sel = source;
+        self.apb2enr.usben = true;
+    }
+
+    pub fn rtcReset(self: *volatile Rcc) void {
+        self.rtccr.rtcdrst = true;
+        self.rtccr.rtcdrst = false;
     }
 };
 

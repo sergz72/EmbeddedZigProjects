@@ -47,7 +47,7 @@ fn epReset() void {
     usb.usb.setEndpointTxLength(usb_cdc.DATA_OUT_ENDPOINT, 0);
 }
 
-pub fn init(usb_clock_source: rcc.UsbfsSel, callback: *const fn (data: []const u8) void, buffer_size: usize,
+pub fn init(usb_clock_source: rcc.Ck48sel, callback: *const fn (data: []const u8) void, buffer_size: usize,
                 allocator: std.mem.Allocator) error{OutOfMemory}!void {
     try dma_sender_instance.init(buffer_size, allocator);
     rx_callback = callback;
