@@ -191,11 +191,13 @@ pub const UsbFs = extern struct {
     otg_sr: UsbFsOtgSr,
 
     pub inline fn ep0Reset(self: *volatile UsbFs) void {
+        @setRuntimeSafety(false);
         self.uep_ctrl[0].tx_ctrl = UsbFsUepTxRxCtrl{.res = .nak};
         self.uep_ctrl[0].rx_ctrl = UsbFsUepTxRxCtrl{.res = .ack};
     }
 
     pub fn devicePreinit(self: *volatile UsbFs) bool {
+        @setRuntimeSafety(false);
         if (!rcc.rcc.usbFsClkConfig())
             return false;
         rcc.rcc.ahbpcenr.otg_fsen = true;
@@ -217,61 +219,73 @@ pub const UsbFs = extern struct {
     }
 
     pub fn deviceInit(self: *volatile UsbFs) void {
+        @setRuntimeSafety(false);
         self.udev_ctrl = UsbFsUdevCtrl{.pd_dis = true, .port_en = true};
         UsbFs.interruptEnable();
     }
 
     pub inline fn interruptEnable() void {
+        @setRuntimeSafety(false);
         pfic.pfic.interruptEnable(interrupts.Interrupt.USBFS.toU8());
     }
 
     pub inline fn interruptDisable() void {
+        @setRuntimeSafety(false);
         pfic.pfic.interruptDisable(interrupts.Interrupt.USBFS.toU8());
     }
 
     pub inline fn setAddress(self: *volatile UsbFs, address: u7) void {
+        @setRuntimeSafety(false);
         self.dev_ad = UsbFsDevAd{.usb_addr = address};
     }
 
     pub fn rTogAndAck(self: *volatile UsbFs, ep_no: u3) void {
+        @setRuntimeSafety(false);
         const ep = &self.uep_ctrl[ep_no];
         ep.rx_ctrl = UsbFsUepTxRxCtrl{.tog = !ep.rx_ctrl.tog, .res = .ack};
     }
 
     pub fn rTogAndNak(self: *volatile UsbFs, ep_no: u3) void {
+        @setRuntimeSafety(false);
         const ep = &self.uep_ctrl[ep_no];
         ep.rx_ctrl = UsbFsUepTxRxCtrl{.tog = !ep.rx_ctrl.tog, .res = .nak};
     }
 
     pub fn tTogAndSetTxLen(self: *volatile UsbFs, ep_no: u3, tx_len: u16) void {
+        @setRuntimeSafety(false);
         const ep = &self.uep_ctrl[ep_no];
         ep.t_len = tx_len;
         ep.tx_ctrl = UsbFsUepTxRxCtrl{.tog = !ep.tx_ctrl.tog, .res = .ack};
     }
 
     pub fn setTxLenAndAck(self: *volatile UsbFs, ep_no: u3, tx_len: u16) void {
+        @setRuntimeSafety(false);
         const ep = &self.uep_ctrl[ep_no];
         ep.t_len = tx_len;
         ep.tx_ctrl.res = .ack;
     }
 
     pub fn tTogAndSendZeroPacket(self: *volatile UsbFs, ep_no: u3) void {
+        @setRuntimeSafety(false);
         const ep = &self.uep_ctrl[ep_no];
         ep.t_len = 0;
         ep.tx_ctrl = UsbFsUepTxRxCtrl{.tog = !ep.tx_ctrl.tog, .res = .ack};
     }
 
     pub fn tTogAndNak(self: *volatile UsbFs, ep_no: u3) void {
+        @setRuntimeSafety(false);
         const ep = &self.uep_ctrl[ep_no];
         ep.tx_ctrl = UsbFsUepTxRxCtrl{.tog = !ep.tx_ctrl.tog, .res = .nak};
     }
 
     pub fn rTog(self: *volatile UsbFs, ep_no: u3) void {
+        @setRuntimeSafety(false);
         const ep = &self.uep_ctrl[ep_no];
         ep.rx_ctrl.tog = !ep.rx_ctrl.tog;
     }
 
     pub fn enableEndpoint(self: *volatile UsbFs, ep_no: u3, rx_enable: bool, tx_enable: bool) void {
+        @setRuntimeSafety(false);
         switch (ep_no) {
             1 => {
                 if (rx_enable) self.uep4_1_mod.ep1_r_en = true;
@@ -306,38 +320,47 @@ pub const UsbFs = extern struct {
     }
 
     pub fn setEndpointTxLength(self: *volatile UsbFs, ep_no: u3, length: u16) void {
+        @setRuntimeSafety(false);
         self.uep_ctrl[ep_no].t_len = length;
     }
 
     pub fn setEndpointTxAuto(self: *volatile UsbFs, ep_no: u3, status: UsbFsRes) void {
+        @setRuntimeSafety(false);
         self.uep_ctrl[ep_no].tx_ctrl = UsbFsUepTxRxCtrl{.res = status, .tog_auto = true};
     }
 
     pub fn setEndpointRxAuto(self: *volatile UsbFs, ep_no: u3, status: UsbFsRes) void {
+        @setRuntimeSafety(false);
         self.uep_ctrl[ep_no].rx_ctrl = UsbFsUepTxRxCtrl{.res = status, .tog_auto = true};
     }
 
     pub fn setEndpointTxStatus(self: *volatile UsbFs, ep_no: u3, status: UsbFsRes) void {
+        @setRuntimeSafety(false);
         self.uep_ctrl[ep_no].tx_ctrl.res = status;
     }
 
     pub fn setEndpointRxStatus(self: *volatile UsbFs, ep_no: u3, status: UsbFsRes) void {
+        @setRuntimeSafety(false);
         self.uep_ctrl[ep_no].rx_ctrl.res = status;
     }
 
     pub fn getEndpointTxStatus(self: *volatile UsbFs, ep_no: u3) usb_device.EndpointStatus {
+        @setRuntimeSafety(false);
         return if (self.uep_ctrl[ep_no].tx_ctrl.res == .stall) .stall else .ok;
     }
 
     pub fn getEndpointRxStatus(self: *volatile UsbFs, ep_no: u3) usb_device.EndpointStatus {
+        @setRuntimeSafety(false);
         return if (self.uep_ctrl[ep_no].rx_ctrl.res == .stall) .stall else .ok;
     }
 
     pub inline fn haltEndpointTx(self: *volatile UsbFs, ep_no: u3, halt: bool) void {
+        @setRuntimeSafety(false);
         self.uep_ctrl[ep_no].tx_ctrl.res = if (halt) .stall else .nak;
     }
 
     pub inline fn haltEndpointRx(self: *volatile UsbFs, ep_no: u3, halt: bool) void {
+        @setRuntimeSafety(false);
         self.uep_ctrl[ep_no].rx_ctrl.res = if (halt) .stall else .ack;
     }
 };

@@ -81,6 +81,7 @@ pub fn flush() void {
 }
 
 fn usbDmaStart(data: []const u8) usize {
+    @setRuntimeSafety(false);
     if (data.len <= usb_device.USB_FS_MAX_PACKET_SIZE) {
         @memcpy(ep3_buffer[0..data.len], data);
         usbfs.usbfs.setTxLenAndAck(usb_cdc.DATA_OUT_ENDPOINT, @truncate(data.len));
