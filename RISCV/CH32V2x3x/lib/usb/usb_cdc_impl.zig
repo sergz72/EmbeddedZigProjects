@@ -1,66 +1,94 @@
+const std = @import("std");
 const usbfs = @import("usbfs");
 const usb_device = @import("usb_device");
 const usb_cdc = @import("usb_cdc");
 const system_timer = @import("system_timer");
+const dma_sender = @import("dma_sender");
 
 const device_init = usb_cdc.buildDeviceInit(&endpointStatus, &haltEp);
 
-var device: usb_device.Device = .{
+var device = usb_device.Device{
     .init = &device_init
 };
 
-var cdc_tx_in_progress: bool = undefined;
+var rx_callback: *const fn (data: []const u8) void = undefined;
+
+var dma_sender_instance = dma_sender.DmaSender {
+    .dma_start = &usbDmaStart,
+    .delayms = system_timer.delayms,
+};
+
 pub var ep1_buffer: [usb_device.USB_FS_MAX_PACKET_SIZE]u8 align(4) = undefined;
 pub var ep2_buffer: [usb_device.USB_FS_MAX_PACKET_SIZE]u8 align(4) = undefined;
 pub var ep3_buffer: [usb_device.USB_FS_MAX_PACKET_SIZE]u8 align(4) = undefined;
 
 fn endpointStatus(endpoint: u8) usb_device.EndpointStatus {
     return switch (endpoint) {
-        0x81 => usbfs.usbfs.getEndpointTxStatus(1),
-        0x02 => usbfs.usbfs.getEndpointRxStatus(2),
-        0x83 => usbfs.usbfs.getEndpointTxStatus(3),
+        0x80 + usb_cdc.INTERRUPT_ENDPOINT => usbfs.usbfs.getEndpointTxStatus(usb_cdc.INTERRUPT_ENDPOINT),
+        usb_cdc.DATA_IN_ENDPOINT => usbfs.usbfs.getEndpointRxStatus(usb_cdc.DATA_IN_ENDPOINT),
+        0x80 + usb_cdc.DATA_OUT_ENDPOINT => usbfs.usbfs.getEndpointTxStatus(usb_cdc.DATA_OUT_ENDPOINT),
         else => .invalid_request
     };
 }
 
 fn haltEp(endpoint: u8, halt: bool) bool {
     switch (endpoint) {
-        0x81 => usbfs.usbfs.haltEndpointTx(1, halt),
-        0x02 => usbfs.usbfs.haltEndpointRx(2, halt),
-        0x83 => usbfs.usbfs.haltEndpointTx(3, halt),
+        0x80 + usb_cdc.INTERRUPT_ENDPOINT => usbfs.usbfs.haltEndpointTx(usb_cdc.INTERRUPT_ENDPOINT, halt),
+        usb_cdc.DATA_IN_ENDPOINT => usbfs.usbfs.haltEndpointRx(usb_cdc.DATA_IN_ENDPOINT, halt),
+        0x80 + usb_cdc.DATA_OUT_ENDPOINT => usbfs.usbfs.haltEndpointTx(usb_cdc.DATA_OUT_ENDPOINT, halt),
         else => return false
     }
     return true;
 }
 
 fn epReset() void {
-    usbfs.usbfs.setEndpointRxStatus(2, .ack);
-    usbfs.usbfs.setEndpointTxStatus(1, .nak);
-    usbfs.usbfs.setEndpointTxLength(1, 0);
-    usbfs.usbfs.setEndpointTxStatus(3, .nak);
-    usbfs.usbfs.setEndpointTxLength(3, 0);
-    cdc_tx_in_progress = false;
-    //todo: CDC_Init()
+    usbfs.usbfs.setEndpointRxStatus(usb_cdc.DATA_IN_ENDPOINT, .ack);
+    usbfs.usbfs.setEndpointTxStatus(usb_cdc.INTERRUPT_ENDPOINT, .nak);
+    usbfs.usbfs.setEndpointTxLength(usb_cdc.INTERRUPT_ENDPOINT, 0);
+    usbfs.usbfs.setEndpointTxStatus(usb_cdc.DATA_OUT_ENDPOINT, .nak);
+    usbfs.usbfs.setEndpointTxLength(usb_cdc.DATA_OUT_ENDPOINT, 0);
 }
 
-pub fn init() bool {
-    cdc_tx_in_progress = false;
+pub fn init(callback: *const fn (data: []const u8) void, buffer_size: usize, allocator: std.mem.Allocator) error{OutOfMemory}!bool {
+    try dma_sender_instance.init(buffer_size, allocator);
     if (!usbfs.usbfs.devicePreinit()) {
         return false;
     }
-    usbfs.usbfs.enableEndpoint(1, false, true);
-    usbfs.usbfs.enableEndpoint(2, true, false);
-    usbfs.usbfs.enableEndpoint(3, false, true);
-    usbfs.usbfs.uep_dma[1] = @intFromPtr(&ep1_buffer);
-    usbfs.usbfs.uep_dma[2] = @intFromPtr(&ep2_buffer);
-    usbfs.usbfs.uep_dma[3] = @intFromPtr(&ep3_buffer);
+    rx_callback = callback;
+    usbfs.usbfs.enableEndpoint(usb_cdc.INTERRUPT_ENDPOINT, false, true);
+    usbfs.usbfs.enableEndpoint(usb_cdc.DATA_IN_ENDPOINT, true, false);
+    usbfs.usbfs.enableEndpoint(usb_cdc.DATA_OUT_ENDPOINT, false, true);
+    usbfs.usbfs.uep_dma[usb_cdc.INTERRUPT_ENDPOINT] = @intFromPtr(&ep1_buffer);
+    usbfs.usbfs.uep_dma[usb_cdc.DATA_IN_ENDPOINT] = @intFromPtr(&ep2_buffer);
+    usbfs.usbfs.uep_dma[usb_cdc.DATA_OUT_ENDPOINT] = @intFromPtr(&ep3_buffer);
     epReset();
     usbfs.usbfs.deviceInit();
     return true;
 }
 
-fn cdcRx(data: []u8) void {
-    _ = data;
+pub fn tx(data: []const u8) void {
+    dma_sender_instance.send(data);
+    dma_sender_instance.start();
+}
+
+pub fn txChar(c: u8) void {
+    dma_sender_instance.sendChar(c);
+    dma_sender_instance.start();
+}
+
+pub fn flush() void {
+    dma_sender_instance.start();
+}
+
+fn usbDmaStart(data: []const u8) usize {
+    return data.len;
+    //if (data.len <= usb_device.USB_FS_MAX_PACKET_SIZE) {
+    //    usbfs.usbfs.tx(usb_cdc.DATA_OUT_ENDPOINT, data);
+    //    return data.len;
+    //} else {
+    //    usbfs.usbfs.tx(usb_cdc.DATA_OUT_ENDPOINT, data[0..usb_device.USB_FS_MAX_PACKET_SIZE]);
+    //    return usb_device.USB_FS_MAX_PACKET_SIZE;
+    //}
 }
 
 fn USBFSIRQHandler() callconv(.c) void {
@@ -72,65 +100,57 @@ fn USBFSIRQHandler() callconv(.c) void {
         switch (intst.token) {
             .in => {
                 switch (intst.h_res_or_endp) {
-                    0 => {
+                    usb_cdc.CONTROL_ENDPOINT => {
                         const result = device.inPacket();
-                        if (result.r_tog_and_ack) {
-                            usbfs.usbfs.rTogAndAck(0);
+                        if (result.tx) |tx_data| {
+                            @memcpy(&usbfs.ep0_buffer, tx_data);
+                            usbfs.usbfs.tTogAndSetTxLen(usb_cdc.CONTROL_ENDPOINT, @truncate(tx_data.len));
                         }
-                        if (result.tx) |tx| {
-                            @memcpy(&usbfs.ep0_buffer, tx);
-                            usbfs.usbfs.tTogAndSetTxLen(0, @truncate(tx.len));
-                        }
-                        if (result.set_address != 0)
+                        if (result.set_address != 0) {
                             usbfs.usbfs.setAddress(result.set_address);
-                    },
-                    // interrupt endpoint
-                    1 => {
-                        usbfs.usbfs.tTogAndNak(1);
+                        }
+                        usbfs.usbfs.rTogAndAck(usb_cdc.CONTROL_ENDPOINT);
                     },
                     // data endpoint
-                    3 => {
-                        usbfs.usbfs.tTogAndNak(3);
-                        cdc_tx_in_progress = false;
+                    usb_cdc.DATA_OUT_ENDPOINT => {
+                        dma_sender_instance.dmaDone();
                     },
                     else => {}
                 }
             },
             .out => {
                 switch (intst.h_res_or_endp) {
-                    0 => {
+                    usb_cdc.CONTROL_ENDPOINT => {
                         if (device.outPacket()) {
-                            usbfs.usbfs.tTogAndSendZeroPacket(0);
+                            usbfs.usbfs.tTogAndSendZeroPacket(usb_cdc.CONTROL_ENDPOINT);
                         }
                     },
-                    2 => {
-                        usbfs.usbfs.rTog(2);
-                        cdcRx(ep2_buffer[0..usbfs.usbfs.rx_len]);
+                    usb_cdc.DATA_IN_ENDPOINT => {
+                        rx_callback(ep2_buffer[0..usbfs.usbfs.rx_len]);
+                        usbfs.usbfs.rTogAndAck(usb_cdc.DATA_IN_ENDPOINT);
                     },
                     else => {}
                 }
             },
             .setup => {
-                const ep = &usbfs.usbfs.uep_ctrl[0];
-                ep.tx_ctrl = .{.tog = true, .res = .nak};
-                ep.rx_ctrl = .{.tog = true, .res = .nak};
+                const ep = &usbfs.usbfs.uep_ctrl[usb_cdc.CONTROL_ENDPOINT];
+                ep.tx_ctrl = usbfs.UsbFsUepTxRxCtrl{.tog = true, .res = .nak};
+                ep.rx_ctrl = usbfs.UsbFsUepTxRxCtrl{.tog = true, .res = .nak};
                 const setup_packet: *const usb_device.SetupPacket = @ptrCast(&usbfs.ep0_buffer);
                 const result = device.setup(setup_packet);
-                if (result.tx) |tx| {
-                    @memcpy(&usbfs.ep0_buffer, tx);
-                    usbfs.usbfs.tTogAndSetTxLen(0, @truncate(tx.len));
+                if (result.tx) |tx_data| {
+                    @memcpy(&usbfs.ep0_buffer, tx_data);
+                    ep.t_len = @truncate(tx_data.len);
+                    ep.tx_ctrl = usbfs.UsbFsUepTxRxCtrl{.tog = true, .res = .ack};
                 }
                 else if (result.invalid_request) {
-                    ep.tx_ctrl = .{.tog = true, .res = .stall};
-                    ep.rx_ctrl = .{.tog = true, .res = .stall};
+                    ep.tx_ctrl = usbfs.UsbFsUepTxRxCtrl{.tog = true, .res = .stall};
                 }
-                else if (result.receive_start) {
-                    ep.rx_ctrl = .{.tog = true, .res = .ack};
-                }
+                ep.rx_ctrl = usbfs.UsbFsUepTxRxCtrl{.tog = true, .res = .ack};
             },
             else => {}
         }
-        usbfs.usbfs.int_fg = .{.transfer = true};
+        usbfs.usbfs.int_fg = usbfs.UsbFsIntFg{.transfer = true};
         return;
     }
 
@@ -138,12 +158,12 @@ fn USBFSIRQHandler() callconv(.c) void {
         usbfs.usbfs.setAddress(0);
         usbfs.usbfs.ep0Reset();
         epReset();
-        usbfs.usbfs.int_fg = .{.bus_rst_or_detect = true};
+        usbfs.usbfs.int_fg = usbfs.UsbFsIntFg{.bus_rst_or_detect = true};
         return;
     }
 
     if (intflag.suspend_wakeup) {
-        usbfs.usbfs.int_fg = .{.suspend_wakeup = true};
+        usbfs.usbfs.int_fg = usbfs.UsbFsIntFg{.suspend_wakeup = true};
         system_timer.delayLoopus(10);
         device.suspendWakeup(usbfs.usbfs.mis_st.suspended);
         return;

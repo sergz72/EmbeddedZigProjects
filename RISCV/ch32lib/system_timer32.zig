@@ -33,9 +33,21 @@ pub fn delayInit() void {
 }
 
 export fn SysTick_Handler() callconv(.naked) void {
-    systick_counter += 1;
-    systick.sr = 0;
-    asm volatile("mret");
+    asm volatile(
+        \\ la    t0, %[counter]
+        \\ lw    t1, 0(t0)
+        \\ addi  t1, t1, 1
+        \\ sw    t1, 0(t0)
+        \\
+        \\ li    t0, 0xE000F000
+        \\ sw    zero, 4(t0)
+        \\ mret
+        :
+        : [counter] "i" (&systick_counter),
+    );
+//    systick_counter += 1;
+//    systick.sr = 0;
+//    asm volatile("mret");
 }
 
 pub fn delayLoopus(us: usize) void {

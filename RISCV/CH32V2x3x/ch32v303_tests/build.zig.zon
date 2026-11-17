@@ -1,0 +1,14 @@
+.{
+    .name = .ch32v303_tests,
+    .version = "0.0.0",
+    .fingerprint =  0xbf719834da30577e, // Changing this has security and trust implications.
+    .minimum_zig_version = "0.17.0-dev.2056+79a9897cd",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        // For example...
+        //"LICENSE",
+        //"README.md",
+    },
+}

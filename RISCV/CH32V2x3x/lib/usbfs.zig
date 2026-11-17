@@ -191,8 +191,8 @@ pub const UsbFs = extern struct {
     otg_sr: UsbFsOtgSr,
 
     pub inline fn ep0Reset(self: *volatile UsbFs) void {
-        self.uep_ctrl[0].tx_ctrl = .{.res = .nak};
-        self.uep_ctrl[0].rx_ctrl = .{.res = .ack};
+        self.uep_ctrl[0].tx_ctrl = UsbFsUepTxRxCtrl{.res = .nak};
+        self.uep_ctrl[0].rx_ctrl = UsbFsUepTxRxCtrl{.res = .ack};
     }
 
     pub fn devicePreinit(self: *volatile UsbFs) bool {
@@ -200,11 +200,11 @@ pub const UsbFs = extern struct {
             return false;
         rcc.rcc.ahbpcenr.otg_fsen = true;
 
-        self.ctrl = .{};
+        self.ctrl = UsbFsCtrl{};
         system_timer.delayus(10);
-        self.ctrl = .{.reset_sie = false, .clr_all = false};
-        self.int_en = .{.susp = true, .bus_rst_or_detect = true, .transfer = true};
-        self.ctrl = .{
+        self.ctrl = UsbFsCtrl{.reset_sie = false, .clr_all = false};
+        self.int_en = UsbFsIntEn{.susp = true, .bus_rst_or_detect = true, .transfer = true};
+        self.ctrl = UsbFsCtrl{
             .reset_sie = false,
             .clr_all = false,
             .sys_ctrl = .device_enable_with_pullup_host_j,
@@ -217,7 +217,7 @@ pub const UsbFs = extern struct {
     }
 
     pub fn deviceInit(self: *volatile UsbFs) void {
-        self.udev_ctrl = .{.pd_dis = true, .port_en = true};
+        self.udev_ctrl = UsbFsUdevCtrl{.pd_dis = true, .port_en = true};
         UsbFs.interruptEnable();
     }
 
@@ -230,29 +230,28 @@ pub const UsbFs = extern struct {
     }
 
     pub inline fn setAddress(self: *volatile UsbFs, address: u7) void {
-        self.dev_ad.usb_addr = address;
+        self.dev_ad = UsbFsDevAd{.usb_addr = address};
     }
 
     pub fn rTogAndAck(self: *volatile UsbFs, ep_no: u3) void {
-        self.uep_ctrl[ep_no].rx_ctrl = .{.tog = true, .res = .ack};
+        self.uep_ctrl[ep_no].rx_ctrl = UsbFsUepTxRxCtrl{.tog = true, .res = .ack};
     }
 
     pub fn tTogAndSetTxLen(self: *volatile UsbFs, ep_no: u3, tx_len: u16) void {
         const ep = &self.uep_ctrl[ep_no];
-        ep.tx_ctrl.tog = !ep.tx_ctrl.tog;
+        ep.tx_ctrl = UsbFsUepTxRxCtrl{.tog = !ep.tx_ctrl.tog, .res = .ack};
         ep.t_len = tx_len;
     }
 
     pub fn tTogAndSendZeroPacket(self: *volatile UsbFs, ep_no: u3) void {
         const ep = &self.uep_ctrl[ep_no];
-        ep.tx_ctrl = .{.tog = true, .res = .ack};
+        ep.tx_ctrl = UsbFsUepTxRxCtrl{.tog = !ep.tx_ctrl.tog, .res = .ack};
         ep.t_len = 0;
     }
 
     pub fn tTogAndNak(self: *volatile UsbFs, ep_no: u3) void {
         const ep = &self.uep_ctrl[ep_no];
-        ep.tx_ctrl.tog = !ep.tx_ctrl.tog;
-        ep.tx_ctrl.res = .nak;
+        ep.tx_ctrl = UsbFsUepTxRxCtrl{.tog = !ep.tx_ctrl.tog, .res = .nak};
     }
 
     pub fn rTog(self: *volatile UsbFs, ep_no: u3) void {
