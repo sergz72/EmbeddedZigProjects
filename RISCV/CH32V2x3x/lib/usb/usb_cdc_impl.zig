@@ -42,10 +42,10 @@ fn haltEp(endpoint: u8, halt: bool) bool {
 }
 
 fn epReset() void {
-    usbfs.usbfs.setEndpointRxStatus(usb_cdc.DATA_IN_ENDPOINT, .ack);
-    usbfs.usbfs.setEndpointTxStatus(usb_cdc.INTERRUPT_ENDPOINT, .nak);
+    usbfs.usbfs.setEndpointRxAuto(usb_cdc.DATA_IN_ENDPOINT, .ack);
+    usbfs.usbfs.setEndpointTxAuto(usb_cdc.INTERRUPT_ENDPOINT, .nak);
     usbfs.usbfs.setEndpointTxLength(usb_cdc.INTERRUPT_ENDPOINT, 0);
-    usbfs.usbfs.setEndpointTxStatus(usb_cdc.DATA_OUT_ENDPOINT, .nak);
+    usbfs.usbfs.setEndpointTxAuto(usb_cdc.DATA_OUT_ENDPOINT, .nak);
     usbfs.usbfs.setEndpointTxLength(usb_cdc.DATA_OUT_ENDPOINT, 0);
 }
 
@@ -83,11 +83,11 @@ pub fn flush() void {
 fn usbDmaStart(data: []const u8) usize {
     if (data.len <= usb_device.USB_FS_MAX_PACKET_SIZE) {
         @memcpy(ep3_buffer[0..data.len], data);
-        usbfs.usbfs.tTogAndSetTxLen(usb_cdc.DATA_OUT_ENDPOINT, @truncate(data.len));
+        usbfs.usbfs.setTxLenAndAck(usb_cdc.DATA_OUT_ENDPOINT, @truncate(data.len));
         return data.len;
     } else {
         @memcpy(&ep3_buffer, data[0..usb_device.USB_FS_MAX_PACKET_SIZE]);
-        usbfs.usbfs.tTogAndSetTxLen(usb_cdc.DATA_OUT_ENDPOINT, usb_device.USB_FS_MAX_PACKET_SIZE);
+        usbfs.usbfs.setTxLenAndAck(usb_cdc.DATA_OUT_ENDPOINT, usb_device.USB_FS_MAX_PACKET_SIZE);
         return usb_device.USB_FS_MAX_PACKET_SIZE;
     }
 }
@@ -130,7 +130,7 @@ fn USBFSIRQHandler() callconv(.c) void {
                     usb_cdc.DATA_IN_ENDPOINT => {
                         usbfs.usbfs.setEndpointRxStatus(usb_cdc.DATA_IN_ENDPOINT, .nak);
                         rx_callback(ep2_buffer[0..usbfs.usbfs.rx_len]);
-                        usbfs.usbfs.rTogAndAck(usb_cdc.DATA_IN_ENDPOINT);
+                        usbfs.usbfs.setEndpointRxStatus(usb_cdc.DATA_IN_ENDPOINT, .ack);
                     },
                     else => {}
                 }

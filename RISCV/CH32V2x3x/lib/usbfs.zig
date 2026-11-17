@@ -249,6 +249,12 @@ pub const UsbFs = extern struct {
         ep.tx_ctrl = UsbFsUepTxRxCtrl{.tog = !ep.tx_ctrl.tog, .res = .ack};
     }
 
+    pub fn setTxLenAndAck(self: *volatile UsbFs, ep_no: u3, tx_len: u16) void {
+        const ep = &self.uep_ctrl[ep_no];
+        ep.t_len = tx_len;
+        ep.tx_ctrl.res = .ack;
+    }
+
     pub fn tTogAndSendZeroPacket(self: *volatile UsbFs, ep_no: u3) void {
         const ep = &self.uep_ctrl[ep_no];
         ep.t_len = 0;
@@ -301,6 +307,14 @@ pub const UsbFs = extern struct {
 
     pub fn setEndpointTxLength(self: *volatile UsbFs, ep_no: u3, length: u16) void {
         self.uep_ctrl[ep_no].t_len = length;
+    }
+
+    pub fn setEndpointTxAuto(self: *volatile UsbFs, ep_no: u3, status: UsbFsRes) void {
+        self.uep_ctrl[ep_no].tx_ctrl = UsbFsUepTxRxCtrl{.res = status, .tog_auto = true};
+    }
+
+    pub fn setEndpointRxAuto(self: *volatile UsbFs, ep_no: u3, status: UsbFsRes) void {
+        self.uep_ctrl[ep_no].rx_ctrl = UsbFsUepTxRxCtrl{.res = status, .tog_auto = true};
     }
 
     pub fn setEndpointTxStatus(self: *volatile UsbFs, ep_no: u3, status: UsbFsRes) void {
