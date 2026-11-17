@@ -23,6 +23,10 @@ const shell_init = shell.ShellInit{
         shell.ShellSourceInit{
             .writer = &usart_writer.usart_writer.writer,
             .echo_func = hal.usartWrite
+        },
+        shell.ShellSourceInit{
+            .writer = &usb_writer.usb_writer.writer,
+            .echo_func = cdcWriteChar
         }
     }
 };
@@ -58,11 +62,15 @@ inline fn timerHandler() void {
     hal.ledToggle();
 }
 
+fn cdcWriteChar(c: u8) void {
+    usb_cdc_impl.txChar(c);
+    usb_cdc_impl.flush();
+}
+
 fn cdcRxCallback(data: []const u8) void {
-    usb_cdc_impl.tx(data);
-    //for (data) |c| {
-    //    hal.sh.processChar(1, c);
-    //}
+    for (data) |c| {
+        hal.sh.processChar(1, c);
+    }
 }
 
 export fn main() callconv(.c) noreturn {
@@ -81,8 +89,8 @@ export fn main() callconv(.c) noreturn {
         }
     }
 
-    //usb_writer.usb_writer.writeCharFunc = usb_cdc_impl.txChar;
-    //usb_writer.usb_writer.writeFlushFunc = usb_cdc_impl.flush;
+    usb_writer.usb_writer.writeCharFunc = usb_cdc_impl.txChar;
+    usb_writer.usb_writer.writeFlushFunc = usb_cdc_impl.flush;
 
     hal.sh = shell.Shell.init(&shell_init, a) catch { while (true){} };
     system_commands.registerCommands(hal.sh) catch { while (true){} };
