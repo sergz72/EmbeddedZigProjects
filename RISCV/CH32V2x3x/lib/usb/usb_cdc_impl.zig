@@ -81,14 +81,15 @@ pub fn flush() void {
 }
 
 fn usbDmaStart(data: []const u8) usize {
-    return data.len;
-    //if (data.len <= usb_device.USB_FS_MAX_PACKET_SIZE) {
-    //    usbfs.usbfs.tx(usb_cdc.DATA_OUT_ENDPOINT, data);
-    //    return data.len;
-    //} else {
-    //    usbfs.usbfs.tx(usb_cdc.DATA_OUT_ENDPOINT, data[0..usb_device.USB_FS_MAX_PACKET_SIZE]);
-    //    return usb_device.USB_FS_MAX_PACKET_SIZE;
-    //}
+    if (data.len <= usb_device.USB_FS_MAX_PACKET_SIZE) {
+        @memcpy(ep3_buffer[0..data.len], data);
+        usbfs.usbfs.tTogAndSetTxLen(usb_cdc.DATA_OUT_ENDPOINT, @truncate(data.len));
+        return data.len;
+    } else {
+        @memcpy(&ep3_buffer, data[0..usb_device.USB_FS_MAX_PACKET_SIZE]);
+        usbfs.usbfs.tTogAndSetTxLen(usb_cdc.DATA_OUT_ENDPOINT, usb_device.USB_FS_MAX_PACKET_SIZE);
+        return usb_device.USB_FS_MAX_PACKET_SIZE;
+    }
 }
 
 fn USBFSIRQHandler() callconv(.c) void {
@@ -113,6 +114,7 @@ fn USBFSIRQHandler() callconv(.c) void {
                     },
                     // data endpoint
                     usb_cdc.DATA_OUT_ENDPOINT => {
+                        usbfs.usbfs.setEndpointTxStatus(usb_cdc.DATA_OUT_ENDPOINT, .nak);
                         dma_sender_instance.dmaDone();
                     },
                     else => {}
@@ -126,6 +128,7 @@ fn USBFSIRQHandler() callconv(.c) void {
                         }
                     },
                     usb_cdc.DATA_IN_ENDPOINT => {
+                        usbfs.usbfs.setEndpointRxStatus(usb_cdc.DATA_IN_ENDPOINT, .nak);
                         rx_callback(ep2_buffer[0..usbfs.usbfs.rx_len]);
                         usbfs.usbfs.rTogAndAck(usb_cdc.DATA_IN_ENDPOINT);
                     },

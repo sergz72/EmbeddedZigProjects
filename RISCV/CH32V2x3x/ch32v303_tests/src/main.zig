@@ -59,7 +59,7 @@ inline fn timerHandler() void {
 }
 
 fn cdcRxCallback(data: []const u8) void {
-    _ = data;
+    usb_cdc_impl.tx(data);
     //for (data) |c| {
     //    hal.sh.processChar(1, c);
     //}
