@@ -28,14 +28,14 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
-    const pm = b.addModule("pm", .{
-        .root_source_file = b.path("../lib/pm.zig"),
+    const mclk = b.addModule("mclk", .{
+        .root_source_file = b.path("../lib/mclk.zig"),
         .target = target,
         .optimize = optimize
     });
 
-    const supc = b.addModule("supc", .{
-        .root_source_file = b.path("../lib/supc.zig"),
+    const pm = b.addModule("pm", .{
+        .root_source_file = b.path("../lib/pm.zig"),
         .target = target,
         .optimize = optimize
     });
@@ -77,6 +77,23 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const board = b.addModule("board", .{
+        .root_source_file = b.path("../lib/curiosity_nano.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "cpu", .module = cpu },
+            .{ .name = "nvic", .module = nvic },
+            .{ .name = "gclk", .module = gclk },
+            .{ .name = "pm", .module = pm },
+            .{ .name = "sercom", .module = sercom },
+            .{ .name = "port", .module = port },
+            .{ .name = "system_timer", .module = system_timer },
+            .{ .name = "interrupts", .module = interrupts },
+            .{ .name = "mclk", .module = mclk }
+        },
+    });
+
     const exe = b.addExecutable(.{
         .name = "atsame51j20_blink.elf",
         .root_module = b.createModule(.{
@@ -84,16 +101,14 @@ pub fn build(b: *std.Build) !void {
             .target = target,
             .optimize = optimize,
             .imports = &.{
-                .{ .name = "port", .module = port },
                 .{ .name = "gclk", .module = gclk },
-                .{ .name = "pm", .module = pm },
-                .{ .name = "supc", .module = supc },
-                .{ .name = "sercom", .module = sercom },
                 .{ .name = "tc", .module = tc },
                 .{ .name = "cpu", .module = cpu },
                 .{ .name = "nvic", .module = nvic },
                 .{ .name = "interrupts", .module = interrupts },
-                .{ .name = "system_timer", .module = system_timer }
+                .{ .name = "system_timer", .module = system_timer },
+                .{ .name = "board", .module = board },
+                .{ .name = "mclk", .module = mclk }
             },
         }),
     });

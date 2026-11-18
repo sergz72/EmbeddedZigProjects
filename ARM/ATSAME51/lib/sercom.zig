@@ -124,6 +124,7 @@ pub const I2CHostInitParameters = struct {
     clock_frequency: usize,
     scl_pin: u5,
     sda_pin: u5,
+    port: usize,
     pmux: port.PortFunction
 };
 
@@ -155,6 +156,7 @@ pub const SercomI2cHost = extern struct {
     reserved8: [3]u8,
 
     pub fn init(self: *volatile SercomI2cHost, parameters: I2CHostInitParameters) bool {
+        @setRuntimeSafety(false);
         if (parameters.baud == 0) {
             return false;
         }
@@ -167,25 +169,25 @@ pub const SercomI2cHost = extern struct {
             return false;
         }
 
-        port.ports[0].outset = (@as(u32, 1)<<parameters.scl_pin)|(@as(u32, 1)<<parameters.sda_pin);
-        port.ports[0].pincfg[parameters.scl_pin] = .{.pmuxen = true, .pullen = true};
-        port.ports[0].pincfg[parameters.sda_pin] = .{.pmuxen = true, .pullen = true};
-        port.ports[0].pmux[parameters.sda_pin/2] = .{.pmuxe = parameters.pmux, .pmuxo = parameters.pmux};
+        port.ports[parameters.port].outset = (@as(u32, 1)<<parameters.scl_pin)|(@as(u32, 1)<<parameters.sda_pin);
+        port.ports[parameters.port].pincfg[parameters.scl_pin] = port.PortPinCfg{.pmuxen = true, .pullen = true};
+        port.ports[parameters.port].pincfg[parameters.sda_pin] = port.PortPinCfg{.pmuxen = true, .pullen = true};
+        port.ports[parameters.port].pmux[parameters.sda_pin/2] = port.PortPmux{.pmuxe = parameters.pmux, .pmuxo = parameters.pmux};
 
-        const a: SercomI2cHostCtrlA = .{.mode = .i2c_host, .sdahold = ._75ns, .sclsm = parameters.sclsm};
+        const a = SercomI2cHostCtrlA{.mode = .i2c_host, .sdahold = ._75ns, .sclsm = parameters.sclsm};
         self.ctrla = a;
-        self.ctrlb = .{.smen = true};
-        self.baud = .{.baud = @truncate(b)};
+        self.ctrlb = SercomI2cHostCtrlB{.smen = true};
+        self.baud = SercomI2cHostBaud{.baud = @truncate(b)};
         self.ctrla.enable = true;
         while (self.syncbusy.enable) {
             asm volatile("nop");
         }
-        self.status = .{.busstate = .idle, .lenerr = true, .sexttout = true,
+        self.status = SercomI2cHostStatus{.busstate = .idle, .lenerr = true, .sexttout = true,
                         .mexttout = true, .lowtout = true, .arblost = true, .buserr = true};
         while (self.syncbusy.sysop) {
             asm volatile("nop");
         }
-        self.intenset = .{.mb = true, .sb = true, .err = true};
+        self.intenset = SercomI2cHostInt{.mb = true, .sb = true, .err = true};
         return true;
     }
 };
@@ -407,6 +409,7 @@ pub const SpiHostInitParameters = struct {
     rx_pin: u5,
     sck_pin: u5,
     ss_pin: ?u5,
+    port: usize,
     pmux: port.PortFunction,
     cpol: bool,
     cpha: bool
@@ -435,6 +438,7 @@ pub const SercomSpi = extern struct {
     reserved8: [3]u8,
 
     pub fn initHost(self: *volatile SercomSpi, params: SpiHostInitParameters) bool {
+        @setRuntimeSafety(false);
         if (params.baud == 0) {
             return false;
         }
@@ -442,24 +446,24 @@ pub const SercomSpi = extern struct {
         if (baud == 0 or baud > 256) {
             return false;
         }
-        port.ports[0].outset = @as(u32, 1)<<params.rx_pin;
-        port.ports[0].pincfg[params.tx_pin] = .{.pmuxen = true};
-        port.ports[0].pincfg[params.sck_pin] = .{.pmuxen = true};
-        port.ports[0].pincfg[params.rx_pin] = .{.pmuxen = true, .inen = true, .pullen = true};
-        port.ports[0].setPmux(params.tx_pin, params.pmux);
-        port.ports[0].setPmux(params.rx_pin, params.pmux);
-        port.ports[0].setPmux(params.sck_pin, params.pmux);
+        port.ports[params.port].outset = @as(u32, 1)<<params.rx_pin;
+        port.ports[params.port].pincfg[params.tx_pin] = port.PortPincfg{.pmuxen = true};
+        port.ports[params.port].pincfg[params.sck_pin] = port.PortPincfg{.pmuxen = true};
+        port.ports[params.port].pincfg[params.rx_pin] = port.PortPincfg{.pmuxen = true, .inen = true, .pullen = true};
+        port.ports[params.port].setPmux(params.tx_pin, params.pmux);
+        port.ports[params.port].setPmux(params.rx_pin, params.pmux);
+        port.ports[params.port].setPmux(params.sck_pin, params.pmux);
         if (params.ss_pin) |ss_pin| {
-            port.ports[0].setPmux(ss_pin, params.pmux);
-            self.ctrlb = .{.rxen = true, .mssen = true};
+            port.ports[params.port].setPmux(ss_pin, params.pmux);
+            self.ctrlb = SercomSpiCtrlB{.rxen = true, .mssen = true};
         } else {
-            self.ctrlb = .{.rxen = true};
+            self.ctrlb = SercomSpiCtrlB{.rxen = true};
         }
         while (self.syncbusy.ctrlb) {
             asm volatile("nop");
         }
         self.baud = @truncate(baud - 1);
-        const a: SercomSpiCtrlA = .{.mode = .spi_host, .enable = true, .dopo = params.dopo,
+        const a = SercomSpiCtrlA{.mode = .spi_host, .enable = true, .dopo = params.dopo,
                         .dipo = params.dipo, .cpol = params.cpol, .cpha = params.cpha};
         self.ctrla = a;
         while (self.syncbusy.enable) {
@@ -665,6 +669,7 @@ pub const UsartInitParameters = struct {
     txpo: u2,
     tx_pin: u5,
     rx_pin: u5,
+    port: usize,
     pmux: port.PortFunction
 };
 
@@ -693,20 +698,21 @@ pub const SercomUsart = extern struct {
     reserved8: [3]u8,
 
     pub fn init(self: *volatile SercomUsart, params: UsartInitParameters) void {
-        port.ports[0].outset = @as(u32, 1)<<params.rx_pin;
-        port.ports[0].pincfg[params.tx_pin] = .{.pmuxen = true};
-        port.ports[0].pincfg[params.rx_pin] = .{.pmuxen = true, .inen = true, .pullen = true};
-        port.ports[0].pmux[params.tx_pin/2] = .{.pmuxe = params.pmux, .pmuxo = params.pmux};
+        @setRuntimeSafety(false);
+        port.ports[params.port].outset = @as(u32, 1)<<params.rx_pin;
+        port.ports[params.port].pincfg[params.tx_pin] = port.PortPincfg{.pmuxen = true};
+        port.ports[params.port].pincfg[params.rx_pin] = port.PortPincfg{.pmuxen = true, .inen = true, .pullen = true};
+        port.ports[params.port].pmux[params.tx_pin/2] = port.PortPmux{.pmuxe = params.pmux, .pmuxo = params.pmux};
 
         self.baud = @truncate(65536 - (params.baud << 20) / params.clock_frequency);
-        self.ctrlb = .{.rxen = true, .txen = true, .sfde = true};
+        self.ctrlb = SercomUsartCtrlB{.rxen = true, .txen = true, .sfde = true};
         while (self.syncbusy.ctrlb) {
             asm volatile("nop");
         }
-        const a: SercomUsartCtrlA = .{.dord = true, .rxpo = params.rxpo, .txpo = params.txpo, .runstdby = true,
+        const a = SercomUsartCtrlA{.dord = true, .rxpo = params.rxpo, .txpo = params.txpo, .runstdby = true,
                         .mode = .usart_int_clk, .enable = true};
         self.ctrla = a;
-        self.intenset = .{.err = true, .rxc = true};
+        self.intenset = SercomUsartInt{.err = true, .rxc = true};
     }
 
     pub fn write(self: *volatile SercomUsart, data: u8) void {
