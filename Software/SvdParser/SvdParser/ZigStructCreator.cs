@@ -27,7 +27,8 @@ public static class ZigStructCreator
         foreach (var cluster in peripheral.Registers?.Clusters ?? Enumerable.Empty<Cluster>())
             CreateStruct(cluster, lines);
         CreateStruct(peripheral, lines);
-        AddInstance(lines, peripheral.Name, peripheral.Addresses.Size.Value);
+        if (peripheral.Addresses.Size != null)
+            AddInstance(lines, peripheral.Name, peripheral.Addresses.Size.Value);
         return lines;
     }
     

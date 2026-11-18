@@ -6,8 +6,8 @@ namespace SvdParser;
 
 public struct AddressBlock
 {
-    [XmlElement("offset")] public HexUInt Offset;
-    [XmlElement("size")] public HexUInt Size;
+    [XmlElement("offset")] public HexUInt? Offset;
+    [XmlElement("size")] public HexUInt? Size;
 }
 
 public interface IPeripheral
