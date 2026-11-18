@@ -1,8 +1,8 @@
 const board = @import("board");
 const tc = @import("tc");
-const system_timer = @import("system_timer");
 const cpu = @import("cpu");
 const gclk = @import("gclk");
+const mclk = @import("mclk");
 const nvic = @import("nvic");
 const interrupts = @import("interrupts");
 
@@ -17,21 +17,20 @@ export fn TC5_Handler() callconv(.c) void {
 
 inline fn clocksInit() void {
     //Timer
+    mclk.mclk.apbcmask.tc5 = true;
     gclk.gclk.channelEnable(.tc4_tc5, 0);
 }
 
 inline fn timerInit() void {
     timer_interrupt = false;
-    TIMER_INSTANCE.cc[0] = @truncate(cpu.cpu.current_frequency / 1024);
-    TIMER_INSTANCE.intenset = .{.mc0 = true};
-    TIMER_INSTANCE.ctrla = .{.runstdby = true, .presync = .presc, .prescaler = .div1024};
+    TIMER_INSTANCE.initTimerInterrupt(@truncate(cpu.cpu.current_frequency / 1024), .div1024);
     nvic.nvic.enableInterrupt(interrupts.Interrupt.TC5.toU8());
 }
 
 export fn SystemInit() callconv(.c) void {
     board.init();
-    //clocksInit();
-    //timerInit();
+    clocksInit();
+    timerInit();
 }
 
 inline fn timerStart() void {
@@ -39,14 +38,12 @@ inline fn timerStart() void {
 }
 
 export fn main() callconv(.c) noreturn {
-    //timerStart();
+    timerStart();
     while (true) {
-        system_timer.delayms(1000);
-        board.ledToggle();
-        //asm volatile("wfi");
-        //if (timer_interrupt) {
-        //    timer_interrupt = false;
-        //    board.ledToggle();
-        //}
+        asm volatile("wfi");
+        if (timer_interrupt) {
+            timer_interrupt = false;
+            board.ledToggle();
+        }
     }
 }

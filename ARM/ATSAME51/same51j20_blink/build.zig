@@ -106,7 +106,6 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "cpu", .module = cpu },
                 .{ .name = "nvic", .module = nvic },
                 .{ .name = "interrupts", .module = interrupts },
-                .{ .name = "system_timer", .module = system_timer },
                 .{ .name = "board", .module = board },
                 .{ .name = "mclk", .module = mclk }
             },

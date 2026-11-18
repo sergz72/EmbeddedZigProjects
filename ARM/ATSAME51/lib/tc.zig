@@ -183,6 +183,16 @@ pub const Tc16 = extern struct {
     cc: [2]u16,
     reserved3: [8]u16,
     ccbuf: [2]u16,
+
+    pub fn initTimerInterrupt(self: *volatile Tc16, cc0: u16, div: TcPrescaler) void {
+        self.wave = .match_frequency;
+        self.cc[0] = cc0;
+        while (self.syncbusy.cc0) {
+            asm volatile("nop");
+        }
+        self.intenset = .{.mc0 = true};
+        self.ctrla = .{.runstdby = true, .presync = .presc, .prescaler = div};
+    }
 };
 
 pub const Tc32 = extern struct {
