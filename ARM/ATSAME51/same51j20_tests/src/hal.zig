@@ -18,6 +18,7 @@ const rstc = @import("rstc");
 const rtc = @import("rtc");
 const i2c = @import("i2c");
 const port = @import("port");
+const pac = @import("pac");
 
 const TIMER_INSTANCE = tc.tc5_16;
 
@@ -129,6 +130,10 @@ inline fn spiInit() void {
     port.ports[SPI_CS_PORT].dirset = SPI_CS_PIN_MASK;
 }
 
+inline fn dsuInit() void {
+    pac.pac.wrctrl = pac.PacWrctrl{.key = .clr, .perid = .dsu};
+}
+
 fn usartCallback(data: u8) void {
     sh.processChar(0, data);
 }
@@ -142,6 +147,7 @@ export fn SystemInit() callconv(.c) void {
     //spiInit();
     trng.trng.init();
     rtc.rtc.init();
+    dsuInit();
     wdt.wdt.init(10000);
 }
 

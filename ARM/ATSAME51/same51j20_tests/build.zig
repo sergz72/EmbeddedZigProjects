@@ -109,6 +109,18 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const dsu = b.addModule("dsu", .{
+        .root_source_file = b.path("../lib/dsu.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const pac = b.addModule("pac", .{
+        .root_source_file = b.path("../lib/pac.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const nvic = b.addModule("nvic", .{
         .root_source_file = b.path("../../lib/nvic.zig"),
         .target = target,
@@ -221,6 +233,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "sercom", .module = sercom },
             .{ .name = "i2c", .module = i2c },
             .{ .name = "port", .module = port },
+            .{ .name = "pac", .module = pac },
         },
     });
 
@@ -348,7 +361,8 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "scd4x_commands", .module = scd4x_commands },
                 .{ .name = "veml7700_commands", .module = veml7700_commands },
                 .{ .name = "rtc_commands", .module = rtc_commands },
-                .{ .name = "aes_commands", .module = aes_commands }
+                .{ .name = "aes_commands", .module = aes_commands },
+                .{ .name = "dsu", .module = dsu },
             },
         }),
     });

@@ -10,13 +10,13 @@ const crc_command = shell.ShellCommand{
 };
 
 pub const Generators = struct {
-    crc8: ?*const fn([]const u8) u8,
-    crc16: ?*const fn([]const u8) u16,
-    crc32: ?*const fn([]const u8) u32
+    crc8: ?*const fn([]const align(4) u8) u8,
+    crc16: ?*const fn([]const align(4) u8) u16,
+    crc32: ?*const fn([]const align(4) u8) u32
 };
 
 var generators: *const Generators = undefined;
-var buffer: [32]u8 = undefined;
+var buffer: [32]u8 align(4) = undefined;
 
 fn crcHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isize {
     const size = std.fmt.parseInt(usize, parameters.argv[0], 10) catch {
@@ -38,7 +38,7 @@ fn crcHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isiz
     switch (size) {
         8 => {
             if (generators.crc8) |g| {
-                const crc = g(bytes);
+                const crc = g(buffer[0..bytes.len]);
                 _ = try parameters.writer.print("crc8: {x:0>2}\n", .{crc});
             } else {
                 _ = try parameters.writer.write("crc8 generator not available\n");
@@ -47,7 +47,7 @@ fn crcHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isiz
         },
         16 => {
             if (generators.crc16) |g| {
-                const crc = g(bytes);
+                const crc = g(buffer[0..bytes.len]);
                 _ = try parameters.writer.print("crc16: {x:0>4}\n", .{crc});
             } else {
                 _ = try parameters.writer.write("crc16 generator not available\n");
@@ -56,7 +56,7 @@ fn crcHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isiz
         },
         32 => {
             if (generators.crc32) |g| {
-                const crc = g(bytes);
+                const crc = g(buffer[0..bytes.len]);
                 _ = try parameters.writer.print("crc32: {x:0>8}\n", .{crc});
             } else {
                 _ = try parameters.writer.write("crc32 generator not available\n");

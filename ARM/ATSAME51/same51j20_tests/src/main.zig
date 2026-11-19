@@ -15,6 +15,7 @@ const scd4x_commands = @import("scd4x_commands");
 const rtc_commands = @import("rtc_commands");
 const aes_commands = @import("aes_commands");
 const trng = @import("trng");
+const dsu = @import("dsu");
 
 const shell_init = shell.ShellInit{
     .max_commands = 50,
@@ -51,9 +52,12 @@ const aes_engines: aes_commands.Engines = .{
     }
 };
 
-fn crc32(data: []const u8) u32 {
-    _ = data;
-    return 0;
+fn crc32(data: []const align(4) u8) u32 {
+    if (data.len == 0 or data.len & 3 != 0) return 0;
+    const d = std.mem.bytesAsSlice(u32, data);
+    return dsu.dsu.crc32(d) catch {
+        return 0;
+    };
 }
 
 fn trngGen(data: []u32) bool {
