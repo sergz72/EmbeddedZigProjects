@@ -153,7 +153,10 @@ pub const NvmctrlError = error {
     ProgramError,
     LockError,
     NvmeError,
-    NonSecureCheckError
+    AddressError,
+    EccSingleError,
+    EccDoubleError,
+    SeesOverflow
 };
 
 pub const Nvmctrl = extern struct {
@@ -185,12 +188,13 @@ pub const Nvmctrl = extern struct {
 
     fn clearInterruptFlags(self: *volatile Nvmctrl) void {
         self.intflag = NvmctrlInt{
-            .done = true,
+            .addre = true,
             .proge = true,
             .locke = true,
+            .eccse = true,
+            .eccde = true,
             .nvme = true,
-            .keye = true,
-            .nschk = true
+            .seesovf = true
         };
     }
 
@@ -198,13 +202,16 @@ pub const Nvmctrl = extern struct {
         self.waitForReady();
         self.clearInterruptFlags();
         self.addr = address;
-        self.ctrla = NvmctrlCtrla{.cmd = cmd};
+        self.ctrlb = NvmctrlCtrlb{.cmd = cmd};
         self.waitForReady();
         const flags = self.intflag;
         if (flags.proge) return NvmctrlError.ProgramError;
         if (flags.locke) return NvmctrlError.LockError;
         if (flags.nvme) return NvmctrlError.NvmeError;
-        if (flags.nschk) return NvmctrlError.NonSecureCheckError;
+        if (flags.addre) return NvmctrlError.AddressError;
+        if (flags.eccse) return NvmctrlError.EccSingleError;
+        if (flags.eccde) return NvmctrlError.EccDoubleError;
+        if (flags.seesovf) return NvmctrlError.SeesOverflow;
     }
 
     pub fn pageErase(self: *volatile Nvmctrl, address: usize) NvmctrlError!void {

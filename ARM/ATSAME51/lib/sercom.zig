@@ -170,8 +170,8 @@ pub const SercomI2cHost = extern struct {
         }
 
         port.ports[parameters.port].outset = (@as(u32, 1)<<parameters.scl_pin)|(@as(u32, 1)<<parameters.sda_pin);
-        port.ports[parameters.port].pincfg[parameters.scl_pin] = port.PortPinCfg{.pmuxen = true, .pullen = true};
-        port.ports[parameters.port].pincfg[parameters.sda_pin] = port.PortPinCfg{.pmuxen = true, .pullen = true};
+        port.ports[parameters.port].pincfg[parameters.scl_pin] = port.PortPincfg{.pmuxen = true, .pullen = true};
+        port.ports[parameters.port].pincfg[parameters.sda_pin] = port.PortPincfg{.pmuxen = true, .pullen = true};
         port.ports[parameters.port].pmux[parameters.sda_pin/2] = port.PortPmux{.pmuxe = parameters.pmux, .pmuxo = parameters.pmux};
 
         const a = SercomI2cHostCtrlA{.mode = .i2c_host, .sdahold = ._75ns, .sclsm = parameters.sclsm};

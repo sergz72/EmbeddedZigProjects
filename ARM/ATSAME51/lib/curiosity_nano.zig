@@ -8,6 +8,7 @@ const gclk = @import("gclk");
 const pm = @import("pm");
 const system_timer = @import("system_timer");
 const mclk = @import("mclk");
+const usart_writer = @import("usart_writer");
 
 pub const panic = std.debug.no_panic;
 
@@ -27,6 +28,8 @@ const USART_TX_PIN_MASK = 1 << USART_TX_PIN;
 //--------------------------------
 const USART_RX_PIN = 17;
 const USART_RX_PIN_MASK = 1 << USART_RX_PIN;
+
+var usart_callback: *const fn(u8) void = undefined;
 
 pub inline fn ledOn() void {
     port.ports[LED_PORT].outset = LED_PIN_MASK;
@@ -56,6 +59,7 @@ inline fn usartInit() void {
     };
     USART_INSTANCE.usart.init(uinit);
     nvic.nvic.enableInterrupt(interrupts.Interrupt.SERCOM5_2.toU8());
+    usart_writer.usart_writer.writeCharFunc = usartWrite;
 }
 
 inline fn clocksInit() void {
@@ -64,7 +68,8 @@ inline fn clocksInit() void {
     gclk.gclk.channelEnable(.sercom5_core, 0);
 }
 
-pub fn init() void {
+pub fn init(callback: *const fn(u8) void) void {
+    usart_callback = callback;
     clocksInit();
     pm.pm.sleepcfg = .idle;
     system_timer.delay_init(system_timer.init_div1);
@@ -82,7 +87,6 @@ export fn SERCOM5_2_Handler() callconv(.c) void {
         USART_INSTANCE.usart.intflag = .{.err = true};
     }
     if (flags.rxc) {
-        const data = USART_INSTANCE.usart.data;
-        USART_INSTANCE.usart.data = data;
+        usart_callback(@truncate(USART_INSTANCE.usart.data));
     }
 }

@@ -1,3 +1,5 @@
+const generic_rtc = @import("generic_rtc");
+
 const RTC_BASE = 0x40002400;
 
 pub const RtcMode = enum(u2) {
@@ -252,6 +254,12 @@ pub const RtcModes = extern union {
     mode2: RtcMode2
 };
 
+pub const InternalRtcError = error{
+    Timeout
+};
+
+pub const RtcError = InternalRtcError || generic_rtc.RtcDataError;
+
 pub const Rtc = extern struct {
     ctrla: RtcCtrla,
     ctrlb: RtcCtrlb,
@@ -268,6 +276,24 @@ pub const Rtc = extern struct {
     tampid: RtcTampid,
     reserved5: [5]u32,
     bkup: [8]u32,
+
+    pub fn init(self: *volatile Rtc) void {
+        _ = self;
+        //todo
+    }
+
+    pub fn setTime(self: *volatile Rtc, data: *generic_rtc.RtcData, timeout: usize) RtcError!void {
+        _ = self;
+        _ = data;
+        _ = timeout;
+        return RtcError.Timeout;
+    }
+
+    pub fn getTime(self: *volatile Rtc, rtc_data: *generic_rtc.RtcData) RtcError!void {
+        _ = self;
+        _ = rtc_data;
+        return RtcError.Timeout;
+    }
 };
 
 pub const rtc: *volatile Rtc = @ptrFromInt(RTC_BASE);

@@ -88,10 +88,6 @@ pub const Wdt = extern struct {
             else => WdtPer.cyc16384
         };
         self.config = WdtConfig{ .per = per, .window = per };
-        self.ctrla.runstdby = true;
-        while (self.syncbusy.runstdby) {
-            asm volatile ("nop");
-        }
         self.ctrla.enable = true;
         while (self.syncbusy.enable) {
             asm volatile ("nop");
