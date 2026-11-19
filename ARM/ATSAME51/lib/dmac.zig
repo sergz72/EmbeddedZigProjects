@@ -169,15 +169,15 @@ pub const DmacChstatus = bitpack struct(u8) {
 };
 
 pub const DmacChannel = extern struct {
-    chctrla: DmacChctrla,
-    chctrlb: DmacCmd,
-    chprilvl: DmacChPrilvl,
-    chevctrl: DmacChevctrl,
+    ctrla: DmacChctrla,
+    ctrlb: DmacCmd,
+    prilvl: DmacChPrilvl,
+    evctrl: DmacChevctrl,
     reserved0: [5]u8,
-    chintenclr: DmacChInt,
-    chintenset: DmacChInt,
-    chintflag: DmacChInt,
-    chstatus: DmacChstatus,
+    intenclr: DmacChInt,
+    intenset: DmacChInt,
+    intflag: DmacChInt,
+    status: DmacChstatus,
 };
 
 pub const DmacCtrl = bitpack struct(u16) {
@@ -191,7 +191,7 @@ pub const DmacCtrl = bitpack struct(u16) {
     reserved1: u4 = 0,
 };
 
-pub const DmacCrcbeatsize = enum(u2) {
+pub const DmacBeatsize = enum(u2) {
     byte = 0,
     hword = 1,
     word = 2,
@@ -246,7 +246,7 @@ pub const DmacCrcmode = enum(u2) {
 };
 
 pub const DmacCrcctrl = bitpack struct(u16) {
-    crcbeatsize: DmacCrcbeatsize = .byte,
+    crcbeatsize: DmacBeatsize = .byte,
     crcpoly: DmacCrcpoly = .crc16,
     reserved0: u4 = 0,
     crcsrc: DmacCrcsrc = .disable,
@@ -312,6 +312,60 @@ pub const DmacActive = bitpack struct(u32) {
     btcnt: u16,
 };
 
+pub const DmacStepSize = enum(u3) {
+    x1 = 0,
+    x2 = 1,
+    x4 = 2,
+    x8 = 3,
+    x16 = 4,
+    x32 = 5,
+    x64 = 6,
+    x128 = 7,
+};
+
+pub const DmaBlockact = enum(u2) {
+    noact = 0,
+    int = 1,
+    suspen = 2,
+    both = 3,
+};
+
+pub const DmacEvosel = enum(u2) {
+    disable = 0,
+    block = 1,
+    beat = 3,
+};
+
+pub const DmacBtctrl = bitpack struct(u16) {
+    valid: bool = false,
+    evosel: DmacEvosel = .disable,
+    blockact: DmaBlockact = .noact,
+    reserved: u3 = 0,
+    beatsize: DmacBeatsize = .byte,
+    srcinc: bool = false,
+    dstinc: bool = false,
+    stepsel: bool = false,
+    stepsize: DmacStepSize = .x1
+};
+
+pub const DmacDescriptor = extern struct {
+    btctrl: DmacBtctrl,
+    btcnt: u16,
+    srcaddr: u32,
+    dstaddr: u32,
+    descaddr: u32,
+};
+
+pub const DmaChannelInit = struct {
+    beatsize: DmacBeatsize,
+    srcinc: bool,
+    dstinc: bool,
+    length: u16,
+    srcaddr: usize,
+    dstaddr: usize,
+    trigsrc: DmacTrigsrc,
+};
+
 pub const Dmac = extern struct {
     ctrl: DmacCtrl,
     crcctrl: DmacCrcctrl,
@@ -332,8 +386,98 @@ pub const Dmac = extern struct {
     baseaddr: u32,
     wrbaddr: u32,
     reserved3: u32,
-    ch: [32]DmacChannel
+    ch: [32]DmacChannel,
+
+    pub fn init(self: *volatile Dmac) void {
+        self.ctrl = DmacCtrl{};
+        while (self.ctrl.dmaenable) {
+            asm volatile ("nop");
+        }
+        self.ctrl = DmacCtrl{.swrst = true};
+        while (self.ctrl.swrst) {
+            asm volatile ("nop");
+        }
+        self.baseaddr = @intFromPtr(&descriptors[0]);
+        self.wrbaddr = @intFromPtr(&writeback[0]);
+        self.ctrl = DmacCtrl{.dmaenable = true, .lvlen0 = true};
+    }
+
+    pub fn channelSetup(self: *volatile Dmac, channel: u5, init_data: *const DmaChannelInit) void {
+        const beatsize: usize = switch (init_data.beatsize) {
+            .byte => 1,
+            .hword => 2,
+            .word => 4,
+        };
+        const len32 = @as(usize, init_data.length);
+        const srcaddr = if (init_data.srcinc) init_data.srcaddr + len32 * beatsize else init_data.srcaddr;
+        const dstaddr = if (init_data.dstinc) init_data.dstaddr + len32 * beatsize else init_data.dstaddr;
+        descriptors[channel] = DmacDescriptor{
+            .btctrl = DmacBtctrl{
+                .beatsize = init_data.beatsize,
+                .srcinc = init_data.srcinc,
+                .dstinc = init_data.dstinc,
+                .valid = true,
+                .blockact = .noact,
+            },
+            .btcnt = init_data.length,
+            .srcaddr = srcaddr,
+            .dstaddr = dstaddr,
+            .descaddr = 0
+        };
+        const ch = &self.ch[channel];
+        ch.ctrla = DmacChctrla{.trigact = .block, .trigsrc = init_data.trigsrc};
+        ch.intflag = DmacChInt{.tcmpl = true};
+        ch.ctrla.enable = true;
+    }
+
+    pub fn start(self: *volatile Dmac, channel: u5) void {
+        self.swtrigctrl = @as(u32, 1) << channel;
+    }
+
+    pub fn waitTransferComplete(self: *volatile Dmac, channel: u5) void {
+        const ch = &self.ch[channel];
+        while (!ch.intflag.tcmpl) {
+            asm volatile ("nop");
+        }
+    }
+
+    fn crcInit(self: *volatile Dmac, src: DmacCrcsrc, poly: DmacCrcpoly, beat_size: DmacBeatsize) void {
+        self.crcctrl = DmacCrcctrl{
+            .crcbeatsize = .byte,
+            .crcpoly = .crc16,
+            .crcsrc = .disable,
+            .crcmode = .default,
+        };
+        self.crcchksum = 0xFFFFFFFF;
+        self.crcctrl = DmacCrcctrl{
+            .crcbeatsize = beat_size,
+            .crcpoly = poly,
+            .crcsrc = src,
+            .crcmode = .default,
+        };
+    }
+
+    pub fn crc32(self: *volatile Dmac, src: DmacCrcsrc, channel: u5, data: []const u8) u32 {
+        self.crcInit(src, .crc32, .byte);
+        var dummy: u8 = undefined;
+        const init_data = &DmaChannelInit{
+            .trigsrc = .disable,
+            .beatsize = .byte,
+            .srcinc = true,
+            .dstinc = false,
+            .length = @truncate(data.len),
+            .srcaddr = @intFromPtr(data.ptr),
+            .dstaddr = @intFromPtr(&dummy),
+        };
+        self.channelSetup(channel, init_data);
+        self.start(channel);
+        self.waitTransferComplete(channel);
+        return self.crcchksum;
+    }
 };
+
+var descriptors: [32]DmacDescriptor align(16) = undefined;
+var writeback: [32]DmacDescriptor align(16) = undefined;
 
 pub const dmac: *volatile Dmac = @ptrFromInt(DMAC_BASE);
 

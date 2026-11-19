@@ -16,6 +16,7 @@ const rtc_commands = @import("rtc_commands");
 const aes_commands = @import("aes_commands");
 const trng = @import("trng");
 const dsu = @import("dsu");
+const dmac = @import("dmac");
 
 const shell_init = shell.ShellInit{
     .max_commands = 50,
@@ -39,7 +40,7 @@ const rng: trng_commands.Rng = .{
 const crc_generators: crc_commands.Generators = .{
     .crc8 = null,
     .crc16 = null,
-    .crc32 = &crc32
+    .crc32 = &crc32dmac
 };
 
 const aes_engines: aes_commands.Engines = .{
@@ -52,12 +53,16 @@ const aes_engines: aes_commands.Engines = .{
     }
 };
 
-fn crc32(data: []const align(4) u8) u32 {
+fn crc32dsu(data: []const align(4) u8) u32 {
     if (data.len == 0 or data.len & 3 != 0) return 0;
     const d = std.mem.bytesAsSlice(u32, data);
     return dsu.dsu.crc32(d) catch {
         return 0;
     };
+}
+
+fn crc32dmac(data: []const align(4) u8) u32 {
+    return dmac.dmac.crc32(.chn0, 0, data);
 }
 
 fn trngGen(data: []u32) bool {

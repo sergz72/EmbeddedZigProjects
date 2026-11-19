@@ -19,6 +19,7 @@ const rtc = @import("rtc");
 const i2c = @import("i2c");
 const port = @import("port");
 const pac = @import("pac");
+const dmac = @import("dmac");
 
 const TIMER_INSTANCE = tc.tc5_16;
 
@@ -134,6 +135,10 @@ inline fn dsuInit() void {
     pac.pac.wrctrl = pac.PacWrctrl{.key = .clr, .perid = .dsu};
 }
 
+inline fn dmaInit() void {
+    dmac.dmac.init();
+}
+
 fn usartCallback(data: u8) void {
     sh.processChar(0, data);
 }
@@ -147,7 +152,8 @@ export fn SystemInit() callconv(.c) void {
     //spiInit();
     trng.trng.init();
     rtc.rtc.init();
-    dsuInit();
+    //dsuInit();
+    dmaInit();
     wdt.wdt.init(10000);
 }
 
