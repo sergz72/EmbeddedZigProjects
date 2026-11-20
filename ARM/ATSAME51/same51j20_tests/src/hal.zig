@@ -154,7 +154,7 @@ export fn SystemInit() callconv(.c) void {
     i2cInit();
     spiInit();
     trng.trng.init();
-    rtc.rtc.init();
+    rtc.rtc.init(.count32);
     //dsuInit();
     dmaInit();
     wdt.wdt.init(10000);

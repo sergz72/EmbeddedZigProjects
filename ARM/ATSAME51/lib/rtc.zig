@@ -1,4 +1,5 @@
 const generic_rtc = @import("generic_rtc");
+const osc32kctrl = @import("osc32kctrl");
 
 const RTC_BASE = 0x40002400;
 
@@ -175,6 +176,19 @@ pub const RtcMode0 = extern struct {
     reserved4: [4]u32,
     tampctrl: RtcTampctrl,
     timestamp: u32,
+
+    pub fn setTime(self: *volatile RtcMode0, data: *generic_rtc.RtcData) RtcError!void {
+        try data.validate();
+        self.count = @truncate(data.toBinary());
+    }
+
+    pub fn getTime(self: *volatile RtcMode0, rtc_data: *generic_rtc.RtcData) RtcError!void {
+        rtc_data.fromBinary(self.count);
+    }
+
+    pub fn getUnixTime(self: *volatile RtcMode0) RtcError!u32 {
+        return self.count;
+    }
 };
 
 pub const RtcMode1 = extern struct {
@@ -188,7 +202,24 @@ pub const RtcMode1 = extern struct {
     reserved4: [4]u32,
     tampctrl: RtcTampctrl,
     timestamp: u16,
-    reserved5: u16
+    reserved5: u16,
+
+    pub fn setTime(self: *volatile RtcMode1, data: *generic_rtc.RtcData) RtcError!void {
+        _ = self;
+        _ = data;
+        return RtcError.NotImplemented;
+    }
+
+    pub fn getTime(self: *volatile RtcMode1, rtc_data: *generic_rtc.RtcData) RtcError!void {
+        _ = self;
+        _ = rtc_data;
+        return RtcError.NotImplemented;
+    }
+
+    pub fn getUnixTime(self: *volatile RtcMode1) RtcError!u32 {
+        _ = self;
+        return RtcError.NotImplemented;
+    }
 };
 
 pub const RtcHour = enum(u5) {
@@ -245,7 +276,24 @@ pub const RtcMode2 = extern struct {
     gp: [4]u32,
     reserved4: [4]u32,
     tampctrl: RtcTampctrl,
-    timestamp: RtcTimestamp
+    timestamp: RtcTimestamp,
+
+    pub fn setTime(self: *volatile RtcMode2, data: *generic_rtc.RtcData) RtcError!void {
+        _ = self;
+        _ = data;
+        return RtcError.NotImplemented;
+    }
+
+    pub fn getTime(self: *volatile RtcMode2, rtc_data: *generic_rtc.RtcData) RtcError!void {
+        _ = self;
+        _ = rtc_data;
+        return RtcError.NotImplemented;
+    }
+
+    pub fn getUnixTime(self: *volatile RtcMode2) RtcError!u32 {
+        _ = self;
+        return RtcError.NotImplemented;
+    }
 };
 
 pub const RtcModes = extern union {
@@ -255,7 +303,7 @@ pub const RtcModes = extern union {
 };
 
 pub const InternalRtcError = error{
-    Timeout
+    NotImplemented
 };
 
 pub const RtcError = InternalRtcError || generic_rtc.RtcDataError;
@@ -277,22 +325,42 @@ pub const Rtc = extern struct {
     reserved5: [5]u32,
     bkup: [8]u32,
 
-    pub fn init(self: *volatile Rtc) void {
-        _ = self;
-        //todo
+    pub fn init(self: *volatile Rtc, mode: RtcMode) void {
+        osc32kctrl.osc32kctrl.rtcctrl = osc32kctrl.Osc32kRtcctrl{.rtcsel = .xosc1k};
+        self.ctrla = RtcCtrla{
+            .mode = mode,
+            .prescaler = .div1024,
+            .countsync = true
+        };
+        self.ctrla.enable = true;
+        while (self.syncbusy.enable) {
+            asm volatile("nop");
+        }
     }
 
     pub fn setTime(self: *volatile Rtc, data: *generic_rtc.RtcData, timeout: usize) RtcError!void {
-        _ = self;
-        _ = data;
         _ = timeout;
-        return RtcError.Timeout;
+        return switch (self.ctrla.mode) {
+            .count32 => self.mode.mode0.setTime(data),
+            .count16 => self.mode.mode1.setTime(data),
+            .clock => self.mode.mode2.setTime(data),
+        };
     }
 
     pub fn getTime(self: *volatile Rtc, rtc_data: *generic_rtc.RtcData) RtcError!void {
-        _ = self;
-        _ = rtc_data;
-        return RtcError.Timeout;
+        return switch (self.ctrla.mode) {
+            .count32 => self.mode.mode0.getTime(rtc_data),
+            .count16 => self.mode.mode1.getTime(rtc_data),
+            .clock => self.mode.mode2.getTime(rtc_data),
+        };
+    }
+
+    pub fn getUnixTime(self: *volatile Rtc) RtcError!u32 {
+        return switch (self.ctrla.mode) {
+            .count32 => self.mode.mode0.getUnixTime(),
+            .count16 => self.mode.mode1.getUnixTime(),
+            .clock => self.mode.mode2.getUnixTime(),
+        };
     }
 };
 

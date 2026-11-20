@@ -117,7 +117,8 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .optimize = optimize,
         .imports = &.{
-            .{ .name = "generic_rtc", .module = generic_rtc }
+            .{ .name = "generic_rtc", .module = generic_rtc },
+            .{ .name = "osc32kctrl", .module = osc32kctrl }
         },
     });
 
