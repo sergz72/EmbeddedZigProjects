@@ -11,6 +11,8 @@ const mclk = @import("mclk");
 const usart_writer = @import("usart_writer");
 const osc32kctrl = @import("osc32kctrl");
 const oscctrl = @import("oscctrl");
+const dma_sender = @import("dma_sender");
+const dmac = @import("dmac");
 
 pub const panic = std.debug.no_panic;
 
@@ -32,6 +34,10 @@ const USART_RX_PIN = 17;
 const USART_RX_PIN_MASK = 1 << USART_RX_PIN;
 
 var usart_callback: *const fn(u8) void = undefined;
+var dma_sender_instance = dma_sender.DmaSender {
+    .dma_start = &usartDmaStart,
+    .delayms = system_timer.delayms,
+};
 
 pub inline fn ledOn() void {
     port.ports[LED_PORT].outset = LED_PIN_MASK;
@@ -45,7 +51,7 @@ pub inline fn ledToggle() void {
     port.ports[LED_PORT].outtgl = LED_PIN_MASK;
 }
 
-inline fn usartInit() void {
+inline fn usartInit(use_dma: bool) void {
     const uinit = sercom.UsartInitParameters{
         .baud = 115200,
         .clock_frequency = cpu.cpu.current_frequency,
@@ -57,8 +63,13 @@ inline fn usartInit() void {
         .pmux = .C
     };
     USART_INSTANCE.usart.init(uinit);
+    if (use_dma) {
+        usart_writer.usart_writer.writeCharFunc = usartWriteDma;
+        usart_writer.usart_writer.writeFlushFunc = usartFlushDma;
+    } else {
+        usart_writer.usart_writer.writeCharFunc = usartWrite;
+    }
     nvic.nvic.enableInterrupt(interrupts.Interrupt.SERCOM5_2.toU8());
-    usart_writer.usart_writer.writeCharFunc = usartWrite;
 }
 
 inline fn clocksInit() void {
@@ -70,17 +81,41 @@ inline fn clocksInit() void {
     gclk.gclk.channelEnable(.sercom5_core, 0);
 }
 
-pub fn init(callback: *const fn(u8) void) void {
+pub fn init(callback: *const fn(u8) void, use_dma: bool) void {
     usart_callback = callback;
     clocksInit();
     pm.pm.sleepcfg = .idle;
     system_timer.delay_init(system_timer.init_div1);
     port.ports[LED_PORT].dirset = LED_PIN_MASK;
-    usartInit();
+    usartInit(use_dma);
+}
+
+pub fn usartDmaInit(buffer_size: usize, allocator: std.mem.Allocator) error{OutOfMemory}!void {
+    try dma_sender_instance.init(buffer_size, allocator);
+    dmac.dmac.initMemoryToPeripheral8(0, @intFromPtr(&USART_INSTANCE.usart.data), .sercom5_tx);
+    nvic.nvic.enableInterrupt(interrupts.Interrupt.DMAC_0.toU8());
 }
 
 pub fn usartWrite(c: u8) void {
     USART_INSTANCE.usart.write(c);
+}
+
+pub fn shellWriteCharDma(byte: u8) void {
+    usartWriteDma(byte);
+    usartFlushDma();
+}
+
+pub fn usartWriteDma(byte: u8) void {
+    dma_sender_instance.sendChar(byte);
+}
+
+pub fn usartFlushDma() void {
+    dma_sender_instance.start();
+}
+
+fn usartDmaStart(data: []const u8) usize {
+    dmac.dmac.startTransferMemoryToPeripheral8(0, data);
+    return data.len;
 }
 
 export fn SERCOM5_2_Handler() callconv(.c) void {
@@ -91,4 +126,9 @@ export fn SERCOM5_2_Handler() callconv(.c) void {
     if (flags.rxc) {
         usart_callback(@truncate(USART_INSTANCE.usart.data));
     }
+}
+
+export fn DMAC_0_Handler() callconv(.c) void {
+    dmac.dmac.clearInterruptFlags(0);
+    dma_sender_instance.dmaDone();
 }

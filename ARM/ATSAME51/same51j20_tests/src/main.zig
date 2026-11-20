@@ -28,7 +28,7 @@ const shell_init = shell.ShellInit{
     .source_init = &.{
         shell.ShellSourceInit{
             .writer = &usart_writer.usart_writer.writer,
-            .echo_func = board.usartWrite
+            .echo_func = board.shellWriteCharDma
         }
     }
 };
@@ -41,7 +41,7 @@ const rng: trng_commands.Rng = .{
 const crc_generators: crc_commands.Generators = .{
     .crc8 = null,
     .crc16 = null,
-    .crc32 = &crc32dmac
+    .crc32 = &crc32dsu
 };
 
 const aes_engines: aes_commands.Engines = .{
@@ -63,7 +63,7 @@ fn crc32dsu(data: []const align(4) u8) u32 {
 }
 
 fn crc32dmac(data: []const align(4) u8) u32 {
-    return dmac.dmac.crc32(.chn0, 0, data);
+    return dmac.dmac.crc32(.chn0, 1, data);
 }
 
 fn trngGen(data: []u32) bool {
@@ -91,6 +91,8 @@ fn aesDecrypt(key: []const u8, iv: []const u8, in: []const u8, out: []u8) bool {
 
 export fn main() callconv(.c) noreturn {
     const a = allocator.buildAllocator();
+
+    board.usartDmaInit(10*1024, a) catch { while (true){} };
 
     hal.sh = shell.Shell.init(&shell_init, a) catch { while (true){} };
     system_commands.registerCommands(hal.sh) catch { while (true){} };

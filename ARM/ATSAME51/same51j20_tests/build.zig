@@ -197,6 +197,12 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const dma_sender = b.addModule("dma_sender", .{
+        .root_source_file = b.path("../../../common_lib/dma_sender.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const board = b.addModule("board", .{
         .root_source_file = b.path("../lib/curiosity_nano.zig"),
         .target = target,
@@ -213,7 +219,9 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "mclk", .module = mclk },
             .{ .name = "usart_writer", .module = usart_writer },
             .{ .name = "osc32kctrl", .module = osc32kctrl },
-            .{ .name = "oscctrl", .module = oscctrl }
+            .{ .name = "oscctrl", .module = oscctrl },
+            .{ .name = "dmac", .module = dmac },
+            .{ .name = "dma_sender", .module = dma_sender },
         },
     });
 

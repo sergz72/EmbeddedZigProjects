@@ -148,14 +148,14 @@ fn usartCallback(data: u8) void {
 export fn SystemInit() callconv(.c) void {
     cmcc.cmcc.cacheEnable();
     scb.scb.cpacr = scb.ScbCpacr{.cp10 = .full_access, .cp11 = .full_access};
-    board.init(&usartCallback);
+    board.init(&usartCallback, true);
     clocksInit();
     timerInit();
     i2cInit();
     spiInit();
     trng.trng.init();
     rtc.rtc.init(.count32);
-    //dsuInit();
+    dsuInit();
     dmaInit();
     wdt.wdt.init(10000);
 }
