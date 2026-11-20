@@ -20,6 +20,7 @@ const i2c = @import("i2c");
 const port = @import("port");
 const pac = @import("pac");
 const dmac = @import("dmac");
+const cmcc = @import("cmcc");
 
 const TIMER_INSTANCE = tc.tc5_16;
 
@@ -34,22 +35,22 @@ const I2C_SDA_PIN_MASK = 1 << I2C_SDA_PIN;
 const I2C_SCLSM = false;
 const I2C_SPEED = 100000;
 
-const SPI_INSTANCE = sercom.sercom0;
-const SPI_PORT = 0;
+const SPI_INSTANCE = sercom.sercom4;
+const SPI_PORT = 1;
 //--------------------------
-const SPI_RX_PIN = 19;
+const SPI_RX_PIN = 11;
 const SPI_RX_PIN_MASK = 1 << SPI_RX_PIN;
 const SPI_DIPO = 3;
 //--------------------------
-const SPI_TX_PIN = 16;
+const SPI_TX_PIN = 8;
 const SPI_TX_PIN_MASK = 1 << SPI_TX_PIN;
 const SPI_DOPO = 0;
 //--------------------------
-const SPI_CLK_PIN = 17;
+const SPI_CLK_PIN = 9;
 const SPI_CLK_PIN_MASK = 1 << SPI_CLK_PIN;
 //--------------------------
-const SPI_CS_PORT = 0;
-const SPI_CS_PIN = 18;
+const SPI_CS_PORT = 1;
+const SPI_CS_PIN = 10;
 const SPI_CS_PIN_MASK = 1 << SPI_CS_PIN;
 
 pub var timer_interrupt: bool = undefined;
@@ -77,7 +78,8 @@ export fn SERCOM3_OTHER_Handler() callconv(.c) void {
 
 inline fn clocksInit() void {
     //SPI
-    //gclk.gclk.channelEnable(.sercom0_core, 0);
+    mclk.mclk.apbdmask.sercom4 = true;
+    gclk.gclk.channelEnable(.sercom4_core, 0);
     //I2C
     mclk.mclk.apbbmask.sercom3 = true;
     gclk.gclk.channelEnable(.sercom3_core, 0);
@@ -127,7 +129,7 @@ inline fn spiInit() void {
         .cpha = false
     };
     _ = SPI_INSTANCE.spi.initHost(parameters);
-    port.ports[SPI_CS_PORT].outset = SPI_CS_PIN_MASK;
+    spiCsSet();
     port.ports[SPI_CS_PORT].dirset = SPI_CS_PIN_MASK;
 }
 
@@ -144,12 +146,13 @@ fn usartCallback(data: u8) void {
 }
 
 export fn SystemInit() callconv(.c) void {
+    cmcc.cmcc.cacheEnable();
     scb.scb.cpacr = scb.ScbCpacr{.cp10 = .full_access, .cp11 = .full_access};
     board.init(&usartCallback);
     clocksInit();
     timerInit();
     i2cInit();
-    //spiInit();
+    spiInit();
     trng.trng.init();
     rtc.rtc.init();
     //dsuInit();
@@ -225,12 +228,18 @@ pub fn vemlWrite(reg: u8, data: u16) bool {
     return true;
 }
 
+fn spiCsSet() void {
+    port.ports[SPI_CS_PORT].outset = SPI_CS_PIN_MASK;
+}
+
+fn spiCsClr() void {
+    port.ports[SPI_CS_PORT].outclr = SPI_CS_PIN_MASK;
+}
+
 pub fn spiSendReceive(channel: usize, wdata: []const u8, rdata: []u8) bool {
     _ = channel;
-    //board.arduinoSpiCsSet(false);
-    //board.SPI_INSTANCE.sendReceivePoll8(wdata, rdata);
-    //board.arduinoSpiCsSet(true);
-    _ = wdata;
-    _ = rdata;
-    return false;
+    spiCsClr();
+    SPI_INSTANCE.spi.sendReceivePoll8(wdata, rdata);
+    spiCsSet();
+    return true;
 }

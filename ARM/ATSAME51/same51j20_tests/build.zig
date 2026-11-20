@@ -127,6 +127,12 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const cmcc = b.addModule("cmcc", .{
+        .root_source_file = b.path("../lib/cmcc.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const nvic = b.addModule("nvic", .{
         .root_source_file = b.path("../../lib/nvic.zig"),
         .target = target,
@@ -241,6 +247,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "port", .module = port },
             .{ .name = "pac", .module = pac },
             .{ .name = "dmac", .module = dmac },
+            .{ .name = "cmcc", .module = cmcc },
         },
     });
 
