@@ -149,12 +149,10 @@ pub const NvmctrlSeestat = bitpack struct(u32) {
 
 pub const NvmctrlError = error {
     Timeout,
-    InvalidAddress,
     ProgramError,
     LockError,
     NvmeError,
     AddressError,
-    EccSingleError,
     EccDoubleError,
     SeesOverflow
 };
@@ -209,19 +207,20 @@ pub const Nvmctrl = extern struct {
         if (flags.locke) return NvmctrlError.LockError;
         if (flags.nvme) return NvmctrlError.NvmeError;
         if (flags.addre) return NvmctrlError.AddressError;
-        if (flags.eccse) return NvmctrlError.EccSingleError;
         if (flags.eccde) return NvmctrlError.EccDoubleError;
         if (flags.seesovf) return NvmctrlError.SeesOverflow;
     }
 
-    pub fn pageErase(self: *volatile Nvmctrl, address: usize) NvmctrlError!void {
-        const a = address & ~(PAGE_SIZE-1);
-        try self.command(a, .erase_page); 
+    pub fn blockErase(self: *volatile Nvmctrl, address: usize) NvmctrlError!void {
+        if (address & (BLOCK_SIZE-1) != 0) {
+            return NvmctrlError.AddressError;
+        }
+        try self.command(address, .erase_block);
     }
 
     pub fn writePage(self: *volatile Nvmctrl, address: usize, data: []const u8) NvmctrlError!void {
         if (address & (PAGE_SIZE-1) != 0) {
-            return NvmctrlError.InvalidAddress;
+            return NvmctrlError.AddressError;
         }
 
         if (data.len == 0) {

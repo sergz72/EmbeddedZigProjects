@@ -169,7 +169,7 @@ pub fn flashWrite(address: usize, data: []const u8) nvmctrl.NvmctrlError!void {
 }
 
 pub fn flashSectorErase(address: usize) nvmctrl.NvmctrlError!void {
-    try nvmctrl.nvmctrl.pageErase(address);
+    try nvmctrl.nvmctrl.blockErase(address);
 }
 
 pub fn reboot() void {
