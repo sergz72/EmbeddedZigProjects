@@ -35,7 +35,7 @@ void FromC(string fileName)
 {
     var names = File.ReadAllLines(fileName)
         .Where(line => line.Contains("= (void*)") && line.Contains("_Handler"))
-        .Select(line => line.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)[3])
+        .Select(line => line.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)[3].TrimEnd(','))
         .ToList();
     foreach (var name in names)
     {

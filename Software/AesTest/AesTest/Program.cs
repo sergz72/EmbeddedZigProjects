@@ -1,4 +1,5 @@
 ﻿using System.Security.Cryptography;
+using AesTest;
 
 if (args.Length != 2)
 {
@@ -10,6 +11,11 @@ var mode = args[0] switch
 {
     "ecb" => Mode.Ecb,
     "cbc" => Mode.Cbc,
+    "ofb" => Mode.Ofb,
+    "cfb" => Mode.Cfb,
+    "counter" => Mode.Counter,
+    "ccm" => Mode.Ccm,
+    "gcm" => Mode.Gcm,
     _ => throw new ArgumentException("Invalid mode")
 };
 
@@ -17,24 +23,64 @@ var data = File.ReadAllLines(args[1]);
 
 var state = State.None; 
 var parsed = ParseData(data);
-Console.WriteLine("key = {0}\ndata={1}\nencrypted={2}",
-    BitConverter.ToString(parsed.Key), BitConverter.ToString(parsed.Data), BitConverter.ToString(parsed.Encrypted));
+Console.WriteLine("key = {0}\niv = {1}\ndata = {2}\nencrypted = {3}",
+    BitConverter.ToString(parsed.Key), BitConverter.ToString(parsed.Iv), BitConverter.ToString(parsed.Data),
+    BitConverter.ToString(parsed.Encrypted));
 
-using var aes = Aes.Create();
-aes.Key = parsed.Key;
-aes.IV = parsed.Iv;
-aes.Padding = PaddingMode.None; // No padding
-aes.Mode = mode switch
+var ciphertext = mode switch
 {
-    Mode.Ecb => CipherMode.ECB,
-    Mode.Cbc => CipherMode.CBC,
-    _ => throw new ArgumentOutOfRangeException()
+    Mode.Counter => AesCtrEncrypt(),
+    Mode.Ccm => AesCcmEncrypt(),
+    Mode.Gcm => AesGcmEncrypt(),
+    _ => AesEncrypt()
 };
-using var encryptor = aes.CreateEncryptor();
-var ciphertext = encryptor.TransformFinalBlock(parsed.Data, 0, parsed.Data.Length);
 Console.WriteLine("{0} expected={1}", ciphertext.SequenceEqual(parsed.Encrypted) ? "OK" : "ERR", BitConverter.ToString(ciphertext));
 
 return;
+
+byte[] AesCtrEncrypt()
+{
+    var aes = new AesCtr(parsed.Key, parsed.Iv);
+    return aes.Transform(parsed.Data);
+}
+
+byte[] AesCcmEncrypt()
+{
+    var encrypted = new byte[parsed.Data.Length];
+    var tag = new byte[16];
+    var aes = new AesCcm(parsed.Key);
+    aes.Encrypt(parsed.Iv[0..12], parsed.Data, encrypted, tag);
+    Console.WriteLine("tag = {0}", BitConverter.ToString(tag));
+    return encrypted;
+}
+
+byte[] AesGcmEncrypt()
+{
+    var encrypted = new byte[parsed.Data.Length];
+    var tag = new byte[16];
+    var aes = new AesGcm(parsed.Key, 16);
+    aes.Encrypt(parsed.Iv[0..12], parsed.Data, encrypted, tag);
+    Console.WriteLine("tag = {0}", BitConverter.ToString(tag));
+    return encrypted;
+}
+
+byte[] AesEncrypt()
+{
+    using var aes = Aes.Create();
+    aes.Key = parsed.Key;
+    aes.IV = parsed.Iv;
+    aes.Padding = PaddingMode.None; // No padding
+    aes.Mode = mode switch
+    {
+        Mode.Ecb => CipherMode.ECB,
+        Mode.Cbc => CipherMode.CBC,
+        Mode.Ofb => CipherMode.OFB,
+        Mode.Cfb => CipherMode.CFB,
+        _ => throw new ArgumentOutOfRangeException()
+    };
+    using var encryptor = aes.CreateEncryptor();
+    return encryptor.TransformFinalBlock(parsed.Data, 0, parsed.Data.Length);
+}
 
 Parsed ParseData(string[] contents) 
 {
@@ -102,7 +148,12 @@ internal enum State
 internal enum Mode
 {
     Ecb,
-    Cbc
+    Cbc,
+    Ofb,
+    Cfb,
+    Counter,
+    Ccm,
+    Gcm
 }
 
 internal struct Parsed
