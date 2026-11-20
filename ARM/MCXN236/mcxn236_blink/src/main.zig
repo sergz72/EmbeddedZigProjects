@@ -22,9 +22,13 @@ fn initTimer() void {
     ctimer.ctimer0.tcr = ctimer.Tcr{.cen = true};
 }
 
-export fn main() callconv(.c) noreturn {
+export fn SystemInit() callconv(.c) void {
+    board.init();
     board.initUart(115200, uart_callback);
     initTimer();
+}
+
+export fn main() callconv(.c) noreturn {
     while (true) {
         asm volatile ("wfi");
         if (timer_interrupt) {

@@ -307,11 +307,7 @@ pub fn build(b: *std.Build) !void {
     //exe.lto = .full;                     // Whole-program optimization & inlining
 
     exe.root_module.addAssemblyFile(b.path("../startup_MCXN236.S"));
-
-    exe.root_module.addCSourceFile(.{
-        .file = b.path("../system_MCXN236.c"),
-        .flags = &[_][]const u8{ "-I../include", "-std=c23", "-Wall", "-DCPU_MCXN236VDF" }
-    });
+    exe.root_module.addAssemblyFile(b.path("../system_MCXN236.s"));
 
     exe.setLinkerScript(b.path("../MCXN236_flash.ld"));
 

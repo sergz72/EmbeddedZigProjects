@@ -88,6 +88,12 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const usart_writer = b.addModule("usart_writer", .{
+        .root_source_file = b.path("../../../common_lib/usart_writer.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const board = b.addModule("board", .{
         .root_source_file = b.path("../lib/FRDM_MCXN236.zig"),
         .target = target,
@@ -105,7 +111,8 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "lp_flexcomm", .module = lp_flexcomm },
             .{ .name = "nvic", .module = nvic },
             .{ .name = "interrupts", .module = interrupts },
-            .{ .name = "cpu", .module = cpu }
+            .{ .name = "cpu", .module = cpu },
+            .{ .name = "usart_writer", .module = usart_writer },
         },
     });
 
@@ -129,14 +136,10 @@ pub fn build(b: *std.Build) !void {
     exe.link_gc_sections = true;
     exe.function_sections = true;
     exe.data_sections = true;
-    exe.lto = .full;                     // Whole-program optimization & inlining
+    //exe.lto = .full;                     // Whole-program optimization & inlining
 
     exe.root_module.addAssemblyFile(b.path("../startup_MCXN236.S"));
-
-    exe.root_module.addCSourceFile(.{
-        .file = b.path("../system_MCXN236.c"),
-        .flags = &[_][]const u8{ "-I../include", "-std=c23", "-Wall", "-DCPU_MCXN236VDF" }
-    });
+    exe.root_module.addAssemblyFile(b.path("../system_MCXN236.s"));
 
     exe.setLinkerScript(b.path("../MCXN236_flash.ld"));
 
