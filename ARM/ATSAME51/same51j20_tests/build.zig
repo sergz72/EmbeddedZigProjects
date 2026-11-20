@@ -240,7 +240,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "i2c", .module = i2c },
             .{ .name = "port", .module = port },
             .{ .name = "pac", .module = pac },
-            .{ .name = "dmac", .module = dmac }
+            .{ .name = "dmac", .module = dmac },
         },
     });
 
@@ -370,7 +370,8 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "rtc_commands", .module = rtc_commands },
                 .{ .name = "aes_commands", .module = aes_commands },
                 .{ .name = "dsu", .module = dsu },
-                .{ .name = "dmac", .module = dmac }
+                .{ .name = "dmac", .module = dmac },
+                .{ .name = "aes", .module = aes },
             },
         }),
     });

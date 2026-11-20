@@ -17,6 +17,7 @@ const aes_commands = @import("aes_commands");
 const trng = @import("trng");
 const dsu = @import("dsu");
 const dmac = @import("dmac");
+const aes = @import("aes");
 
 const shell_init = shell.ShellInit{
     .max_commands = 50,
@@ -75,19 +76,17 @@ fn trngInit(seed: usize) void {
 }
 
 fn aesEncrypt(key: []const u8, iv: []const u8, in: []const u8, out: []u8) bool {
-    _ = key;
-    _ = iv;
-    _ = in;
-    _ = out;
-    return false;
+    aes.aes.config(.cbc, ._256bit, true);
+    if (!aes.aes.setKey(key)) return false;
+    if (!aes.aes.setIv(iv)) return false;
+    return aes.aes.processBlocks(in, out);
 }
 
 fn aesDecrypt(key: []const u8, iv: []const u8, in: []const u8, out: []u8) bool {
-    _ = key;
-    _ = iv;
-    _ = in;
-    _ = out;
-    return false;
+    aes.aes.config(.cbc, ._256bit, false);
+    if (!aes.aes.setKey(key)) return false;
+    if (!aes.aes.setIv(iv)) return false;
+    return aes.aes.processBlocks(in, out);
 }
 
 export fn main() callconv(.c) noreturn {
