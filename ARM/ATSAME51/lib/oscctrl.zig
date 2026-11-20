@@ -228,6 +228,24 @@ pub const Oscctrl = extern struct {
     dfllsync: OscctrlDfllsync,
     reserved4: [3]u8,
     dpll: [2]OscctrlDPLL,
+
+    pub fn setXosc32kForDfll48(self: *volatile Oscctrl) void {
+        self.dfllmul = OscctrlDfllmul{
+            .mul = 1465,
+            .fstep = 1,
+            .cstep = 1,
+        };
+        while (self.dfllsync.dfllmul) {
+            asm volatile ("nop");
+        }
+        self.dfllctrlb = OscctrlDfllctrlb{.mode = true};
+        while (true) {
+            const status = self.status;
+            if (status.dfllrdy and status.dflllckc and status.dflllckf) {
+                break;
+            }
+        }
+    }
 };
 
 pub const oscctrl: *volatile Oscctrl = @ptrFromInt(OSCCTRL_BASE);

@@ -111,6 +111,14 @@ pub const Gclk = extern struct {
             .chen = true,
         };
     }
+
+    pub fn setXosc32kForDfll48(self: *volatile Gclk, gen: u4) void {
+        self.genctrl[gen] = Genctrl{
+            .src = Src.xosc32k,
+            .genen = true,
+        };
+        self.channelEnable(.dfll48, gen);
+    }
 };
 
 pub const gclk: *volatile Gclk = @ptrFromInt(GCLK_BASE);

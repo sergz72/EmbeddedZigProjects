@@ -9,6 +9,8 @@ const pm = @import("pm");
 const system_timer = @import("system_timer");
 const mclk = @import("mclk");
 const usart_writer = @import("usart_writer");
+const osc32kctrl = @import("osc32kctrl");
+const oscctrl = @import("oscctrl");
 
 pub const panic = std.debug.no_panic;
 
@@ -43,9 +45,6 @@ pub inline fn ledToggle() void {
     port.ports[LED_PORT].outtgl = LED_PIN_MASK;
 }
 
-pub fn initXosc32k() void {
-}
-
 inline fn usartInit() void {
     const uinit = sercom.UsartInitParameters{
         .baud = 115200,
@@ -63,6 +62,9 @@ inline fn usartInit() void {
 }
 
 inline fn clocksInit() void {
+    osc32kctrl.osc32kctrl.enableXosc32k();
+    gclk.gclk.setXosc32kForDfll48(1);
+    oscctrl.oscctrl.setXosc32kForDfll48();
     //USART
     mclk.mclk.apbdmask.sercom5 = true;
     gclk.gclk.channelEnable(.sercom5_core, 0);

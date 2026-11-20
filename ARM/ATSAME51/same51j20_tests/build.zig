@@ -94,6 +94,18 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const osc32kctrl = b.addModule("osc32kctrl", .{
+        .root_source_file = b.path("../lib/osc32kctrl.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const oscctrl = b.addModule("oscctrl", .{
+        .root_source_file = b.path("../lib/oscctrl.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const generic_rtc = b.addModule("generic_rtc", .{
         .root_source_file = b.path("../../../common_lib/rtc/generic_rtc.zig"),
         .target = target,
@@ -199,6 +211,8 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "interrupts", .module = interrupts },
             .{ .name = "mclk", .module = mclk },
             .{ .name = "usart_writer", .module = usart_writer },
+            .{ .name = "osc32kctrl", .module = osc32kctrl },
+            .{ .name = "oscctrl", .module = oscctrl }
         },
     });
 

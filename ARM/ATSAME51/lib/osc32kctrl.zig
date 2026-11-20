@@ -91,6 +91,21 @@ pub const Osc32kctrl = extern struct {
     evctrl: Osc32kEvctrl,
     reserved1: u32,
     osculp32k: Osc32kOsculp32k,
+
+    pub fn enableXosc32k(self: *volatile Osc32kctrl) void {
+        self.xosc32k = Osc32kXosc32k{
+            .enable = true,
+            .xtalen = true,
+            .en32k = true,
+            .en1k = true,
+            .runstdby = true,
+            .ondemand = false,
+            .cgm = .high_speed
+        };
+        while (!self.status.xosc32krdy) {
+            asm volatile ("nop");
+        }
+    }
 };
 
 pub const osc32kctrl: *volatile Osc32kctrl = @ptrFromInt(OSC32KCTRL_BASE);
