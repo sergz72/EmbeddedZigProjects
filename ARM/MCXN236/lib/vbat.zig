@@ -362,5 +362,4 @@ pub const vbat0: *volatile Vbat = @ptrFromInt(VBAT0_BASE);
 test "sizeof test" {
     const std = @import("std");
     try std.testing.expectEqual(0x800, @sizeOf(Vbat));
-
 }
