@@ -1,3 +1,5 @@
+const cpu_family = @import("cpu_family");
+
 pub const Cpu = struct {
     current_frequency: usize,
     apb1_frequency: usize,
@@ -7,6 +9,10 @@ pub const Cpu = struct {
         self.current_frequency = frequency;
         self.apb1_frequency = frequency;
         self.apb2_frequency = frequency;
+    }
+
+    pub fn getFamily() cpu_family.CpuFamily {
+        return .F4;
     }
 };
 
