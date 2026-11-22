@@ -13,10 +13,17 @@ public static class ZigStructCreator
         _reservedIdx++;
         return result;
     }
+
+    private static string ToCamelCasePart(string n)
+    {
+        if (n.Length > 1)
+            return n[0] + n[1..].ToLower();
+        return n;
+    }
     
     private static string ToCamelCase(string s)
     {
-        return s.Split('_').Select(n => n[0] + n[1..].ToLower()).Aggregate((a, b) => a + b);
+        return s.Split('_').Select(ToCamelCasePart).Aggregate((a, b) => a + b);
     }
 
     public static List<string> CreateStruct(Peripheral peripheral)
