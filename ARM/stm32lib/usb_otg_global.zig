@@ -1,3 +1,4 @@
+const std = @import("std");
 const usb_device = @import("usb_device");
 const usb_otg_device = @import("usb_otg_device");
 const cpu = @import("cpu");
@@ -7,6 +8,8 @@ const interrupts = @import("interrupts");
 
 const DEVICE_OFFSET = 0x800;
 const PWRCLK_OFFSET = 0xE00;
+const FIFO_OFFSET = 0x1000;
+const FIFO_SIZE = 0x1000;
 
 const USB_OTG_FS_BASE: usize = 0x50000000;
 const USB_OTG_HS_BASE: usize = 0x40040000;
@@ -108,15 +111,24 @@ pub const UsbGint = bitpack struct(u32) {
     oepint: bool = false,
     iisoixfr: bool = false,
     ipfxr_incompisoout: bool = false,
-    reserved3: u2 = 0,
+    dataf_susp: bool = false,
+    rstdet: bool = false,
     hprint: bool = false,
     hcint: bool = false,
     ptxfe: bool = false,
-    reserved4: u1 = 0,
+    lpmint: bool = false,
     cidschg: bool = false,
     discnt: bool = false,
     srqint: bool = false,
     wkupint: bool = false
+};
+
+pub const UsbDevicePktsts = enum(u4) {
+    global_out_nak = 1,
+    out_packet_received = 2,
+    out_transfer_completed = 3,
+    setup_transaction_completed = 4,
+    setup_packet_received = 6
 };
 
 pub const UsbGrxstsr = bitpack struct(u32) {
@@ -214,11 +226,11 @@ pub const UsbOtgGlobal = extern struct {
     reserved43: [40]u32,
     dieptxf: [8]UsbTxf,
 
-    fn getDevice(self: *volatile UsbOtgGlobal) *volatile usb_otg_device.UsbOtgDevice {
+    inline fn getDevice(self: *volatile UsbOtgGlobal) *volatile usb_otg_device.UsbOtgDevice {
         return @ptrFromInt(@intFromPtr(self) + DEVICE_OFFSET);
     }
 
-    fn getPcgctl(self: *volatile UsbOtgGlobal) *volatile UsbPcgcctl {
+    inline fn getPcgctl(self: *volatile UsbOtgGlobal) *volatile UsbPcgcctl {
         return @ptrFromInt(@intFromPtr(self) + PWRCLK_OFFSET);
     }
 
@@ -358,11 +370,11 @@ pub const UsbOtgGlobal = extern struct {
         return true;
     }
 
-    pub fn setRxFifo(self: *volatile UsbOtgGlobal, size: u32) void {
+    pub inline fn setRxFifo(self: *volatile UsbOtgGlobal, size: u32) void {
         self.grxfsiz = size / 4;
     }
 
-    pub fn setTxFifo(self: *volatile UsbOtgGlobal, fifo: u3, txf: UsbTxf) void {
+    pub inline fn setTxFifo(self: *volatile UsbOtgGlobal, fifo: u3, txf: UsbTxf) void {
         self.dieptxf[fifo] = txf;
     }
 
@@ -399,6 +411,44 @@ pub const UsbOtgGlobal = extern struct {
         nvic.nvic.enableInterrupt(interrupts.OTG_FS.toU8());
         self.gahbcfg.gintmsk = true;
         device.dctl.sdis = false;
+    }
+
+    pub fn getInterruptStatus(self: *volatile UsbOtgGlobal) UsbGint {
+        var sts = @backingInt(self.gintsts);
+        sts &= @backingInt(self.gintmsk);
+        return @bitCast(sts);
+    }
+
+    pub inline fn getDFifo(self: *volatile UsbOtgGlobal, fifo_number: u5) *u32 {
+        return @ptrFromInt(@intFromPtr(self) + FIFO_OFFSET + fifo_number * FIFO_SIZE);
+    }
+
+    pub fn readPacket(self: *volatile UsbOtgGlobal, buffer: []u8, length: usize) void {
+        @setRuntimeSafety(false);
+        const count32b = (length + 3) / 4;
+        var fifo = self.getDFifo(0);
+        var idx: usize = 0;
+        for (0..count32b) |_| {
+            const data = fifo.*;
+            std.mem.writeInt(u32, buffer[idx..][0..4], data, .little);;
+            idx += 4;
+        }
+    }
+
+    pub fn writePacket(self: *volatile UsbOtgGlobal, ep_no: u4, buffer: []u8) void {
+        @setRuntimeSafety(false);
+        const count32b = (buffer.len + 3) / 4;
+        var fifo = self.getDFifo(ep_no);
+        var idx: usize = 0;
+        for (0..count32b) |_| {
+            const data = std.mem.readInt(u32, buffer[idx..][0..4], .little);
+            fifo.* = data;
+            idx += 4;
+        }
+    }
+
+    pub inline fn setTrdtTimeFs(self: *volatile UsbOtgGlobal) void {
+        self.gusbcfg.trdt = 6;
     }
 };
 

@@ -99,9 +99,9 @@ pub fn build(b: *std.Build) !void {
 
     exe.entry = .{ .symbol_name = "Reset_Handler" };
     exe.link_gc_sections = true;
-    exe.link_function_sections = true;
-    exe.link_data_sections = true;
-    exe.lto = .full;                     // Whole-program optimization & inlining
+    exe.function_sections = true;
+    exe.data_sections = true;
+    //exe.lto = .full;                     // Whole-program optimization & inlining
 
     exe.root_module.addAssemblyFile(b.path("../startup_stm32f412rx.s"));
 

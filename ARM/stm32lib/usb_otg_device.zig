@@ -214,7 +214,7 @@ pub const UsbOtgDevice = extern struct {
     reserved19: [64]u32,
     doep: [9]UsbDoep,
 
-    pub fn setFullSpeed(self: *volatile UsbOtgDevice) void {
+    pub inline fn setFullSpeed(self: *volatile UsbOtgDevice) void {
         self.dcfg.dspd = .full;
     }
 
@@ -261,6 +261,24 @@ pub const UsbOtgDevice = extern struct {
             };
         }
         self.diepmsk.txfurm = false;
+    }
+
+    pub inline fn removeWakeupSignaling(self: *volatile UsbOtgDevice) void {
+        self.dctl.rwusig = false;
+    }
+
+    pub inline fn suspended(self: *volatile UsbOtgDevice) bool {
+        return self.dsts.suspsts;
+    }
+
+    pub inline fn getOutEndpoint(self: *volatile UsbOtgDevice, epnum: u4) *volatile UsbDoep {
+        @setRuntimeSafety(false);
+        return &self.doep[epnum];
+    }
+
+    pub inline fn getInEndpoint(self: *volatile UsbOtgDevice, epnum: u4) *volatile UsbDiep {
+        @setRuntimeSafety(false);
+        return &self.diep[epnum];
     }
 };
 

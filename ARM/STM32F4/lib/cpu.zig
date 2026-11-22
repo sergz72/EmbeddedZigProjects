@@ -10,11 +10,9 @@ pub const Cpu = struct {
         self.apb1_frequency = frequency;
         self.apb2_frequency = frequency;
     }
-
-    pub fn getFamily() cpu_family.CpuFamily {
-        return .F4;
-    }
 };
+
+pub const family: cpu_family.CpuFamily = .F4;
 
 pub var cpu = Cpu{
     .current_frequency = 16000000,
