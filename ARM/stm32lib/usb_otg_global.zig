@@ -397,6 +397,9 @@ pub const UsbOtgGlobal = extern struct {
     }
 
     pub fn init(self: *volatile UsbOtgGlobal, init_data: *const UsbOtgInit) void {
+        for (xfer_buffers) |*buf| {
+            buf.current_length = 0;
+        }
         self.gahbcfg.gintmsk = false;
         self.coreInit(init_data.timeout);
         self.gusbcfg.fdmod = true;
@@ -423,22 +426,28 @@ pub const UsbOtgGlobal = extern struct {
         return @ptrFromInt(@intFromPtr(self) + FIFO_OFFSET + fifo_number * FIFO_SIZE);
     }
 
-    pub fn readPacket(self: *volatile UsbOtgGlobal, buffer: []u8, length: usize) void {
+    pub fn readPacket(self: *volatile UsbOtgGlobal) void {
         @setRuntimeSafety(false);
+        const grxstp = self.grxstsp;
+        const buf = &xfer_buffers[grxstp.epnum];
+        const length = grxstp.bcnt;
+
         const count32b = (length + 3) / 4;
-        var fifo = self.getDFifo(0);
-        var idx: usize = 0;
+        const fifo = self.getDFifo(0);
+        var idx: usize = buf.current_length;
         for (0..count32b) |_| {
             const data = fifo.*;
-            std.mem.writeInt(u32, buffer[idx..][0..4], data, .little);;
+            std.mem.writeInt(u32, buf.buffer[idx..][0..4], data, .little);
             idx += 4;
         }
+
+        buf.current_length = idx;
     }
 
     pub fn writePacket(self: *volatile UsbOtgGlobal, ep_no: u4, buffer: []u8) void {
         @setRuntimeSafety(false);
         const count32b = (buffer.len + 3) / 4;
-        var fifo = self.getDFifo(ep_no);
+        const fifo = self.getDFifo(ep_no);
         var idx: usize = 0;
         for (0..count32b) |_| {
             const data = std.mem.readInt(u32, buffer[idx..][0..4], .little);
@@ -451,6 +460,13 @@ pub const UsbOtgGlobal = extern struct {
         self.gusbcfg.trdt = 6;
     }
 };
+
+pub const UsbBuffer = struct {
+    buffer: [usb_device.USB_FS_MAX_PACKET_SIZE]u8,
+    current_length: usize
+};
+
+var xfer_buffers: [8]UsbBuffer = undefined;
 
 pub const otg_fs_global: *volatile UsbOtgGlobal = @ptrFromInt(USB_OTG_FS_BASE);
 pub const otg_hs_global: *volatile UsbOtgGlobal = @ptrFromInt(USB_OTG_HS_BASE);

@@ -86,11 +86,82 @@ fn usbDmaStart(data: []const u8) usize {
 }
 
 fn OEPIntHandler() void {
-    //todo
+    var interrupts = usb_otg_device.otg_fs_device.getAllEpInterrupts().oepint;
+    var ep_no: u4 = 0;
+    const buffer = &usb_otg_global.xfer_buffer[ep_no];
+    while (interrupts != 0) : (ep_no += 1) {
+        if ((interrupts & 1) != 0) {
+            const ep = usb_otg_device.otg_fs_device.getOutEndpoint(ep_no);
+            const int = ep.int;
+            if (int.xfrc) {
+                ep.int = usb_otg_device.UsbDoepint{.xfrc = true};
+                switch (ep_no) {
+                    usb_cdc.CONTROL_ENDPOINT => {
+                        if (device.outPacket()) {
+                            usb_otg_device.otg_fs_device.txZeroPacket(usb_cdc.CONTROL_ENDPOINT);
+                        }
+                    },
+                    usb_cdc.DATA_IN_ENDPOINT => {
+                        rx_callback(buffer.buffer[0..buffer.length]);
+                        usb_otg_global.otg_fs_global.setEndpointRxStatus(usb_cdc.DATA_IN_ENDPOINT, .valid);
+                    },
+                    else => {},
+                }
+            }
+            if (int.stup) {
+                ep.int = usb_otg_device.UsbDoepint{.stup = true};
+                const result = device.setup(@ptrCast(&buffer.buffer));
+                if (result.tx) |tx_data| {
+                    usb_otg_global.otg_fs_global.tx(usb_cdc.CONTROL_ENDPOINT, tx_data);
+                }
+                if (result.invalid_request) {
+                    usb_otg_global.otg_fs_global.setEndpointTxStatus(usb_cdc.CONTROL_ENDPOINT, .stall);
+                }
+                usb_otg_global.otg_fs_global.setEndpointRxStatus(usb_cdc.CONTROL_ENDPOINT, .valid);
+            }
+            if (int.otepdis) {
+                ep.int = usb_otg_device.UsbDoepint{.otepdis = true};
+            }
+            if (int.otepspr) {
+                ep.int = usb_otg_device.UsbDoepint{.otepspr = true};
+            }
+        }
+        interrupts >>= 1;
+        ep_no += 1;
+    }
 }
 
 fn IEPIntHandler() void {
-    //todo
+    var interrupts = usb_otg_device.otg_fs_device.getAllEpInterrupts().iepint;
+    var ep_no: u4 = 0;
+    while (interrupts != 0) : (ep_no += 1) {
+        if ((interrupts & 1) != 0) {
+            const ep = usb_otg_device.otg_fs_device.getInEndpoint(ep_no);
+            const int = ep.int;
+            if (int.xfrc) {
+                ep.int = usb_otg_device.UsbDiepint{.xfrc = true};
+                const fifoemptymsk = @as(u32, 1) << ep_no;
+                usb_otg_device.otg_fs_device.clearFifoEmptyMask(fifoemptymsk);
+                switch (ep_no) {
+                    usb_cdc.CONTROL_ENDPOINT => {
+                        const result = device.inPacket();
+                        if (result.tx) |tx_data| {
+                            usb_otg_global.otg_fs_global.tx(usb_cdc.CONTROL_ENDPOINT, tx_data);
+                        }
+                        if (result.set_address != 0) {
+                            usb_otg_global.otg_fs_global.setAddress(result.set_address);
+                        }
+                        usb_otg_global.otg_fs_global.setEndpointRxStatus(usb_cdc.CONTROL_ENDPOINT, .valid);
+                    },
+                    usb_cdc.DATA_OUT_ENDPOINT => {
+                        dma_sender_instance.dmaDone();
+                    },
+                    else => {}
+                }
+            }
+        }
+        interrupts >>= 1;
+    }
 }
 
 fn USBRSTHandler() void {
@@ -140,17 +211,30 @@ export fn OTG_FS_IRQHandler() callconv(.c) void {
     }
     if (status.rxflvl) {
         usb_otg_global.otg_fs_global.gintmsk.rxflvl = false;
-        const grxstp = usb_otg_global.otg_fs_global.grxstsp;
-        const ep = usb_otg_device.otg_fs_device.getOutEndpoint(grxstp.epnum);
-        const buf = &xfer_buffers[grxstp.epnum];
-        const pktsts: usb_otg_global.UsbDevicePktsts = @bitCast(grxstp.pktsts);
-        if (pktsts == .out_packet_received) {
-            // Handle out packet received
-        } else if (pktsts == .setup_packet_received) {
-            // Handle setup packet received
-        }
+        usb_otg_global.otg_fs_global.readPacket();
         usb_otg_global.otg_fs_global.gintmsk.rxflvl = true;
     }
+    if (status.sof) {
+        //todo: SOF callback
+        usb_otg_global.otg_fs_global.gintsts = usb_otg_global.UsbGint{.sof = true};
+    }
+    if (status.iisoixfr) {
+        //todo: incomplete isochronous IN transfer callback
+        usb_otg_global.otg_fs_global.gintsts = usb_otg_global.UsbGint{.iisoixfr = true};
+    }
+    if (status.ipfxr_incompisoout) {
+        //todo: incomplete isochronous OUT transfer callback
+        usb_otg_global.otg_fs_global.gintsts = usb_otg_global.UsbGint{.ipfxr_incompisoout = true};
+    }
+    if (status.srqint) {
+        //todo: connect callback
+        usb_otg_global.otg_fs_global.gintsts = usb_otg_global.UsbGint{.srqint = true};
+    }
+    if (status.otgnt) {
+        const temp = usb_otg_global.otg_fs_global.gotgint;
+        if (temp.sedet) {
+            //todo: disconnect callback
+        }
+        usb_otg_global.otg_fs_global.gotgint = temp;
+    }
 }
-
-var xfer_buffers: [8][usb_device.USB_FS_MAX_PACKET_SIZE]u8 = undefined;

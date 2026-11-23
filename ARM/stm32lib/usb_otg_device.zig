@@ -280,6 +280,12 @@ pub const UsbOtgDevice = extern struct {
         @setRuntimeSafety(false);
         return &self.diep[epnum];
     }
+
+    pub inline fn getAllEpInterrupts(self: *volatile UsbOtgDevice) UsbDaint {
+        const daint = @backingInt(self.daint);
+        const msk = @backingInt(self.daintmsk);
+        return @bitCast(daint & msk);
+    }
 };
 
 pub const otg_fs_device: *volatile UsbOtgDevice = @ptrFromInt(OTG_FS_DEVICE_BASE);
