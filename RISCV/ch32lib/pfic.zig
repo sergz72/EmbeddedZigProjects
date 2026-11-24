@@ -11,6 +11,7 @@ pub const Interrupt = enum(u8) {
     Ecall_U_Mode           = 8,       // 8 Ecall U Mode Interrupt
     Break_Point            = 9,       // 9 Break Point Interrupt
     SysTick                = 12,      // 12 System timer Interrupt
+    SysTick1               = 13,      // 13 System timer 2 Interrupt
     Software               = 14,      // 14 software Interrupt
 
     pub fn toU8(self: Interrupt) u8 {
@@ -43,7 +44,8 @@ pub const Pfic = extern struct {
     reserved: u32,
     cfgr: PficCfgr,
     gisr: u32,
-    vtfidr: [4]u32,
+    vtfidr: [4]u8,
+    reserved1: [3]u32,
     vtfaddrr: [4]u32,
     reserved2: [36]u32,
     ienr: [8]u32,
@@ -57,30 +59,45 @@ pub const Pfic = extern struct {
     iactr: [8]u32,
     reserved7: [56]u32,
     iprior: [256]u8,
-    reserved8: [516]u32,
-    sctlr: PficSctlr,
-
-    pub fn setInterruptPriority(self: *volatile Pfic, interrupt: u8, priority: u8) void {
-        self.iprior[interrupt] = priority;
-    }
-
-    pub fn interruptEnable(self: *volatile Pfic, interrupt: u8) void {
-        const shift: u5 = @truncate(interrupt);
-        self.ienr[interrupt >> 5] = @as(u32, 1) << shift;
-    }
-
-    pub fn interruptDisable(self: *volatile Pfic, interrupt: u8) void {
-        const shift: u5 = @truncate(interrupt);
-        self.irer[interrupt >> 5] = @as(u32, 1) << shift;
-    }
-
-    pub fn systemReset(self: *volatile Pfic) noreturn {
-        self.cfgr = PficCfgr{.sysreset = true};
-        while (true) {
-            asm volatile ("wfi");
-        }
-    }
+    reserved8: [64]u32,
+    iallocr: [256]u8,
+    iautr: [8]u32,
+    wakeip: [2]u32,
+    reserved10: [22]u32,
+    cstar: [2]u32,
+    reserved11: [318]u32,
+    eenr: u32,
+    epr: u32,
+    ewupr: u32,
+    reserved12: [33]u32,
+    sctlr: PficSctlr
 };
+
+pub fn setInterruptPriority(interrupt: u8, priority: u8) void {
+    pfic.iprior[interrupt] = priority;
+}
+
+pub fn interruptEnable(interrupt: u8) void {
+    const shift: u5 = @truncate(interrupt);
+    pfic.ienr[interrupt >> 5] = @as(u32, 1) << shift;
+}
+
+pub fn interruptDisable(interrupt: u8) void {
+    const shift: u5 = @truncate(interrupt);
+    pfic.irer[interrupt >> 5] = @as(u32, 1) << shift;
+}
+
+pub fn systemReset() noreturn {
+    pfic.cfgr = PficCfgr{.sysreset = true};
+    while (true) {
+        asm volatile ("wfi");
+    }
+}
+
+pub fn wakeupCpu1(address: usize) void {
+    pfic.wakeip[1] = address;
+    pfic.sctlr.setevent = true;
+}
 
 pub const pfic: *volatile Pfic = @ptrFromInt(PFIC_BASE);
 
