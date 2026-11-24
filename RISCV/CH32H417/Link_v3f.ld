@@ -15,6 +15,8 @@ MEMORY
 	RAM_LOAD (xrw) : ORIGIN = 0x20140000, LENGTH = 256         /* RAM for .load section*/
 }
 
+PROVIDE(CORE_V5F_START_ADDRESS = ORIGIN(FLASH) + LENGTH(FLASH));
+
 SECTIONS
 {
 	.init :

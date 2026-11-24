@@ -547,7 +547,7 @@ handle_reset:
     li t0, 0x07
     csrw 0x804, t0
 /* Enable floating point and global interrupt, configure privileged mode */
-   	li t0, 0x6088           
+   	li t0, 0x7888           
    	csrw mstatus, t0
 /* Configure the interrupt vector table recognition mode and entry address mode */
  	la t0, _vector_base
