@@ -79,13 +79,13 @@ export fn SERCOM3_OTHER_Handler() callconv(.c) void {
 inline fn clocksInit() void {
     //SPI
     mclk.mclk.apbdmask.sercom4 = true;
-    gclk.gclk.channelEnable(.sercom4_core, 0);
+    gclk.channelEnable(.sercom4_core, 0);
     //I2C
     mclk.mclk.apbbmask.sercom3 = true;
-    gclk.gclk.channelEnable(.sercom3_core, 0);
+    gclk.channelEnable(.sercom3_core, 0);
     //Timer
     mclk.mclk.apbcmask.tc5 = true;
-    gclk.gclk.channelEnable(.tc4_tc5, 0);
+    gclk.channelEnable(.tc4_tc5, 0);
     mclk.mclk.apbcmask.trng = true;
     mclk.mclk.apbcmask.aes = true;
     mclk.mclk.apbamask.rtc = true;
@@ -94,7 +94,7 @@ inline fn clocksInit() void {
 inline fn timerInit() void {
     timer_interrupt = false;
     TIMER_INSTANCE.initTimerInterrupt(@truncate(cpu.cpu.current_frequency / 1024), .div1024);
-    nvic.nvic.enableInterrupt(interrupts.Interrupt.TC5.toU8());
+    nvic.enableInterrupt(interrupts.Interrupt.TC5.toU8());
 }
 
 inline fn i2cInit() void {
@@ -108,9 +108,9 @@ inline fn i2cInit() void {
         .sclsm = I2C_SCLSM
     };
     _ = I2C_INSTANCE.i2cm.init(parameters);
-    nvic.nvic.enableInterrupt(interrupts.Interrupt.SERCOM3_0.toU8());
-    nvic.nvic.enableInterrupt(interrupts.Interrupt.SERCOM3_1.toU8());
-    nvic.nvic.enableInterrupt(interrupts.Interrupt.SERCOM3_OTHER.toU8());
+    nvic.enableInterrupt(interrupts.Interrupt.SERCOM3_0.toU8());
+    nvic.enableInterrupt(interrupts.Interrupt.SERCOM3_1.toU8());
+    nvic.enableInterrupt(interrupts.Interrupt.SERCOM3_OTHER.toU8());
 }
 
 inline fn spiInit() void {
@@ -138,7 +138,7 @@ inline fn dsuInit() void {
 }
 
 inline fn dmaInit() void {
-    dmac.dmac.init();
+    dmac.init();
 }
 
 fn usartCallback(data: u8) void {
@@ -146,18 +146,18 @@ fn usartCallback(data: u8) void {
 }
 
 export fn SystemInit() callconv(.c) void {
-    cmcc.cmcc.cacheEnable();
+    cmcc.cacheEnable();
     scb.scb.cpacr = scb.ScbCpacr{.cp10 = .full_access, .cp11 = .full_access};
     board.init(&usartCallback, true);
     clocksInit();
     timerInit();
     i2cInit();
     spiInit();
-    trng.trng.init();
-    rtc.rtc.init(.count32);
+    trng.init();
+    rtc.init(.count32);
     dsuInit();
     dmaInit();
-    wdt.wdt.init(10000);
+    wdt.init(10000);
 }
 
 pub inline fn timerStart() void {
@@ -165,23 +165,23 @@ pub inline fn timerStart() void {
 }
 
 pub fn flashWrite(address: usize, data: []const u8) nvmctrl.NvmctrlError!void {
-    try nvmctrl.nvmctrl.writePage(address, data);
+    try nvmctrl.writePage(address, data);
 }
 
 pub fn flashSectorErase(address: usize) nvmctrl.NvmctrlError!void {
-    try nvmctrl.nvmctrl.blockErase(address);
+    try nvmctrl.blockErase(address);
 }
 
 pub fn reboot() void {
-    scb.scb.reboot();
+    scb.reboot();
 }
 
 pub fn wdtReset() void {
-    wdt.wdt.reset();
+    wdt.reset();
 }
 
 pub fn getResetCause() []const u8 {
-    return rstc.rstc.getResetCause();
+    return rstc.getResetCause();
 }
 
 pub fn i2cScan(channel: usize, address: u10) [2]u8 {

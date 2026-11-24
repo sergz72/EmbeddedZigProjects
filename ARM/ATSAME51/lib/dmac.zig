@@ -388,132 +388,132 @@ pub const Dmac = extern struct {
     wrbaddr: u32,
     reserved3: u32,
     ch: [32]DmacChannel,
+};
 
-    pub fn init(self: *volatile Dmac) void {
-        self.ctrl = DmacCtrl{};
-        while (self.ctrl.dmaenable) {
-            asm volatile ("nop");
-        }
-        self.ctrl = DmacCtrl{.swrst = true};
-        while (self.ctrl.swrst) {
-            asm volatile ("nop");
-        }
-        self.baseaddr = @intFromPtr(&descriptors[0]);
-        self.wrbaddr = @intFromPtr(&writeback[0]);
-        self.ctrl = DmacCtrl{.dmaenable = true, .lvlen0 = true};
+pub fn init() void {
+    dmac.ctrl = DmacCtrl{};
+    while (dmac.ctrl.dmaenable) {
+        asm volatile ("nop");
     }
-
-    pub fn buildAddress(address: usize, inc: bool, length: usize, beat_size: DmacBeatsize) usize {
-        const beatsize: usize = switch (beat_size) {
-            .byte => 1,
-            .hword => 2,
-            .word => 4,
-        };
-        return if (inc) address + length * beatsize else address;
+    dmac.ctrl = DmacCtrl{.swrst = true};
+    while (dmac.ctrl.swrst) {
+        asm volatile ("nop");
     }
+    dmac.baseaddr = @intFromPtr(&descriptors[0]);
+    dmac.wrbaddr = @intFromPtr(&writeback[0]);
+    dmac.ctrl = DmacCtrl{.dmaenable = true, .lvlen0 = true};
+}
 
-    pub fn channelSetup(self: *volatile Dmac, channel: u5, init_data: *const DmaChannelInit) void {
-        const len32 = @as(usize, init_data.length);
-        const srcaddr = buildAddress(init_data.srcaddr, init_data.srcinc, len32, init_data.beatsize);
-        const dstaddr = buildAddress(init_data.dstaddr, init_data.dstinc, len32, init_data.beatsize);
-        descriptors[channel] = DmacDescriptor{
-            .btctrl = DmacBtctrl{
-                .beatsize = init_data.beatsize,
-                .srcinc = init_data.srcinc,
-                .dstinc = init_data.dstinc,
-                .valid = true,
-                .blockact = .noact,
-            },
-            .btcnt = init_data.length,
-            .srcaddr = srcaddr,
-            .dstaddr = dstaddr,
-            .descaddr = 0
-        };
-        const ch = &self.ch[channel];
-        ch.ctrla = DmacChctrla{.trigact = init_data.trigact, .trigsrc = init_data.trigsrc};
-        ch.intflag = DmacChInt{.tcmpl = true};
-    }
+pub fn buildAddress(address: usize, inc: bool, length: usize, beat_size: DmacBeatsize) usize {
+    const beatsize: usize = switch (beat_size) {
+        .byte => 1,
+        .hword => 2,
+        .word => 4,
+    };
+    return if (inc) address + length * beatsize else address;
+}
 
-    pub fn swStart(self: *volatile Dmac, channel: u5) void {
-        self.swtrigctrl = @as(u32, 1) << channel;
-    }
-
-    pub fn waitTransferComplete(self: *volatile Dmac, channel: u5) void {
-        const ch = &self.ch[channel];
-        while (!ch.intflag.tcmpl) {
-            asm volatile ("nop");
-        }
-    }
-
-    fn crcInit(self: *volatile Dmac, src: DmacCrcsrc, poly: DmacCrcpoly, beat_size: DmacBeatsize) void {
-        self.crcctrl = DmacCrcctrl{
-            .crcbeatsize = .byte,
-            .crcpoly = .crc16,
-            .crcsrc = .disable,
-            .crcmode = .default,
-        };
-        self.crcchksum = 0xFFFFFFFF;
-        self.crcctrl = DmacCrcctrl{
-            .crcbeatsize = beat_size,
-            .crcpoly = poly,
-            .crcsrc = src,
-            .crcmode = .default,
-        };
-    }
-
-    pub fn crc32(self: *volatile Dmac, src: DmacCrcsrc, channel: u5, data: []const u8) u32 {
-        self.crcInit(src, .crc32, .byte);
-        var dummy: u8 = undefined;
-        const init_data = &DmaChannelInit{
-            .trigsrc = .disable,
-            .beatsize = .byte,
-            .srcinc = true,
-            .dstinc = false,
-            .length = @truncate(data.len),
-            .srcaddr = @intFromPtr(data.ptr),
-            .dstaddr = @intFromPtr(&dummy),
-            .trigact = .block,
-        };
-        self.channelSetup(channel, init_data);
-        self.ch[channel].ctrla.enable = true;
-        self.swStart(channel);
-        self.waitTransferComplete(channel);
-        return self.crcchksum;
-    }
-
-    pub fn initMemoryToPeripheral8(self: *volatile Dmac, channel: u5, peripheral_address: u32, src: DmacTrigsrc) void {
-        const init_data = &DmaChannelInit{
-            .trigsrc = src,
-            .beatsize = .byte,
-            .srcinc = true,
-            .dstinc = false,
-            .length = 0,
-            .srcaddr = 0,
-            .dstaddr = peripheral_address,
-            .trigact = .burst,
-        };
-        self.channelSetup(channel, init_data);
-        self.ch[channel].intenset = DmacChInt{.tcmpl = true, .terr = true};
-    }
-
-    pub fn clearInterruptFlags(self: *volatile Dmac, channel: u5) void {
-        self.ch[channel].intflag = DmacChInt{.terr = true, .tcmpl = true, .susp = true};
-    }
-
-    pub fn startTransferMemoryToPeripheral8(self: *volatile Dmac, channel: u5, data: []const u8) void {
-        var d = &descriptors[channel];
-        d.btcnt = @truncate(data.len);
-        d.srcaddr = buildAddress(@intFromPtr(data.ptr), true, data.len, .byte);
-        d.btctrl = DmacBtctrl{
-            .beatsize = .byte,
-            .srcinc = true,
-            .dstinc = false,
+pub fn channelSetup(channel: u5, init_data: *const DmaChannelInit) void {
+    const len32 = @as(usize, init_data.length);
+    const srcaddr = buildAddress(init_data.srcaddr, init_data.srcinc, len32, init_data.beatsize);
+    const dstaddr = buildAddress(init_data.dstaddr, init_data.dstinc, len32, init_data.beatsize);
+    descriptors[channel] = DmacDescriptor{
+        .btctrl = DmacBtctrl{
+            .beatsize = init_data.beatsize,
+            .srcinc = init_data.srcinc,
+            .dstinc = init_data.dstinc,
             .valid = true,
             .blockact = .noact,
-        };
-        self.ch[channel].ctrla.enable = true;
+        },
+        .btcnt = init_data.length,
+        .srcaddr = srcaddr,
+        .dstaddr = dstaddr,
+        .descaddr = 0
+    };
+    const ch = &dmac.ch[channel];
+    ch.ctrla = DmacChctrla{.trigact = init_data.trigact, .trigsrc = init_data.trigsrc};
+    ch.intflag = DmacChInt{.tcmpl = true};
+}
+
+pub fn swStart(channel: u5) void {
+    dmac.swtrigctrl = @as(u32, 1) << channel;
+}
+
+pub fn waitTransferComplete(channel: u5) void {
+    const ch = &dmac.ch[channel];
+    while (!ch.intflag.tcmpl) {
+        asm volatile ("nop");
     }
-};
+}
+
+fn crcInit(src: DmacCrcsrc, poly: DmacCrcpoly, beat_size: DmacBeatsize) void {
+    dmac.crcctrl = DmacCrcctrl{
+        .crcbeatsize = .byte,
+        .crcpoly = .crc16,
+        .crcsrc = .disable,
+        .crcmode = .default,
+    };
+    dmac.crcchksum = 0xFFFFFFFF;
+    dmac.crcctrl = DmacCrcctrl{
+        .crcbeatsize = beat_size,
+        .crcpoly = poly,
+        .crcsrc = src,
+        .crcmode = .default,
+    };
+}
+
+pub fn crc32(src: DmacCrcsrc, channel: u5, data: []const u8) u32 {
+    crcInit(src, .crc32, .byte);
+    var dummy: u8 = undefined;
+    const init_data = &DmaChannelInit{
+        .trigsrc = .disable,
+        .beatsize = .byte,
+        .srcinc = true,
+        .dstinc = false,
+        .length = @truncate(data.len),
+        .srcaddr = @intFromPtr(data.ptr),
+        .dstaddr = @intFromPtr(&dummy),
+        .trigact = .block,
+    };
+    channelSetup(channel, init_data);
+    dmac.ch[channel].ctrla.enable = true;
+    swStart(channel);
+    waitTransferComplete(channel);
+    return dmac.crcchksum;
+}
+
+pub fn initMemoryToPeripheral8(channel: u5, peripheral_address: u32, src: DmacTrigsrc) void {
+    const init_data = &DmaChannelInit{
+        .trigsrc = src,
+        .beatsize = .byte,
+        .srcinc = true,
+        .dstinc = false,
+        .length = 0,
+        .srcaddr = 0,
+        .dstaddr = peripheral_address,
+        .trigact = .burst,
+    };
+    channelSetup(channel, init_data);
+    dmac.ch[channel].intenset = DmacChInt{.tcmpl = true, .terr = true};
+}
+
+pub fn clearInterruptFlags(channel: u5) void {
+    dmac.ch[channel].intflag = DmacChInt{.terr = true, .tcmpl = true, .susp = true};
+}
+
+pub fn startTransferMemoryToPeripheral8(channel: u5, data: []const u8) void {
+    var d = &descriptors[channel];
+    d.btcnt = @truncate(data.len);
+    d.srcaddr = buildAddress(@intFromPtr(data.ptr), true, data.len, .byte);
+    d.btctrl = DmacBtctrl{
+        .beatsize = .byte,
+        .srcinc = true,
+        .dstinc = false,
+        .valid = true,
+        .blockact = .noact,
+    };
+    dmac.ch[channel].ctrla.enable = true;
+}
 
 var descriptors: [32]DmacDescriptor align(16) = undefined;
 var writeback: [32]DmacDescriptor align(16) = undefined;

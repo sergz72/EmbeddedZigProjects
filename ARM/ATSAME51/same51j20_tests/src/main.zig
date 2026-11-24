@@ -57,17 +57,17 @@ const aes_engines: aes_commands.Engines = .{
 fn crc32dsu(data: []const align(4) u8) u32 {
     if (data.len == 0 or data.len & 3 != 0) return 0;
     const d = std.mem.bytesAsSlice(u32, data);
-    return dsu.dsu.crc32(d) catch {
+    return dsu.crc32(d) catch {
         return 0;
     };
 }
 
 fn crc32dmac(data: []const align(4) u8) u32 {
-    return dmac.dmac.crc32(.chn0, 1, data);
+    return dmac.crc32(.chn0, 1, data);
 }
 
 fn trngGen(data: []u32) bool {
-    trng.trng.generate(data);
+    trng.generate(data);
     return true;
 }
 
@@ -76,17 +76,17 @@ fn trngInit(seed: usize) void {
 }
 
 fn aesEncrypt(key: []const u8, iv: []const u8, in: []const u8, out: []u8) bool {
-    aes.aes.config(.cbc, ._256bit, true);
-    if (!aes.aes.setKey(key)) return false;
-    if (!aes.aes.setIv(iv)) return false;
-    return aes.aes.processBlocks(in, out);
+    aes.config(.cbc, ._256bit, true);
+    if (!aes.setKey(key)) return false;
+    if (!aes.setIv(iv)) return false;
+    return aes.processBlocks(in, out);
 }
 
 fn aesDecrypt(key: []const u8, iv: []const u8, in: []const u8, out: []u8) bool {
-    aes.aes.config(.cbc, ._256bit, false);
-    if (!aes.aes.setKey(key)) return false;
-    if (!aes.aes.setIv(iv)) return false;
-    return aes.aes.processBlocks(in, out);
+    aes.config(.cbc, ._256bit, false);
+    if (!aes.setKey(key)) return false;
+    if (!aes.setIv(iv)) return false;
+    return aes.processBlocks(in, out);
 }
 
 export fn main() callconv(.c) noreturn {

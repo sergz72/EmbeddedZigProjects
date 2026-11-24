@@ -324,45 +324,45 @@ pub const Rtc = extern struct {
     tampid: RtcTampid,
     reserved5: [5]u32,
     bkup: [8]u32,
-
-    pub fn init(self: *volatile Rtc, mode: RtcMode) void {
-        osc32kctrl.osc32kctrl.rtcctrl = osc32kctrl.Osc32kRtcctrl{.rtcsel = .xosc1k};
-        self.ctrla = RtcCtrla{
-            .mode = mode,
-            .prescaler = .div1024,
-            .countsync = true
-        };
-        self.ctrla.enable = true;
-        while (self.syncbusy.enable) {
-            asm volatile("nop");
-        }
-    }
-
-    pub fn setTime(self: *volatile Rtc, data: *generic_rtc.RtcData, timeout: usize) RtcError!void {
-        _ = timeout;
-        return switch (self.ctrla.mode) {
-            .count32 => self.mode.mode0.setTime(data),
-            .count16 => self.mode.mode1.setTime(data),
-            .clock => self.mode.mode2.setTime(data),
-        };
-    }
-
-    pub fn getTime(self: *volatile Rtc, rtc_data: *generic_rtc.RtcData) RtcError!void {
-        return switch (self.ctrla.mode) {
-            .count32 => self.mode.mode0.getTime(rtc_data),
-            .count16 => self.mode.mode1.getTime(rtc_data),
-            .clock => self.mode.mode2.getTime(rtc_data),
-        };
-    }
-
-    pub fn getUnixTime(self: *volatile Rtc) RtcError!u32 {
-        return switch (self.ctrla.mode) {
-            .count32 => self.mode.mode0.getUnixTime(),
-            .count16 => self.mode.mode1.getUnixTime(),
-            .clock => self.mode.mode2.getUnixTime(),
-        };
-    }
 };
+
+pub fn init(mode: RtcMode) void {
+    osc32kctrl.osc32kctrl.rtcctrl = osc32kctrl.Osc32kRtcctrl{.rtcsel = .xosc1k};
+    rtc.ctrla = RtcCtrla{
+        .mode = mode,
+        .prescaler = .div1024,
+        .countsync = true
+    };
+    rtc.ctrla.enable = true;
+    while (rtc.syncbusy.enable) {
+        asm volatile("nop");
+    }
+}
+
+pub fn setTime(data: *generic_rtc.RtcData, timeout: usize) RtcError!void {
+    _ = timeout;
+    return switch (rtc.ctrla.mode) {
+        .count32 => rtc.mode.mode0.setTime(data),
+        .count16 => rtc.mode.mode1.setTime(data),
+        .clock => rtc.mode.mode2.setTime(data),
+    };
+}
+
+pub fn getTime(rtc_data: *generic_rtc.RtcData) RtcError!void {
+    return switch (rtc.ctrla.mode) {
+        .count32 => rtc.mode.mode0.getTime(rtc_data),
+        .count16 => rtc.mode.mode1.getTime(rtc_data),
+        .clock => rtc.mode.mode2.getTime(rtc_data),
+    };
+}
+
+pub fn getUnixTime() RtcError!u32 {
+    return switch (rtc.ctrla.mode) {
+        .count32 => rtc.mode.mode0.getUnixTime(),
+        .count16 => rtc.mode.mode1.getUnixTime(),
+        .clock => rtc.mode.mode2.getUnixTime(),
+    };
+}
 
 pub const rtc: *volatile Rtc = @ptrFromInt(RTC_BASE);
 

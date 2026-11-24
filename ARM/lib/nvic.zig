@@ -17,26 +17,26 @@ pub const Nvic = extern struct {
     iabr: [8]u32,
     reserved7: [56]u32,
     ipr:  [60]u32,
-
-    pub fn enableInterrupt(self: *volatile Nvic, interrupt: u8) void {
-        const shift: u5 = @truncate(interrupt);
-        self.iser[interrupt >> 5] = @as(u32, 1) << shift;
-    }
-
-    pub fn disableInterrupt(self: *volatile Nvic, interrupt: u8) void {
-        const shift: u5 = @truncate(interrupt);
-        self.icer[interrupt >> 5] = @as(u32, 1) << shift;
-    }
-
-    pub fn setInterruptPriority(self: *volatile Nvic, interrupt: u8, priority: u8) void {
-        const idx = interrupt >> 2;
-        var v = self.ipr[idx];
-        const shift: u5 = @truncate((interrupt & 0x3) << 3);
-        v &= ~(0xFF << shift);
-        v |= priority << (shift + 8 - priority_bits);
-        self.ipr[idx] = v;
-    }
 };
+
+pub fn enableInterrupt(interrupt: u8) void {
+    const shift: u5 = @truncate(interrupt);
+    nvic.iser[interrupt >> 5] = @as(u32, 1) << shift;
+}
+
+pub fn disableInterrupt(interrupt: u8) void {
+    const shift: u5 = @truncate(interrupt);
+    nvic.icer[interrupt >> 5] = @as(u32, 1) << shift;
+}
+
+pub fn setInterruptPriority(interrupt: u8, priority: u8) void {
+    const idx = interrupt >> 2;
+    var v = nvic.ipr[idx];
+    const shift: u5 = @truncate((interrupt & 0x3) << 3);
+    v &= ~(0xFF << shift);
+    v |= priority << (shift + 8 - priority_bits);
+    nvic.ipr[idx] = v;
+}
 
 pub inline fn getPrimask() u32 {
     return asm volatile ("mrs %[result], primask"

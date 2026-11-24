@@ -66,34 +66,34 @@ pub const Wdt = extern struct {
     syncbusy: WdtSyncBusy,
     clear: u8,
     reserved3: [3]u8,
-
-    pub fn reset(self: *volatile Wdt) void {
-        self.clear = WDT_CLEAR;
-    }
-
-    pub fn init(self: *volatile Wdt, period_ms: usize) void {
-        const div = period_ms * WDT_CLOCK_FREQUENCY / 1000;
-        const per: WdtPer = switch (div) {
-            0...8 => WdtPer.cyc8,
-            9...16 => WdtPer.cyc16,
-            17...32 => WdtPer.cyc32,
-            33...64 => WdtPer.cyc64,
-            65...128 => WdtPer.cyc128,
-            129...256 => WdtPer.cyc256,
-            257...512 => WdtPer.cyc512,
-            513...1024 => WdtPer.cyc1024,
-            1025...2048 => WdtPer.cyc2048,
-            2049...4096 => WdtPer.cyc4096,
-            4097...8192 => WdtPer.cyc8192,
-            else => WdtPer.cyc16384
-        };
-        self.config = WdtConfig{ .per = per, .window = per };
-        self.ctrla.enable = true;
-        while (self.syncbusy.enable) {
-            asm volatile ("nop");
-        }
-    }
 };
+
+pub fn reset() void {
+    wdt.clear = WDT_CLEAR;
+}
+
+pub fn init(period_ms: usize) void {
+    const div = period_ms * WDT_CLOCK_FREQUENCY / 1000;
+    const per: WdtPer = switch (div) {
+        0...8 => WdtPer.cyc8,
+        9...16 => WdtPer.cyc16,
+        17...32 => WdtPer.cyc32,
+        33...64 => WdtPer.cyc64,
+        65...128 => WdtPer.cyc128,
+        129...256 => WdtPer.cyc256,
+        257...512 => WdtPer.cyc512,
+        513...1024 => WdtPer.cyc1024,
+        1025...2048 => WdtPer.cyc2048,
+        2049...4096 => WdtPer.cyc4096,
+        4097...8192 => WdtPer.cyc8192,
+        else => WdtPer.cyc16384
+    };
+    wdt.config = WdtConfig{ .per = per, .window = per };
+    wdt.ctrla.enable = true;
+    while (wdt.syncbusy.enable) {
+        asm volatile ("nop");
+    }
+}
 
 pub const wdt: *volatile Wdt = @ptrFromInt(WDT_BASE);
 

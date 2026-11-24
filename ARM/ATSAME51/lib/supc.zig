@@ -121,11 +121,11 @@ pub const Supc = extern struct {
     bbps: SupcBbps,
     bkout: SupcBkout,
     bkin: SupcBkin,
-
-    pub fn buckConverterEnable(self: *volatile Supc) void {
-        self.vreg = .{.sel = true};
-    }
 };
+
+pub fn buckConverterEnable() void {
+    supc.vreg = .{.sel = true};
+}
 
 pub const supc: *volatile Supc = @ptrFromInt(SUPC_BASE);
 

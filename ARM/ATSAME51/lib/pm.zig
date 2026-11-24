@@ -69,20 +69,20 @@ pub const Pm = extern struct {
     reserved2: [7]u8,
     pwsakdly: PmPwsakdly,
     reserved3: u8,
-
-    pub fn enterStandby(self: *volatile Pm) void {
-        self.sleepcfg = .standby;
-        while (self.sleepcfg != .standby) {
-            asm volatile("nop");
-        }
-        asm volatile("dsb");
-        asm volatile("wfi");
-        self.sleepcfg = .idle;
-        while (self.sleepcfg != .idle) {
-            asm volatile("nop");
-        }
-    }
 };
+
+pub fn enterStandby() void {
+    pm.sleepcfg = .standby;
+    while (pm.sleepcfg != .standby) {
+        asm volatile("nop");
+    }
+    asm volatile("dsb");
+    asm volatile("wfi");
+    pm.sleepcfg = .idle;
+    while (pm.sleepcfg != .idle) {
+        asm volatile("nop");
+    }
+}
 
 pub const pm: *volatile Pm = @ptrFromInt(PM_BASE);
 

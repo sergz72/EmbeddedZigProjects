@@ -104,22 +104,22 @@ pub const Gclk = extern struct {
     genctrl: [12]Genctrl,
     reserved2: [12]u32,
     pchctrl: [48]GclkPchCtrl,
-
-    pub fn channelEnable(self: *volatile Gclk, channel: GclkChannel, gen: u4) void {
-        self.pchctrl[@backingInt(channel)] = GclkPchCtrl{
-            .gen = gen,
-            .chen = true,
-        };
-    }
-
-    pub fn setXosc32kForDfll48(self: *volatile Gclk, gen: u4) void {
-        self.genctrl[gen] = Genctrl{
-            .src = Src.xosc32k,
-            .genen = true,
-        };
-        self.channelEnable(.dfll48, gen);
-    }
 };
+
+pub fn channelEnable(channel: GclkChannel, gen: u4) void {
+    gclk.pchctrl[@backingInt(channel)] = GclkPchCtrl{
+        .gen = gen,
+        .chen = true,
+    };
+}
+
+pub fn setXosc32kForDfll48(gen: u4) void {
+    gclk.genctrl[gen] = Genctrl{
+        .src = Src.xosc32k,
+        .genen = true,
+    };
+    channelEnable(.dfll48, gen);
+}
 
 pub const gclk: *volatile Gclk = @ptrFromInt(GCLK_BASE);
 

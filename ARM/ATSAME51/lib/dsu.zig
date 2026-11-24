@@ -166,22 +166,22 @@ pub const Dsu = extern struct {
     cid1: DsuCid1,
     cid2: DsuCid2,
     cid3: DsuCid3,
-
-    pub fn crc32(self: *volatile Dsu, data: []const u32) DsuError!u32 {
-        self.addr = @intFromPtr(data.ptr);
-        self.length = data.len * 4;
-        self.data = 0xFFFFFFFF; // initial value
-        self.statusa = DsuStatusa{.done = true, .berr = true, .fail = true, .perr = true};
-        self.ctrl = DsuCtrl{.crc = true};
-        while (true) {
-            if (self.statusa.berr) return DsuError.BusError;
-            if (self.statusa.fail) return DsuError.Failure;
-            if (self.statusa.perr) return DsuError.ProtectionError;
-            if (self.statusa.done) break;
-        }
-        return self.data;
-    }
 };
+
+pub fn crc32(data: []const u32) DsuError!u32 {
+    dsu.addr = @intFromPtr(data.ptr);
+    dsu.length = data.len * 4;
+    dsu.data = 0xFFFFFFFF; // initial value
+    dsu.statusa = DsuStatusa{.done = true, .berr = true, .fail = true, .perr = true};
+    dsu.ctrl = DsuCtrl{.crc = true};
+    while (true) {
+        if (dsu.statusa.berr) return DsuError.BusError;
+        if (dsu.statusa.fail) return DsuError.Failure;
+        if (dsu.statusa.perr) return DsuError.ProtectionError;
+        if (dsu.statusa.done) break;
+    }
+    return dsu.data;
+}
 
 pub const dsu: *volatile Dsu = @ptrFromInt(DSU_BASE);
 

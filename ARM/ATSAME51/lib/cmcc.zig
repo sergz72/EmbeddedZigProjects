@@ -96,29 +96,29 @@ pub const Cmcc = extern struct {
     men: CmccMen,
     mctrl: CmccMctrl,
     msr: u32,
-
-    pub fn cacheEnable(self: *volatile Cmcc) void {
-        self.ctrl.cen = true;
-        while (!self.sr.csts) {
-            asm volatile ("nop");
-        }
-        asm volatile ("dsb");
-        asm volatile ("isb");
-    }
-
-    pub fn cacheDisable(self: *volatile Cmcc) void {
-        self.ctrl.cen = false;
-        while (self.sr.csts) {
-            asm volatile ("nop");
-        }
-    }
-
-    pub fn cacheInvalidate(self: *volatile Cmcc) void {
-        self.cacheDisable();
-        self.maint0.invall = true;
-        self.cacheEnable();
-    }
 };
+
+pub fn cacheEnable() void {
+    cmcc.ctrl.cen = true;
+    while (!cmcc.sr.csts) {
+        asm volatile ("nop");
+    }
+    asm volatile ("dsb");
+    asm volatile ("isb");
+}
+
+pub fn cacheDisable() void {
+    cmcc.ctrl.cen = false;
+    while (cmcc.sr.csts) {
+        asm volatile ("nop");
+    }
+}
+
+pub fn cacheInvalidate() void {
+    cacheDisable();
+    cmcc.maint0.invall = true;
+    cacheEnable();
+}
 
 pub const cmcc: *volatile Cmcc = @ptrFromInt(CMCC_BASE);
 

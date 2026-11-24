@@ -18,20 +18,20 @@ pub const Trng = extern struct {
     intflag: u8,
     reserved3: [0x15]u8,
     data: u32,
-
-    pub fn init(self: *volatile Trng) void {
-        self.ctrla = TrngCtrlA{ .enable = true };
-    }
-
-    pub fn generate(self: *volatile Trng, data: []u32) void {
-        for (data) |*d| {
-            while (self.intflag == 0) {
-                asm volatile ("nop");
-            }
-            d.* = self.data;
-        }
-    }
 };
+
+pub fn init() void {
+    trng.ctrla = TrngCtrlA{ .enable = true };
+}
+
+pub fn generate(data: []u32) void {
+    for (data) |*d| {
+        while (trng.intflag == 0) {
+            asm volatile ("nop");
+        }
+        d.* = trng.data;
+    }
+}
 
 pub const trng: *volatile Trng = @ptrFromInt(TRNG_BASE);
 

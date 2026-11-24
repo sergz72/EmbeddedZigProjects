@@ -109,16 +109,16 @@ pub const Scb = extern struct {
     reserved2: [18]u32,
     cpacr: ScbCpacr,
     nsacr: ScbNsacr,
-
-    pub fn reboot(self: *volatile Scb) void {
-        asm volatile("dsb");
-        self.aircr = ScbAircr{.sysresetreq = true};
-        asm volatile("dsb");
-        while (true) {
-            asm volatile("wfi");
-        }
-    }
 };
+
+pub fn reboot() void {
+    asm volatile("dsb");
+    scb.aircr = ScbAircr{.sysresetreq = true};
+    asm volatile("dsb");
+    while (true) {
+        asm volatile("wfi");
+    }
+}
 
 pub const scb: *volatile Scb = @ptrFromInt(SCB_BASE);
 

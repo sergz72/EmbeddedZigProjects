@@ -69,16 +69,16 @@ inline fn usartInit(use_dma: bool) void {
     } else {
         usart_writer.usart_writer.writeCharFunc = usartWrite;
     }
-    nvic.nvic.enableInterrupt(interrupts.Interrupt.SERCOM5_2.toU8());
+    nvic.enableInterrupt(interrupts.Interrupt.SERCOM5_2.toU8());
 }
 
 inline fn clocksInit() void {
-    osc32kctrl.osc32kctrl.enableXosc32k();
-    gclk.gclk.setXosc32kForDfll48(1);
-    oscctrl.oscctrl.setXosc32kForDfll48();
+    osc32kctrl.enableXosc32k();
+    gclk.setXosc32kForDfll48(1);
+    oscctrl.setXosc32kForDfll48();
     //USART
     mclk.mclk.apbdmask.sercom5 = true;
-    gclk.gclk.channelEnable(.sercom5_core, 0);
+    gclk.channelEnable(.sercom5_core, 0);
 }
 
 pub fn init(callback: *const fn(u8) void, use_dma: bool) void {
@@ -92,8 +92,8 @@ pub fn init(callback: *const fn(u8) void, use_dma: bool) void {
 
 pub fn usartDmaInit(buffer_size: usize, allocator: std.mem.Allocator) error{OutOfMemory}!void {
     try dma_sender_instance.init(buffer_size, allocator);
-    dmac.dmac.initMemoryToPeripheral8(0, @intFromPtr(&USART_INSTANCE.usart.data), .sercom5_tx);
-    nvic.nvic.enableInterrupt(interrupts.Interrupt.DMAC_0.toU8());
+    dmac.initMemoryToPeripheral8(0, @intFromPtr(&USART_INSTANCE.usart.data), .sercom5_tx);
+    nvic.enableInterrupt(interrupts.Interrupt.DMAC_0.toU8());
 }
 
 pub fn usartWrite(c: u8) void {
@@ -114,7 +114,7 @@ pub fn usartFlushDma() void {
 }
 
 fn usartDmaStart(data: []const u8) usize {
-    dmac.dmac.startTransferMemoryToPeripheral8(0, data);
+    dmac.startTransferMemoryToPeripheral8(0, data);
     return data.len;
 }
 
@@ -129,6 +129,6 @@ export fn SERCOM5_2_Handler() callconv(.c) void {
 }
 
 export fn DMAC_0_Handler() callconv(.c) void {
-    dmac.dmac.clearInterruptFlags(0);
+    dmac.clearInterruptFlags(0);
     dma_sender_instance.dmaDone();
 }

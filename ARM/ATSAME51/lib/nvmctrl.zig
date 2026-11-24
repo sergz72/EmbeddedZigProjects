@@ -177,78 +177,78 @@ pub const Nvmctrl = extern struct {
     seecfg: NvmctrlSeecfg,
     reserved4: u8,
     seestat: NvmctrlSeestat,
-
-    fn waitForReady(self: *volatile Nvmctrl) void {
-        while (!self.status.ready) {
-            asm volatile ("nop");
-        }
-    }
-
-    fn clearInterruptFlags(self: *volatile Nvmctrl) void {
-        self.intflag = NvmctrlInt{
-            .addre = true,
-            .proge = true,
-            .locke = true,
-            .eccse = true,
-            .eccde = true,
-            .nvme = true,
-            .seesovf = true
-        };
-    }
-
-    fn command(self: *volatile Nvmctrl, address: usize, cmd: NvmctrlCommand) NvmctrlError!void {
-        self.waitForReady();
-        self.clearInterruptFlags();
-        self.addr = address;
-        self.ctrlb = NvmctrlCtrlb{.cmd = cmd};
-        self.waitForReady();
-        const flags = self.intflag;
-        if (flags.proge) return NvmctrlError.ProgramError;
-        if (flags.locke) return NvmctrlError.LockError;
-        if (flags.nvme) return NvmctrlError.NvmeError;
-        if (flags.addre) return NvmctrlError.AddressError;
-        if (flags.eccde) return NvmctrlError.EccDoubleError;
-        if (flags.seesovf) return NvmctrlError.SeesOverflow;
-    }
-
-    pub fn blockErase(self: *volatile Nvmctrl, address: usize) NvmctrlError!void {
-        if (address & (BLOCK_SIZE-1) != 0) {
-            return NvmctrlError.AddressError;
-        }
-        try self.command(address, .erase_block);
-    }
-
-    pub fn writePage(self: *volatile Nvmctrl, address: usize, data: []const u8) NvmctrlError!void {
-        if (address & (PAGE_SIZE-1) != 0) {
-            return NvmctrlError.AddressError;
-        }
-
-        if (data.len == 0) {
-            return;
-        }
-
-        var p: [*]u32 = @ptrFromInt(address);
-
-        try self.command(address, .page_buffer_clear);
-
-        var l = if (data.len > PAGE_SIZE) PAGE_SIZE else data.len;
-        var idx: usize = 0;
-        while (l >= 4) {
-            const d: u32 = std.mem.readInt(u32, data[idx..][0..4], .little);
-            p[0] = d;
-            p += 1;
-            idx += 4;
-            l -= 4;
-        }
-        if (l != 0) {
-            var v: [4]u8 = .{0xFF, 0xFF, 0xFF, 0xFF};
-            @memcpy(v[0..l], data[idx..]);
-            const d = std.mem.readInt(u32, &v, .little);
-            p[0] = d;
-        }
-        try self.command(address, .write_page);
-    }
 };
+
+fn waitForReady() void {
+    while (!nvmctrl.status.ready) {
+        asm volatile ("nop");
+    }
+}
+
+fn clearInterruptFlags() void {
+    nvmctrl.intflag = NvmctrlInt{
+        .addre = true,
+        .proge = true,
+        .locke = true,
+        .eccse = true,
+        .eccde = true,
+        .nvme = true,
+        .seesovf = true
+    };
+}
+
+fn command(address: usize, cmd: NvmctrlCommand) NvmctrlError!void {
+    waitForReady();
+    clearInterruptFlags();
+    nvmctrl.addr = address;
+    nvmctrl.ctrlb = NvmctrlCtrlb{.cmd = cmd};
+    waitForReady();
+    const flags = nvmctrl.intflag;
+    if (flags.proge) return NvmctrlError.ProgramError;
+    if (flags.locke) return NvmctrlError.LockError;
+    if (flags.nvme) return NvmctrlError.NvmeError;
+    if (flags.addre) return NvmctrlError.AddressError;
+    if (flags.eccde) return NvmctrlError.EccDoubleError;
+    if (flags.seesovf) return NvmctrlError.SeesOverflow;
+}
+
+pub fn blockErase(address: usize) NvmctrlError!void {
+    if (address & (BLOCK_SIZE-1) != 0) {
+        return NvmctrlError.AddressError;
+    }
+    try command(address, .erase_block);
+}
+
+pub fn writePage(address: usize, data: []const u8) NvmctrlError!void {
+    if (address & (PAGE_SIZE-1) != 0) {
+        return NvmctrlError.AddressError;
+    }
+
+    if (data.len == 0) {
+        return;
+    }
+
+    var p: [*]u32 = @ptrFromInt(address);
+
+    try command(address, .page_buffer_clear);
+
+    var l = if (data.len > PAGE_SIZE) PAGE_SIZE else data.len;
+    var idx: usize = 0;
+    while (l >= 4) {
+        const d: u32 = std.mem.readInt(u32, data[idx..][0..4], .little);
+        p[0] = d;
+        p += 1;
+        idx += 4;
+        l -= 4;
+    }
+    if (l != 0) {
+        var v: [4]u8 = .{0xFF, 0xFF, 0xFF, 0xFF};
+        @memcpy(v[0..l], data[idx..]);
+        const d = std.mem.readInt(u32, &v, .little);
+        p[0] = d;
+    }
+    try command(address, .write_page);
+}
 
 pub const nvmctrl: *volatile Nvmctrl = @ptrFromInt(NVMCTRL_BASE);
 
