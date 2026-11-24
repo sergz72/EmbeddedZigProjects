@@ -8,6 +8,8 @@ const TIMER7_BASE: usize = 0x40001400;
 const TIMER8_BASE: usize = 0x40013400;
 const TIMER9_BASE: usize = 0x40014C00;
 const TIMER10_BASE: usize = 0x40015000;
+const TIMER11_BASE = 0x40015400;
+const TIMER12_BASE = 0x40013C00;
 
 pub const TimerCtlr1 = bitpack struct(u16) {
     cen: bool = false,
@@ -18,7 +20,9 @@ pub const TimerCtlr1 = bitpack struct(u16) {
     cms: u2 = 0,
     apre: bool = false,
     ckd: u2 = 0,
-    reserved: u6 = 0
+    reserved0: u4 = 0,
+    capov: bool = false,
+    caplvl: bool = false
 };
 
 pub const TimerCtlr2 = bitpack struct(u16) {
@@ -191,7 +195,10 @@ pub const TimerAux = bitpack struct(u16) {
     cap_ed_ch2: bool = false,
     cap_ed_ch3: bool = false,
     cap_ed_ch4: bool = false,
-    reserved: u13 = 0
+    bk_sel: u3 = 0,
+    dtp_mode: bool = false,
+    dtn_mode: bool = false,
+    dt_vlu2: u8 = 0,
 };
 
 pub const TimerCnt = extern union {
@@ -237,13 +244,15 @@ pub const Timer = extern struct {
 
 pub const adtm1: *volatile Timer = @ptrFromInt(TIMER1_BASE);
 pub const adtm8: *volatile Timer = @ptrFromInt(TIMER8_BASE);
-pub const adtm9: *volatile Timer = @ptrFromInt(TIMER9_BASE);
-pub const adtm10: *volatile Timer = @ptrFromInt(TIMER10_BASE);
 
 pub const gptm2: *volatile Timer = @ptrFromInt(TIMER2_BASE);
 pub const gptm3: *volatile Timer = @ptrFromInt(TIMER3_BASE);
 pub const gptm4: *volatile Timer = @ptrFromInt(TIMER4_BASE);
 pub const gptm5: *volatile Timer = @ptrFromInt(TIMER5_BASE);
+pub const gptm9: *volatile Timer = @ptrFromInt(TIMER9_BASE);
+pub const gptm10: *volatile Timer = @ptrFromInt(TIMER10_BASE);
+pub const gptm11: *volatile Timer = @ptrFromInt(TIMER11_BASE);
+pub const gptm12: *volatile Timer = @ptrFromInt(TIMER12_BASE);
 
 pub const bctm6: *volatile Timer = @ptrFromInt(TIMER6_BASE);
 pub const bctm7: *volatile Timer = @ptrFromInt(TIMER7_BASE);

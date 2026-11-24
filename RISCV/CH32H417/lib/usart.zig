@@ -20,7 +20,9 @@ pub const UsartStatr = bitpack struct(u32) {
     cts: bool,
     rx_busy: bool,
     ms_err: bool,
-    reserved: u20 = 0
+    reserved0: u3 = 0,
+    lpwkup_act_flag: bool = false,
+    reserved1: u16 = 0,
 };
 
 pub const UsartCtlr1 = bitpack struct(u32) {
@@ -69,7 +71,23 @@ pub const UsartCtlr3 = bitpack struct(u32) {
     rtse: bool = false,
     ctse: bool = false,
     ctsie: bool = false,
-    reserved: u21 = 0
+    lpwkup_en: bool = false,
+    lpwkup_ck_src: bool = false,
+    lpwkup_dly_cfg: u3 = 0,
+    reserved0: u16 = 0,
+};
+
+pub const UsartGpr = bitpack struct(u32) {
+    psc: u8 = 0,
+    gt: u8 = 0,
+    reserved0: u16 = 0,
+};
+
+pub const UsartCtlr4 = bitpack struct(u32) {
+    reserved0: u1 = 0,
+    ms_errie: bool = false,
+    check_sel: u2 = 0,
+    reserved1: u28 = 0,
 };
 
 pub const Usart = extern struct {
@@ -80,8 +98,8 @@ pub const Usart = extern struct {
     ctlr1: UsartCtlr1,
     ctlr2: UsartCtlr2,
     ctlr3: UsartCtlr3,
-    gpr: u32,
-    ctlr4: u32,
+    gpr: UsartGpr,
+    ctlr4: UsartCtlr4,
 
     pub fn init(self: *volatile Usart, baud_rate: u32, apbclock: u32) void {
         self.brr = apbclock / baud_rate;

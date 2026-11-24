@@ -101,7 +101,6 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "gpio", .module = gpio },
             .{ .name = "afio", .module = afio },
             .{ .name = "system_timer", .module = system_timer },
-            .{ .name = "timer", .module = timer },
             .{ .name = "usart", .module = usart },
             .{ .name = "cpu", .module = cpu },
             .{ .name = "pfic", .module = pfic },
@@ -117,9 +116,12 @@ pub fn build(b: *std.Build) !void {
             .target = target,
             .optimize = optimize,
             .imports = &.{
+                .{ .name = "rcc", .module = rcc },
                 .{ .name = "system_timer", .module = system_timer },
                 .{ .name = "board", .module = board },
+                .{ .name = "timer", .module = timer },
                 .{ .name = "pfic", .module = pfic },
+                .{ .name = "interrupts", .module = interrupts },
                 .{ .name = "cpu", .module = cpu }
             },
         }),

@@ -46,16 +46,27 @@ pub const AfioExticr2 = bitpack struct(u32) {
 
 pub const Afio = extern struct {
     pcfr1: AfioPcfr1,
-    aafr: [2]u32,
-    bafr: [2]u32,
-    cafr: [2]u32,
-    dafr: [2]u32,
-    eafr: [2]u32,
-    fafr: [2]u32,
+    afr: [12]u32,
     reserved0: u32,
     exticr1: AfioExticr1,
     exticr2: AfioExticr2,
 };
+
+pub const AfioPort = enum(usize) {
+    A = 0,
+    B = 1,
+    C = 2,
+    D = 3,
+    E = 4,
+    F = 5
+};
+
+pub fn setGpioFunction(port: AfioPort, pin: u4, function: u4) void {
+    @setRuntimeSafety(false);
+    const afr_index = @backingInt(port) * 2 + pin / 8;
+    const afr_shift = @as(u5, pin & 7) * 4;
+    afio.afr[afr_index] = (afio.afr[afr_index] & ~(@as(u32, 0xF) << afr_shift)) | (@as(u32, function) << afr_shift);
+}
 
 pub const afio: *volatile Afio = @ptrFromInt(AFIO_BASE);
 
