@@ -49,14 +49,14 @@ pub const PwrCsr = bitpack struct(u32) {
 pub const Pwr = extern struct {
     ctlr: PwrCtrl,
     csr: PwrCsr,
-
-    pub fn enable() void {
-        rcc.rcc.apb1pcenr.pwren = true;
-    }
-
-    pub fn setBatteryPoweredDomainWriteAccess(self: *volatile Pwr, en: bool) void {
-        self.ctlr.dbp = en;
-    }
 };
+
+pub fn enable() void {
+    rcc.rcc.apb1pcenr.pwren = true;
+}
+
+pub fn setBatteryPoweredDomainWriteAccess(en: bool) void {
+    pwr.ctlr.dbp = en;
+}
 
 pub const pwr: *volatile Pwr = @ptrFromInt(PWR_BASE);

@@ -32,23 +32,23 @@ pub const Iwdg = extern struct {
     rldr: u16,
     reserved2: u16,
     statr: IwdgStatr,
-
-    pub fn init(self: *volatile Iwdg, interval_ms: usize) bool {
-        const rld = interval_ms * 1000 / (128000000/cpu.LSI_FREQUENCY);
-        if (rld == 0 or rld > 4095) {
-            return false;
-        }
-        self.ctlr = IwdgCommand.unlock;
-        self.pscr = .div128;
-        self.rldr = @truncate(rld);
-        self.ctlr = IwdgCommand.enable;
-        return true;
-    }
-
-    pub fn reload(self: *volatile Iwdg) void {
-        self.ctlr = IwdgCommand.reload_counter;
-    }
 };
+
+pub fn init(interval_ms: usize) bool {
+    const rld = interval_ms * 1000 / (128000000/cpu.LSI_FREQUENCY);
+    if (rld == 0 or rld > 4095) {
+        return false;
+    }
+    iwdg.ctlr = IwdgCommand.unlock;
+    iwdg.pscr = .div128;
+    iwdg.rldr = @truncate(rld);
+    iwdg.ctlr = IwdgCommand.enable;
+    return true;
+}
+
+pub fn reload() void {
+    iwdg.ctlr = IwdgCommand.reload_counter;
+}
 
 pub const iwdg: *volatile Iwdg = @ptrFromInt(IWDG_BASE);
 

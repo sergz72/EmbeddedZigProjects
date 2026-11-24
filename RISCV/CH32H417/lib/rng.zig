@@ -35,32 +35,32 @@ pub const Rng = extern struct {
     cr: RngCr,
     sr: RngSr,
     dr: u32,
-
-    pub fn enable(self: *volatile Rng) void {
-        self.cr.rngen = true;
-    }
-
-    pub fn disable(self: *volatile Rng) void {
-        self.cr.rngen = false;
-    }
-
-    pub fn init(self: *volatile Rng) void {
-        rcc.rcc.ahbpcenr.rngen = true;
-        self.disable();
-        self.sr = RngSr{};
-        self.enable();
-    }
-
-    pub fn generate(self: *volatile Rng, data: []u32) RngError!void {
-        for (data) |*d| {
-            while (!self.sr.drdy) {
-                if (self.sr.cecs) return RngError.ClockError;
-                if (self.sr.secs) return RngError.SeedError;
-            }
-            d.* = self.dr;
-        }
-    }
 };
+
+pub fn enable() void {
+    rng.cr.rngen = true;
+}
+
+pub fn disable() void {
+    rng.cr.rngen = false;
+}
+
+pub fn init() void {
+    rcc.rcc.ahbpcenr.rngen = true;
+    disable();
+    rng.sr = RngSr{};
+    enable();
+}
+
+pub fn generate(data: []u32) RngError!void {
+    for (data) |*d| {
+        while (!rng.sr.drdy) {
+            if (rng.sr.cecs) return RngError.ClockError;
+            if (rng.sr.secs) return RngError.SeedError;
+        }
+        d.* = rng.dr;
+    }
+}
 
 pub const rng: *volatile Rng = @ptrFromInt(RNG_BASE);
 

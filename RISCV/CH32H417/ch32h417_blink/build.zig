@@ -19,7 +19,7 @@ pub fn build(b: *std.Build) !void {
     });
 
     const cpu = b.addModule("cpu", .{
-        .root_source_file = b.path("../lib/cpu_3f.zig"),
+        .root_source_file = b.path("../lib/cpu.zig"),
         .target = target,
         .optimize = optimize
     });
@@ -57,13 +57,20 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const csr = b.addModule("csr", .{
+        .root_source_file = b.path("../../lib/csr.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const system_timer = b.addModule("system_timer", .{
         .root_source_file = b.path("../lib/system_timer.zig"),
         .target = target,
         .optimize = optimize,
         .imports = &.{
             .{ .name = "cpu", .module = cpu },
-            .{ .name = "pfic", .module = pfic }
+            .{ .name = "pfic", .module = pfic },
+            .{ .name = "csr", .module = csr }
         },
     });
 
@@ -85,6 +92,24 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const board = b.addModule("board", .{
+        .root_source_file = b.path("../lib/nano_board.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "rcc", .module = rcc },
+            .{ .name = "gpio", .module = gpio },
+            .{ .name = "afio", .module = afio },
+            .{ .name = "system_timer", .module = system_timer },
+            .{ .name = "timer", .module = timer },
+            .{ .name = "usart", .module = usart },
+            .{ .name = "cpu", .module = cpu },
+            .{ .name = "pfic", .module = pfic },
+            .{ .name = "interrupts", .module = interrupts },
+            .{ .name = "usart_writer", .module = usart_writer }
+        },
+    });
+
     const exe_3f = b.addExecutable(.{
         .name = "ch32h417_3f_blink.elf",
         .root_module = b.createModule(.{
@@ -92,16 +117,10 @@ pub fn build(b: *std.Build) !void {
             .target = target,
             .optimize = optimize,
             .imports = &.{
-                .{ .name = "rcc", .module = rcc },
-                .{ .name = "gpio", .module = gpio },
-                .{ .name = "afio", .module = afio },
                 .{ .name = "system_timer", .module = system_timer },
-                .{ .name = "timer", .module = timer },
-                .{ .name = "usart", .module = usart },
-                .{ .name = "cpu", .module = cpu },
+                .{ .name = "board", .module = board },
                 .{ .name = "pfic", .module = pfic },
-                .{ .name = "interrupts", .module = interrupts },
-                .{ .name = "usart_writer", .module = usart_writer }
+                .{ .name = "cpu", .module = cpu }
             },
         }),
     });
@@ -117,14 +136,48 @@ pub fn build(b: *std.Build) !void {
 
     b.installArtifact(exe_3f);
 
-    const riscv_size_report = b.addSystemCommand(&.{ "llvm-size-22" });
-    riscv_size_report.addArtifactArg(exe_3f);
+    const riscv_size_report_3f = b.addSystemCommand(&.{ "llvm-size-22" });
+    riscv_size_report_3f.addArtifactArg(exe_3f);
 
-    const riscv_bin_create = b.addSystemCommand(&.{ "llvm-objcopy-22" });
-    riscv_bin_create.addArg("-Obinary");
-    riscv_bin_create.addArtifactArg(exe_3f);
-    riscv_bin_create.addFileArg(b.path("zig-out/bin/ch32h417_3f_blink.bin"));
+    const riscv_bin_create_3f = b.addSystemCommand(&.{ "llvm-objcopy-22" });
+    riscv_bin_create_3f.addArg("-Obinary");
+    riscv_bin_create_3f.addArtifactArg(exe_3f);
+    riscv_bin_create_3f.addFileArg(b.path("zig-out/bin/ch32h417_3f_blink.bin"));
 
-    b.getInstallStep().dependOn(&riscv_size_report.step);
-    b.getInstallStep().dependOn(&riscv_bin_create.step);
+    const exe_5f = b.addExecutable(.{
+        .name = "ch32h417_5f_blink.elf",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("5f/main.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "system_timer", .module = system_timer },
+                .{ .name = "board", .module = board },
+            },
+        }),
+    });
+
+    exe_5f.link_gc_sections = true;
+    exe_5f.function_sections = true;
+    exe_5f.data_sections = true;
+    //riscv_exe.lto = .full;                     // Whole-program optimization & inlining
+
+    exe_5f.root_module.addAssemblyFile(b.path("../startup_ch32h417_v5f.S"));
+
+    exe_5f.setLinkerScript(b.path("../Link_v5f.ld"));
+
+    b.installArtifact(exe_5f);
+
+    const riscv_size_report_5f = b.addSystemCommand(&.{ "llvm-size-22" });
+    riscv_size_report_5f.addArtifactArg(exe_5f);
+
+    const riscv_bin_create_5f = b.addSystemCommand(&.{ "llvm-objcopy-22" });
+    riscv_bin_create_5f.addArg("-Obinary");
+    riscv_bin_create_5f.addArtifactArg(exe_5f);
+    riscv_bin_create_5f.addFileArg(b.path("zig-out/bin/ch32h417_5f_blink.bin"));
+
+    b.getInstallStep().dependOn(&riscv_size_report_3f.step);
+    b.getInstallStep().dependOn(&riscv_bin_create_3f.step);
+    b.getInstallStep().dependOn(&riscv_size_report_5f.step);
+    b.getInstallStep().dependOn(&riscv_bin_create_5f.step);
 }

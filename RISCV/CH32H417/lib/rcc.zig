@@ -419,15 +419,15 @@ pub const Rcc = extern struct {
     hbrstr: RccHbrstr,
     cfgr2: RccCfgr2,
     pllcfgr2: RccPllcfgr2,
-
-    pub fn init(self: *volatile Rcc) void {
-        self.cfgr0 = RccCfgr0{};
-        while (self.cfgr0.sws != .hsi) {
-            asm volatile("nop");
-        }
-        self.ctlr.pllon = false;
-    }
 };
+
+pub fn init() void {
+    rcc.cfgr0 = RccCfgr0{};
+    while (rcc.cfgr0.sws != .hsi) {
+        asm volatile("nop");
+    }
+    rcc.ctlr.pllon = false;
+}
 
 pub const rcc: *volatile Rcc = @ptrFromInt(RCC_BASE);
 

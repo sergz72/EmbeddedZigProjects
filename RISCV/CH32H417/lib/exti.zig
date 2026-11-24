@@ -7,17 +7,17 @@ pub const Exti = extern struct {
     ftenr: u32,
     swievr: u32,
     intfr: u32,
-
-    pub fn interruptEnable(self: *volatile Exti, line: u5, rising_edge: bool, falling_edge: bool) void {
-        self.intenr |= (1 << line);
-        if (rising_edge) {
-            self.rtenr |= (1 << line);
-        }
-        if (falling_edge) {
-            self.ftenr |= (1 << line);
-        }
-    }
 };
+
+pub fn interruptEnable(line: u5, rising_edge: bool, falling_edge: bool) void {
+    exti.intenr |= (1 << line);
+    if (rising_edge) {
+        exti.rtenr |= (1 << line);
+    }
+    if (falling_edge) {
+        exti.ftenr |= (1 << line);
+    }
+}
 
 pub const exti: *volatile Exti = @ptrFromInt(EXTI_BASE);
 
