@@ -48,12 +48,9 @@ pub fn build(b: *std.Build) !void {
     exe.link_gc_sections = true;
     exe.function_sections = true;
     exe.data_sections = true;
-    exe.lto = .full;                     // Whole-program optimization & inlining
+    //exe.lto = .full;                     // Whole-program optimization & inlining
 
-    exe.root_module.addCSourceFile(.{
-        .file = b.path("../startup_samd21.c"),
-        .flags = &[_][]const u8{ "-I../include", "-std=c23", "-Wall" }
-    });
+    exe.root_module.addAssemblyFile(b.path("../startup_samd21.s"));
 
     exe.setLinkerScript(b.path("../samd21g18a_flash.ld"));
 
