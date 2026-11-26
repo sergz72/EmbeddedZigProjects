@@ -1,22 +1,18 @@
-const TCC0_BASE = 0x42002000;
-const TCC1_BASE = 0x42002400;
-const TCC2_BASE = 0x42002800;
 const TC3_BASE = 0x42002C00;
 const TC4_BASE = 0x42003000;
 const TC5_BASE = 0x42003400;
-const TC6_BASE = 0x42003800;
-const TC7_BASE = 0x42003C00;
 
 pub const TcMode = enum(u2) {
     count16 = 0,
     count8 = 1,
-    count32 = 2
+    count32 = 2,
 };
 
-pub const TcPresync = enum(u2) {
-    gclk = 0,
-    presc = 1,
-    resync = 2
+pub const TcWavegen = enum(u2) {
+    nfrq = 0,
+    mfrq = 1,
+    npwm = 2,
+    mpwm = 3,
 };
 
 pub const TcPrescaler = enum(u3) {
@@ -27,192 +23,182 @@ pub const TcPrescaler = enum(u3) {
     div16 = 4,
     div64 = 5,
     div256 = 6,
-    div1024 = 7
+    div1024 = 7,
 };
 
-pub const TcCaptMode = enum(u2) {
-    default = 0,
-    capmin = 1,
-    capmax = 2
+pub const TcPrescsync = enum(u2) {
+    gclk = 0,
+    presc = 1,
+    resync = 2,
 };
 
-pub const TcCtrla = bitpack struct(u32) {
+pub const TcCtrla = bitpack struct(u16) {
     swrst: bool = false,
     enable: bool = false,
     mode: TcMode = .count16,
-    presync: TcPresync = .gclk,
-    runstdby: bool = false,
-    ondemand: bool = false,
+    reserved0: u1 = 0,
+    wavegen: TcWavegen = .nfrq,
+    reserved1: u1 = 0,
     prescaler: TcPrescaler = .div1,
-    alock: bool = false,
-    reserved: u4 = 0,
-    capten0: bool = false,
-    capten1: bool = false,
+    runstdby: bool = false,
+    prescsync: TcPrescsync = .gclk,
     reserved2: u2 = 0,
-    copen0: bool = false,
-    copen1: bool = false,
-    reserved3: u2 = 0,
-    captmode0: TcCaptMode = .default,
-    reserved4: u1 = 0,
-    captmode1: TcCaptMode = .default,
-    reserved5: u3 = 0
 };
 
-pub const TcCmd = enum(u3) {
+pub const TcReadreq = bitpack struct(u16) {
+    addr: u5 = 0,
+    reserved0: u9 = 0,
+    rcont: bool = false,
+    rreq: bool = false,
+};
+
+pub const TcCmd = enum(u2) {
     none = 0,
     retrigger = 1,
     stop = 2,
-    update = 3,
-    readsync = 4
 };
 
-pub const TcCtrlB = bitpack struct(u8) {
+pub const TcCtrlb = bitpack struct(u8) {
     dir: bool = false,
-    lupd: bool = false,
+    reserved0: u1 = 0,
     oneshot: bool = false,
-    reserved: u2 = 0,
-    cmd: TcCmd = .none
+    reserved1: u3 = 0,
+    cmd: TcCmd = .none,
 };
 
-pub const TcEvAct = enum(u3) {
+pub const TcCtrlc = bitpack struct(u8) {
+    inven0: bool = false,
+    inven1: bool = false,
+    reserved0: u2 = 0,
+    cpten0: bool = false,
+    cpten1: bool = false,
+    reserved1: u2 = 0,
+};
+
+pub const TcDbgctrl = bitpack struct(u8) {
+    dbgrun: bool = false,
+    reserved0: u7 = 0,
+};
+
+pub const TcEvact = enum(u3) {
     off = 0,
     retrigger = 1,
     count = 2,
     start = 3,
-    stamp = 4,
     ppw = 5,
     pwp = 6,
-    pw = 7
 };
 
-pub const TcEvCtrl = bitpack struct(u16) {
-    evact: TcEvAct = .off,
-    reserved: u1 = 0,
+pub const TcEvctrl = bitpack struct(u16) {
+    evact: TcEvact = .off,
+    reserved0: u1 = 0,
     tcinv: bool = false,
     tcei: bool = false,
-    reserved2: u2 = 0,
+    reserved1: u2 = 0,
     ovfeo: bool = false,
-    reserved3: u3 = 0,
-    mce0: bool = false,
-    mce1: bool = false,
-    reserved4: u2 = 0
+    reserved2: u3 = 0,
+    mceo0: bool = false,
+    mceo1: bool = false,
+    reserved3: u2 = 0,
 };
 
 pub const TcInt = bitpack struct(u8) {
     ovf: bool = false,
     err: bool = false,
-    reserved: u2 = 0,
+    reserved0: u1 = 0,
+    syncrdy: bool = false,
     mc0: bool = false,
     mc1: bool = false,
-    reserved2: u2 = 0
+    reserved1: u2 = 0,
 };
 
 pub const TcStatus = bitpack struct(u8) {
+    reserved0: u3,
     stop: bool,
     slave: bool,
-    reserved: u1,
-    perbufv: bool,
-    ccbufv0: bool,
-    ccbufv1: bool,
-    reserved2: u2
+    reserved1: u2,
+    syncbusy: bool,
 };
 
-pub const TcWave = enum(u8) {
-    normal_frequency = 0,
-    match_frequency = 1,
-    normal_pwm = 2,
-    match_pwm = 3
-};
+pub const Tc8 = extern struct {
+    ctrla: TcCtrla,
+    readreq: TcReadreq,
+    ctrlbclr: TcCtrlb,
+    ctrlbset: TcCtrlb,
+    ctrlc: TcCtrlc,
+    reserved0: u8,
+    dbgctrl: TcDbgctrl,
+    reserved1: u8,
+    evctrl: TcEvctrl,
+    intenclr: TcInt,
+    intenset: TcInt,
+    intflag: TcInt,
+    status: TcStatus,
+    count: u8,
+    reserved2: [3]u8,
+    per: u8,
+    reserved3: [3]u8,
+    cc: [2]u8,
+    reserved: [3]u16,
 
-pub const TcDrvCtrl = bitpack struct(u8) {
-    inven0: bool = false,
-    inven1: bool = false,
-    reserved: u6 = 0
-};
-
-pub const TcSyncBusy = bitpack struct(u32) {
-    swrst: bool,
-    enable: bool,
-    ctrlb: bool,
-    status: bool,
-    count: bool,
-    per: bool,
-    cc0: bool,
-    cc1: bool,
-    reserved: u24
+    pub fn setPer(self: *volatile Tc8, value: u8) void {
+        self.per = value;
+        while (self.status.syncbusy) {
+            asm volatile("nop");
+        }
+    }
 };
 
 pub const Tc16 = extern struct {
     ctrla: TcCtrla,
-    ctrlbclr: TcCtrlB,
-    ctrlbset: TcCtrlB,
-    evctrl: TcEvCtrl,
+    readreq: TcReadreq,
+    ctrlbclr: TcCtrlb,
+    ctrlbset: TcCtrlb,
+    ctrlc: TcCtrlc,
+    reserved0: u8,
+    dbgctrl: TcDbgctrl,
+    reserved1: u8,
+    evctrl: TcEvctrl,
     intenclr: TcInt,
     intenset: TcInt,
     intflag: TcInt,
     status: TcStatus,
-    wave: TcWave,
-    drvctrl: TcDrvCtrl,
-    reserved1: u8,
-    dbgctrl: u8,
-    syncbusy: TcSyncBusy,
     count: u16,
-    reserved2: [2]u16,
-    per: u16,
+    reserved2: [3]u16,
     cc: [2]u16,
-    reserved3: [7]u16,
-    perbuf: u16,
-    ccbuf: [2]u16,
-
-    pub fn setPer(self: *volatile Tc16, value: u16) void {
-        self.per = value;
-        while (self.syncbusy.per) {
-            asm volatile("nop");
-        }
-    }
+    reserved: u32
 };
 
-pub const Tc24 = extern struct {
+pub const Tc32 = extern struct {
     ctrla: TcCtrla,
-    ctrlbclr: TcCtrlB,
-    ctrlbset: TcCtrlB,
-    evctrl: TcEvCtrl,
+    readreq: TcReadreq,
+    ctrlbclr: TcCtrlb,
+    ctrlbset: TcCtrlb,
+    ctrlc: TcCtrlc,
+    reserved0: u8,
+    dbgctrl: TcDbgctrl,
+    reserved1: u8,
+    evctrl: TcEvctrl,
     intenclr: TcInt,
     intenset: TcInt,
     intflag: TcInt,
     status: TcStatus,
-    wave: TcWave,
-    drvctrl: TcDrvCtrl,
-    reserved1: u8,
-    dbgctrl: u8,
-    syncbusy: TcSyncBusy,
-    count: u16,
-    reserved2: [2]u16,
-    per: u16,
-    cc: [2]u16,
-    reserved3: [7]u16,
-    perbuf: u16,
-    ccbuf: [2]u16,
-
-    pub fn setPer(self: *volatile Tc24, value: u16) void {
-        self.per = value;
-        while (self.syncbusy.per) {
-            asm volatile("nop");
-        }
-    }
+    count: u32,
+    reserved2: u32,
+    cc: [2]u32,
 };
 
-pub const tcc0: *volatile Tc24 = @ptrFromInt(TCC0_BASE);
-pub const tcc1: *volatile Tc24 = @ptrFromInt(TCC1_BASE);
-pub const tcc2: *volatile Tc24 = @ptrFromInt(TCC2_BASE);
-pub const tc3: *volatile Tc16 = @ptrFromInt(TC3_BASE);
-pub const tc4: *volatile Tc16 = @ptrFromInt(TC4_BASE);
-pub const tc5: *volatile Tc16 = @ptrFromInt(TC5_BASE);
-pub const tc6: *volatile Tc16 = @ptrFromInt(TC6_BASE);
-pub const tc7: *volatile Tc16 = @ptrFromInt(TC7_BASE);
+pub const tc3_8: *volatile Tc8 = @ptrFromInt(TC3_BASE);
+pub const tc4_8: *volatile Tc8 = @ptrFromInt(TC4_BASE);
+pub const tc5_8: *volatile Tc8 = @ptrFromInt(TC5_BASE);
+pub const tc3_16: *volatile Tc16 = @ptrFromInt(TC3_BASE);
+pub const tc4_16: *volatile Tc16 = @ptrFromInt(TC4_BASE);
+pub const tc5_16: *volatile Tc16 = @ptrFromInt(TC5_BASE);
+pub const tc3_32: *volatile Tc32 = @ptrFromInt(TC3_BASE);
 
 test "sizeof test" {
     const std = @import("std");
-    try std.testing.expectEqual(0x34, @sizeOf(Tc16));
-    try std.testing.expectEqual(0x34, @sizeOf(Tc24));
+    try std.testing.expectEqual(0x20, @sizeOf(Tc8));
+    try std.testing.expectEqual(0x20, @sizeOf(Tc16));
+    try std.testing.expectEqual(0x20, @sizeOf(Tc32));
 }

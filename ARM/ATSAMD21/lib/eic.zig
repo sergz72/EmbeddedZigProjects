@@ -1,11 +1,14 @@
 const EIC_BASE = 0x40001800;
 
-pub const EicCtrlA = bitpack struct(u8) {
+pub const EicCtrl = bitpack struct(u8) {
     swrst: bool = false,
     enable: bool = false,
-    reserved: u2 = 0,
-    cksel: bool = false,
-    reserved2: u3 = 0
+    reserved0: u6 = 0,
+};
+
+pub const EicStatus = bitpack struct(u8) {
+    reserved0: u7,
+    syncbusy: bool,
 };
 
 pub const EicSense = enum(u3) {
@@ -17,23 +20,15 @@ pub const EicSense = enum(u3) {
     low_level = 5
 };
 
-pub const EicNmiCtrl = bitpack struct(u8) {
+pub const EicNmictrl = bitpack struct(u8) {
     nmisense: EicSense = .no_detection,
     nmifilten: bool = false,
-    nmiasynch: bool = false,
-    reserved: u3 = 0
+    reserved0: u4 = 0,
 };
 
-pub const EicSyncBusy = bitpack struct(u32) {
-    swrst: bool,
-    enable: bool,
-    reserved: u30
-};
-
-pub const EicIntEn = bitpack struct(u32) {
-    extint: u8 = 0,
-    reserved: u23 = 0,
-    nschk: bool = false 
+pub const EicNmiflag = bitpack struct(u8) {
+    nmi: bool = false,
+    reserved0: u7 = 0,
 };
 
 pub const EicChConfig = bitpack struct(u4) {
@@ -41,7 +36,7 @@ pub const EicChConfig = bitpack struct(u4) {
     filten: bool = false
 };
 
-pub const EicConfig = bitpack struct(u32) {
+pub const EicConfig0 = bitpack struct(u32) {
     ch0: EicChConfig,
     ch1: EicChConfig,
     ch2: EicChConfig,
@@ -52,37 +47,46 @@ pub const EicConfig = bitpack struct(u32) {
     ch7: EicChConfig,
 };
 
-pub const EicDpPrescaler = bitpack struct(u32) {
-    prescaler: u3 = 0,
-    states: bool = false,
-    reserved: u12 = 0,
-    tickon: bool = false,
-    reserved2: u15 = 0
+pub const EicConfig1 = bitpack struct(u32) {
+    ch8: EicChConfig,
+    ch9: EicChConfig,
+    ch10: EicChConfig,
+    ch11: EicChConfig,
+    ch12: EicChConfig,
+    ch13: EicChConfig,
+    ch14: EicChConfig,
+    ch15: EicChConfig,
+};
+
+pub const EicConfig2 = bitpack struct(u32) {
+    ch24: EicChConfig,
+    ch25: EicChConfig,
+    ch26: EicChConfig,
+    ch27: EicChConfig,
+    ch28: EicChConfig,
+    ch29: EicChConfig,
+    ch30: EicChConfig,
+    ch31: EicChConfig,
 };
 
 pub const Eic = extern struct {
-    ctrla: EicCtrlA,
-    nmictrl: EicNmiCtrl,
-    nmiflag: u8,
-    reserved1: u8,
-    syncbusy: EicSyncBusy,
+    ctrl: EicCtrl,
+    status: EicStatus,
+    nmictrl: EicNmictrl,
+    nmiflag: EicNmiflag,
     evctrl: u32,
-    intenclr: EicIntEn,
-    intenset: EicIntEn,
-    intflag: EicIntEn,
-    asynch: u32,
-    config: EicConfig,
-    reserved2: [4]u32,
-    debouncen: u32,
-    dprescaler: EicDpPrescaler,
-    pinstate: u32,
-    nschk: EicIntEn,
-    nonsec: EicIntEn
+    intenclr: u32,
+    intenset: u32,
+    intflag: u32,
+    wakeup: u32,
+    config0: EicConfig0,
+    config1: EicConfig1,
+    config2: EicConfig2,
 };
 
 pub const eic: *volatile Eic = @ptrFromInt(EIC_BASE);
 
 test "sizeof test" {
     const std = @import("std");
-    try std.testing.expectEqual(0x44, @sizeOf(Eic));
+    try std.testing.expectEqual(0x24, @sizeOf(Eic));
 }

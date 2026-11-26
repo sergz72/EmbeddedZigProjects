@@ -90,6 +90,14 @@ pub const Gclk = extern struct {
     gendiv: GclkGendiv,
 };
 
+pub fn channelEnable(channel: GclkChannel, gen: u4) void {
+    gclk.clkctrl = GclkClkctrl{
+        .id = channel,
+        .gen = gen,
+        .clken = true,
+    };
+}
+
 pub const gclk: *volatile Gclk = @ptrFromInt(GCLK_BASE);
 
 test "sizeof test" {

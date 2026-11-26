@@ -1,76 +1,120 @@
 const PM_BASE = 0x40000400;
 
-pub const PmSleepCfg = enum(u8) {
-    idle = 2,
-    standby = 4,
-    off = 6
+pub const PmIdle = enum(u2) {
+    cpu = 0,
+    ahb = 1,
+    apb = 2,
 };
 
-pub const PmPlsel = enum(u2) {
-    pl0 = 0,
-    pl2 = 2
+pub const PmSleep = bitpack struct(u8) {
+    idle: PmIdle = .cpu,
+    reserved0: u6 = 0,
 };
 
-pub const PmPlCfg = bitpack struct(u8) {
-    plsel: PmPlsel = .pl0,
-    reserved: u5 = 0,
-    pldis: bool = false
+pub const PmDiv = enum(u8) {
+    div1 = 0,
+    div2 = 1,
+    div4 = 2,
+    div8 = 3,
+    div16 = 4,
+    div32 = 5,
+    div64 = 6,
+    div128 = 7,
 };
 
-pub const PmPwCfg = enum(u8) {
-    _16k = 0,
-    _12k = 1,
-    _8k = 2,
-    _4k = 3
+pub const PmAhbmask = bitpack struct(u32) {
+    hpb0: bool = true,
+    hpb1: bool = true,
+    hpb2: bool = true,
+    dsu: bool = true,
+    nvmctrl: bool = true,
+    dmac: bool = true,
+    usb: bool = true,
+    reserved0: u25 = 0,
 };
 
-pub const PmVregsMod = enum(u2) {
-    auto = 0,
-    performance = 1,
-    lp = 2
+pub const PmApbamask = bitpack struct(u32) {
+    pac0: bool = true,
+    pm: bool = true,
+    sysctrl: bool = true,
+    gclk: bool = true,
+    wdt: bool = true,
+    rtc: bool = true,
+    eic: bool = true,
+    reserved0: u25 = 0,
 };
 
-pub const PmStdbyCfg = bitpack struct(u16) {
-    pdcfg: bool = false,
-    reserved: u3 = 0,
-    dpgpdsw: bool = false,
-    reserved2: u1 = 0,
-    vregsmod: PmVregsMod = .auto,
-    reserved3: u2 = 0,
-    bbiashs: bool = false,
-    reserved4: u1 = 0,
-    bbiastr: bool = false,
-    reserved5: u3 = 0
+pub const PmApbbmask = bitpack struct(u32) {
+    pac1: bool = true,
+    dsu: bool = true,
+    nvmctrl: bool = true,
+    port: bool = true,
+    dmac: bool = true,
+    usb: bool = true,
+    hmatrix: bool = true,
+    reserved0: u25 = 0,
+};
+
+pub const PmApbcmask = bitpack struct(u32) {
+    pac2: bool = false,
+    evsys: bool = false,
+    sercom0: bool = false,
+    sercom1: bool = false,
+    sercom2: bool = false,
+    sercom3: bool = false,
+    sercom4: bool = false,
+    sercom5: bool = false,
+    tcc0: bool = false,
+    tcc1: bool = false,
+    tcc2: bool = false,
+    tc3: bool = false,
+    tc4: bool = false,
+    tc5: bool = false,
+    reserved0: u2 = 1,
+    adc: bool = true,
+    ac: bool = false,
+    dac: bool = false,
+    ptc: bool = false,
+    i2s: bool = false,
+    reserved1: u11 = 0,
+};
+
+pub const PmRcause = bitpack struct(u8) {
+    por: bool,
+    bod12: bool,
+    bod33: bool,
+    reserved0: u1,
+    ext: bool,
+    wdt: bool,
+    syst: bool,
+    reserved1: u1,
 };
 
 pub const Pm = extern struct {
-    reserved1: u8,
-    sleepcfg: PmSleepCfg,
-    plcfg: PmPlCfg,
-    pwcfg: PmPwCfg,
+    ctrl: u8,
+    sleep: PmSleep,
+    reserved0: [3]u16,
+    cpusel: PmDiv,
+    apbasel: PmDiv,
+    apbbsel: PmDiv,
+    apbcsel: PmDiv,
+    reserved1: [2]u32,
+    ahbmask: PmAhbmask,
+    apbamask: PmApbamask,
+    apbbmask: PmApbbmask,
+    apbcmask: PmApbcmask,
+    reserved2: [4]u32,
     intenclr: u8,
     intenset: u8,
     intflag: u8,
-    reserved2: u8,
-    stdbycfg: PmStdbyCfg,
-
-    pub fn enterStandby(self: *volatile Pm) void {
-        self.sleepcfg = .standby;
-        while (self.sleepcfg != .standby) {
-            asm volatile("nop");
-        }
-        asm volatile("dsb");
-        asm volatile("wfi");
-        self.sleepcfg = .idle;
-        while (self.sleepcfg != .idle) {
-            asm volatile("nop");
-        }
-    }
+    reserved3: u8,
+    rcause: PmRcause,
+    reserved4: [3]u8,
 };
 
 pub const pm: *volatile Pm = @ptrFromInt(PM_BASE);
 
 test "sizeof test" {
     const std = @import("std");
-    try std.testing.expectEqual(0x0A, @sizeOf(Pm));
+    try std.testing.expectEqual(0x3C, @sizeOf(Pm));
 }
