@@ -9,10 +9,10 @@ pub const TcMode = enum(u2) {
 };
 
 pub const TcWavegen = enum(u2) {
-    nfrq = 0,
-    mfrq = 1,
-    npwm = 2,
-    mpwm = 3,
+    normal_frequency = 0,
+    match_frequency = 1,
+    normal_pwm = 2,
+    match_pwm = 3
 };
 
 pub const TcPrescaler = enum(u3) {
@@ -37,7 +37,7 @@ pub const TcCtrla = bitpack struct(u16) {
     enable: bool = false,
     mode: TcMode = .count16,
     reserved0: u1 = 0,
-    wavegen: TcWavegen = .nfrq,
+    wavegen: TcWavegen = .normal_frequency,
     reserved1: u1 = 0,
     prescaler: TcPrescaler = .div1,
     runstdby: bool = false,
@@ -166,7 +166,19 @@ pub const Tc16 = extern struct {
     count: u16,
     reserved2: [3]u16,
     cc: [2]u16,
-    reserved: u32
+    reserved: u32,
+
+    pub fn initTimerInterrupt(self: *volatile Tc16, cc0: u16, div: TcPrescaler) void {
+        self.cc[0] = cc0;
+        while (self.status.syncbusy) {
+            asm volatile("nop");
+        }
+        self.intenset = .{.mc0 = true};
+        self.ctrla = .{.wavegen = .match_frequency, .runstdby = true, .prescsync = .presc, .prescaler = div};
+        while (self.status.syncbusy) {
+            asm volatile("nop");
+        }
+    }
 };
 
 pub const Tc32 = extern struct {
@@ -194,7 +206,7 @@ pub const tc5_8: *volatile Tc8 = @ptrFromInt(TC5_BASE);
 pub const tc3_16: *volatile Tc16 = @ptrFromInt(TC3_BASE);
 pub const tc4_16: *volatile Tc16 = @ptrFromInt(TC4_BASE);
 pub const tc5_16: *volatile Tc16 = @ptrFromInt(TC5_BASE);
-pub const tc3_32: *volatile Tc32 = @ptrFromInt(TC3_BASE);
+pub const tc4_32: *volatile Tc32 = @ptrFromInt(TC4_BASE);
 
 test "sizeof test" {
     const std = @import("std");

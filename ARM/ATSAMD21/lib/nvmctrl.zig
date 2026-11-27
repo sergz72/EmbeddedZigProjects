@@ -25,12 +25,6 @@ pub const NvmctrlCtrla = bitpack struct(u16) {
     cmdex: u8 = 0xA5
 };
 
-pub const NvmctrlRws = enum(u4) {
-    single = 0,
-    half = 1,
-    dual = 2,
-};
-
 pub const NvmctrlSleepprm = enum(u2) {
     wakeonaccess = 0,
     wakeupinstant = 1,
@@ -45,7 +39,7 @@ pub const NvmctrlReadmode = enum(u2) {
 
 pub const NvmctrlCtrlb = bitpack struct(u32) {
     reserved0: u1 = 0,
-    rws: NvmctrlRws = .single,
+    rws: u4 = 0,
     reserved1: u2 = 0,
     manw: bool = false,
     sleepprm: NvmctrlSleepprm = .wakeonaccess,
@@ -106,6 +100,10 @@ pub const Nvmctrl = extern struct {
     lock: u16,
     reserved5: u16
 };
+
+pub fn setWaitStates(waitStates: u4) void {
+    nvmctrl.ctrlb.rws = waitStates;
+}
 
 pub const nvmctrl: *volatile Nvmctrl = @ptrFromInt(NVMCTRL_BASE);
 

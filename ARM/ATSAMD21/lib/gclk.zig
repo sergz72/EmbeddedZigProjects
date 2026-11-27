@@ -12,7 +12,7 @@ pub const GclkSrc = enum(u5) {
     fdpll96m = 8
 };
 
-pub const GclkGenCtrl = bitpack struct(u32) {
+pub const GclkGenctrl = bitpack struct(u32) {
     id: u4 = 0,
     reserved: u4 = 0,
     src: GclkSrc = .xosc,
@@ -86,7 +86,7 @@ pub const Gclk = extern struct {
     ctrl: u8,
     status: u8,
     clkctrl: GclkClkctrl,
-    genctrl: GclkGenCtrl,
+    genctrl: GclkGenctrl,
     gendiv: GclkGendiv,
 };
 
@@ -96,6 +96,15 @@ pub fn channelEnable(channel: GclkChannel, gen: u4) void {
         .gen = gen,
         .clken = true,
     };
+}
+
+pub fn setXosc32kForDfll48(gen: u4) void {
+    gclk.genctrl = GclkGenctrl{
+        .id = gen,
+        .src = .xosc32k,
+        .genen = true,
+    };
+    channelEnable(.dfll48ref, gen);
 }
 
 pub const gclk: *volatile Gclk = @ptrFromInt(GCLK_BASE);

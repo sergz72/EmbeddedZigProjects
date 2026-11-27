@@ -113,7 +113,7 @@ pub const SysctrlOsc32k = bitpack struct(u32) {
 };
 
 pub const SysctrlOsculp32k = bitpack struct(u8) {
-    calib: u5 = 31,
+    calib: u5,
     reserved0: u2 = 0,
     wrtlock: bool = false,
 };
@@ -133,16 +133,16 @@ pub const SysctrlFrange = enum(u2) {
 };
 
 pub const SysctrlOsc8m = bitpack struct(u32) {
-    reserved0: u1 = 1,
+    reserved0: u1 = 0,
     enable: bool = true,
-    reserved1: u4 = 14,
+    reserved1: u4 = 0,
     runstdby: bool = false,
     ondemand: bool = true,
     presc: SysctrlPresc = .div8,
-    reserved2: u6 = 7,
-    calib: u12 = 1799,
-    reserved3: u2 = 2,
-    frange: SysctrlFrange = ._8to11Mhz,
+    reserved2: u6 = 0,
+    calib: u12,
+    reserved3: u2 = 0,
+    frange: SysctrlFrange,
 };
 
 pub const SysctrlDfllctrl = bitpack struct(u16) {
@@ -239,7 +239,7 @@ pub const SysctrlVref = bitpack struct(u32) {
 pub const SysctrlDpllctrla = bitpack struct(u8) {
     reserved0: u1 = 0,
     enable: bool = false,
-    reserved1: u4 = 2,
+    reserved1: u4 = 0,
     runstdby: bool = false,
     ondemand: bool = true,
 };
@@ -325,6 +325,57 @@ pub const Sysctrl = extern struct {
     dpllstatus: SysctrlDpllstatus,
     reserved8: [3]u8,
 };
+
+pub fn clearInterruptFlags() void {
+    sysctrl.intflag = SysctrlInt{
+        .xoscrdy = true,
+        .xosc32krdy = true,
+        .osc32krdy = true,
+        .osc8mrdy = true,
+        .dfllrdy = true,
+        .dflloob = true,
+        .dflllckf = true,
+        .dflllckc = true,
+        .dfllrcs = true,
+        .bod33rdy = true,
+        .bod33det = true,
+        .b33srdy = true,
+        .dplllckr = true,
+        .dplllckf = true,
+        .dplllto = true
+    };
+}
+
+pub fn enableXosc32k() void {
+    sysctrl.xosc32k = SysctrlXosc32k{
+        .enable = true,
+        .xtalen = true,
+        .en32k = true,
+        .en1k = true,
+        .runstdby = true,
+        .ondemand = false,
+        .startup = .cycle2048
+    };
+    while (!sysctrl.intflag.xosc32krdy) {
+        asm volatile ("nop");
+    }
+}
+
+pub fn setXosc32kForDfll48() void {
+    clearInterruptFlags();
+    sysctrl.dfllmul = SysctrlDfllmul{
+        .mul = 1465,
+        .fstep = 1,
+        .cstep = 1,
+    };
+    sysctrl.dfllctrl = SysctrlDfllctrl{.mode = true};
+    while (true) {
+        const status = sysctrl.intflag;
+        if (status.dfllrdy and status.dflllckc and status.dflllckf) {
+            break;
+        }
+    }
+}
 
 pub const sysctrl: *volatile Sysctrl = @ptrFromInt(SYSCTRL_BASE);
 
