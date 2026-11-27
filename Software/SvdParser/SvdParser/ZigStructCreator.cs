@@ -32,11 +32,22 @@ public static class ZigStructCreator
         lines.Add($"const {peripheral.Name.ToUpper()}_BASE = 0x{peripheral.BaseAddress.Value:X};");
         lines.Add("");
         foreach (var cluster in peripheral.Registers?.Clusters ?? Enumerable.Empty<Cluster>())
+        {
             CreateStruct(cluster, lines);
+            foreach (var cluster2 in cluster.Clusters ?? Enumerable.Empty<Cluster>())
+                CreateStruct(cluster2, lines);
+        }
         CreateStruct(peripheral, lines);
         if (peripheral.Addresses.Size != null)
-            AddInstance(lines, peripheral.Name, peripheral.Addresses.Size.Value);
+            AddInstance(lines, ToCamelCase(peripheral.Name), peripheral.Addresses.Size.Value);
         return lines;
+    }
+
+    private static string BuildRegisterName(string peripheralName, string registerName)
+    {
+        if (registerName.Contains(peripheralName, StringComparison.OrdinalIgnoreCase))
+            return ToCamelCase(registerName);
+        return peripheralName + ToCamelCase(registerName);
     }
     
     private static void CreateStruct(IPeripheral peripheral, List<string> lines)
@@ -44,14 +55,15 @@ public static class ZigStructCreator
         if (peripheral.GetRegisters() == null)
             return;
         var peripheralLines = new List<string>();
-        peripheralLines.Add($"pub const {peripheral.GetName()} = extern struct {{");
+        var pname = ToCamelCase(peripheral.GetName());
+        peripheralLines.Add($"pub const {pname} = extern struct {{");
         uint offset = 0;
         var resIdx = 0;
         foreach (var register in peripheral.GetRegisters()!.OrderBy(r => r.AddressOffset.Value))
         {
             var regLines = new List<string>();
             var rw = register.Access != "read-only";
-            var rName = ToCamelCase(register.Name);
+            var rName = BuildRegisterName(pname, register.Name);
             var pfName = register.Name.Contains('_') ? register.Name.Split('_')[1].ToLower() : register.Name.ToLower();
             var diff = register.AddressOffset.Value - offset; 
             if (diff != 0)
@@ -59,9 +71,11 @@ public static class ZigStructCreator
                 peripheralLines.Add($"    reserved{resIdx}: [{diff}]u8,");
                 resIdx++;
             }
-            offset = register.AddressOffset.Value + register.Size.Value / 8;
+
+            var size = register.Size?.Value ?? 32;
+            offset = register.AddressOffset.Value + size / 8;
             peripheralLines.Add($"    {pfName}: {rName},");
-            regLines.Add($"pub const {rName} = bitpack struct(u{register.Size.Value}) {{");
+            regLines.Add($"pub const {rName} = bitpack struct(u{size}) {{");
             uint nextBit = 0;
             _reservedIdx = 0;
             var resetValue  = register.ResetValue?.Value ?? 0;
@@ -82,15 +96,15 @@ public static class ZigStructCreator
                     }
                     else
                     {
-                        var v = BuildFieldStruct(lines, field, resetValue, rw);
+                        var v = BuildFieldStruct(pname, lines, field, resetValue, rw);
                         regLines.Add($"    {fname}: {v},");
                     }
 
                     nextBit = field.BitOffset + field.BitWidth;
                 }
             }
-            if (nextBit < register.Size.Value)
-                regLines.Add(BuildReserved(resetValue, nextBit, register.Size.Value - nextBit, rw));
+            if (nextBit < size)
+                regLines.Add(BuildReserved(resetValue, nextBit, size - nextBit, rw));
             regLines.Add("};");
             regLines.Add("");
             lines.AddRange(regLines);
@@ -100,14 +114,14 @@ public static class ZigStructCreator
         lines.Add("");
     }
 
-    private static string BuildFieldStruct(List<string> lines, Field field, uint resetValue, bool rw)
+    private static string BuildFieldStruct(string peripheralName, List<string> lines, Field field, uint resetValue, bool rw)
     {
         if (field.EnumeratedValues == null)
         {
             var iv = rw ? BuildInitValue(resetValue, field.BitOffset, field.BitWidth, true) : "";
             return $"u{field.BitWidth}{iv}";
         }
-        var sname = ToCamelCase(field.Name);
+        var sname = BuildRegisterName(peripheralName, field.Name);
         var value = BuildInitValue(resetValue, field.BitOffset, field.BitWidth);
         lines.Add($"pub const {sname} = enum(u{field.BitWidth}) {{");
         var initName = "Unknown";
@@ -116,9 +130,16 @@ public static class ZigStructCreator
             var name = v.Name.Replace("-", "_");
             if (char.IsDigit(name[0]))
                 name = "_" + name;
-            lines.Add($"    {name} = {v.Value.Value},");
-            if (v.Value.Value == value)
-                initName = name;
+            if (v.Value != null)
+            {
+                lines.Add($"    {name} = {v.Value.Value},");
+                if (v.Value.Value == value)
+                    initName = name;
+            }
+            else
+            {
+                lines.Add($"    {name},");
+            }
         }
         lines.Add("};");
         lines.Add("");
@@ -132,7 +153,7 @@ public static class ZigStructCreator
         lines.Add("");
         lines.Add("test \"sizeof test\" {");
         lines.Add("    const std = @import(\"std\");");
-        lines.Add($"    try std.testing.expectEqual({sz}, @sizeOf({peripheralName}));\n");
+        lines.Add($"    try std.testing.expectEqual({sz}, @sizeOf({peripheralName}));");
         lines.Add("}");
     }
 

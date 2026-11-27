@@ -38,6 +38,7 @@ public struct Cluster: IPeripheral
     [XmlElement("description")] public string Description;
     [XmlElement("addressOffset")] public HexUInt AddressOffset;
     [XmlElement("register")] public Register[] Registers;
+    [XmlElement("cluster")] public Cluster[] Clusters;
     
     public string GetName() => Name;
     public string GetDescription() => Description;
@@ -125,10 +126,13 @@ public sealed class HexUInt : IXmlSerializable
         {
             s = s.Replace("#", "");
             s = s.Replace("x", "");
+            s = s.Replace("X", "");
             Value = Convert.ToUInt32(s, 16);
         }
         else if (s.StartsWith("0x") || s.StartsWith("0X"))
             Value = Convert.ToUInt32(s, 16);
+        else if (s.StartsWith("0b") || s.StartsWith("0B"))
+            Value = Convert.ToUInt32(s.Substring(2), 2);
         else
             Value = Convert.ToUInt32(s, 10);
     }
