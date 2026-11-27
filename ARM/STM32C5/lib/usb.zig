@@ -154,111 +154,112 @@ pub const Usb = extern struct {
     chep: [8]UsbChep,
     sram: [496]u32,
 
-    pub fn epReset(self: *volatile Usb, ep_no: u3, statrx: UsbDeviceEndpointStatus, stattx: UsbDeviceEndpointStatus,
-                    endpoint_type: UsbUsageType) void {
-        self.chepr[ep_no] = UsbChepr{
-            .ea = ep_no,
-            .utype = endpoint_type,
-            .stattx = @backingInt(stattx),
-            .statrx = @backingInt(statrx)};
-    }
-
-    pub fn ep0Reset(self: *volatile Usb) void {
-        self.epReset(0, .valid, .nak, .control);
-    }
-
-    pub inline fn setAddress(self: *volatile Usb, address: u7) void {
-        self.daddr = UsbDaddr{.add = address, .ef = true};
-    }
-
-    pub fn enableEndpoint(self: *volatile Usb, ep_no: u3, rx_enable: bool, tx_enable: bool) void {
-        if (rx_enable) {
-            const pma_offset = allocatePMABuffer(usb_device.USB_FS_MAX_PACKET_SIZE);
-            pma_buffers_rx[ep_no] = @ptrCast(&self.sram[pma_offset]);
-            // 2 blocks of 32 bytes each
-            self.chep[ep_no].rx = UsbChepRx{.addr_rx =  @truncate(pma_offset*4+64), .num_block = 2, .blsize = true};
-        }
-        if (tx_enable) {
-            const pma_offset = allocatePMABuffer(usb_device.USB_FS_MAX_PACKET_SIZE);
-            pma_buffers_tx[ep_no] = @ptrCast(&self.sram[pma_offset]);
-            self.chep[ep_no].tx = UsbChepTx{.addr_tx = @truncate(pma_offset*4+64)};
-        }
-    }
-
-    pub fn getEndpointRxLength(self: *volatile Usb, ep_no: u3) u10 {
-        return self.chep[ep_no].rx.count_rx;
-    }
-
-    pub fn setEndpointTxLength(self: *volatile Usb, ep_no: u3, length: u16) void {
-        self.chep[ep_no].tx.count_tx = @truncate(length);
-    }
-
-    pub fn setEndpointTxStatus(self: *volatile Usb, ep_no: u3, status: UsbDeviceEndpointStatus) void {
-        var chepr: u32 = @bitCast(self.chepr[ep_no]);
-        chepr &= 0xFFFF_8FBF;
-        chepr ^= @as(u32, @backingInt(status)) << 4;
-        self.chepr[ep_no] = @bitCast(chepr);
-    }
-
-    pub fn setEndpointRxStatus(self: *volatile Usb, ep_no: u3, status: UsbDeviceEndpointStatus) void {
-        var chepr: u32 = @bitCast(self.chepr[ep_no]);
-        chepr &= 0xFFFF_BF8F;
-        chepr ^= @as(u32, @backingInt(status)) << 12;
-        self.chepr[ep_no] = @bitCast(chepr);
-    }
-
-    pub fn getEndpointTxStatus(self: *volatile Usb, ep_no: u3) usb_device.EndpointStatus {
-        return if (self.chepr[ep_no].stattx == @backingInt(UsbDeviceEndpointStatus.stall)) .stall else .ok;
-    }
-
-    pub fn getEndpointRxStatus(self: *volatile Usb, ep_no: u3) usb_device.EndpointStatus {
-        return if (self.chepr[ep_no].statrx == @backingInt(UsbDeviceEndpointStatus.stall)) .stall else .ok;
-    }
-
-    pub inline fn haltEndpointTx(self: *volatile Usb, ep_no: u3, halt: bool) void {
-        self.setEndpointTxStatus(ep_no, if (halt) .stall else .nak);
-    }
-
-    pub inline fn haltEndpointRx(self: *volatile Usb, ep_no: u3, halt: bool) void {
-        self.setEndpointRxStatus(ep_no, if (halt) .stall else .valid);
-    }
-
-    pub fn devicePreinit(self: *volatile Usb, usb_clock_source: rcc.Ck48sel) void {
-        rcc.rcc.enableUsbClock(usb_clock_source);
-        nvic.nvic.enableInterrupt(interrupts.Interrupt.USB_DRD_FS.toU8());
-
-        self.cntr = UsbCntr{
-            .errm = true,
-            .pmaovrm = true,
-            .ctrm = true,
-            .thr512m = true,
-            .suspm = true,
-            .wkupm = true,
-            .rst_dconm = true,
-            .usbrst = false,
-            .pdwn = false
-        };
-        sram_pointer = 0;
-        self.enableEndpoint(0, true, true);
-        self.ep0Reset();
-    }
-
-    pub fn deviceInit(self: *volatile Usb) void {
-        self.daddr = UsbDaddr{.ef = true};
-        self.bcdr = UsbBcdr{.dppu_dpd = true};
-    }
-
-    pub fn tx(self: *volatile Usb, ep_no: u3, data: []const u8) void {
-        usb_device.copyToPMA32(pma_buffers_tx[ep_no], data.ptr, data.len);
-        self.setEndpointTxLength(ep_no, @truncate(data.len));
-        self.setEndpointTxStatus(ep_no, .valid);
-    }
-
-    pub fn txZeroPacket(self: *volatile Usb, ep_no: u3) void {
-        self.setEndpointTxLength(ep_no, 0);
-        self.setEndpointTxStatus(ep_no, .valid);
-    }
 };
+
+pub fn epReset(ep_no: u3, statrx: UsbDeviceEndpointStatus, stattx: UsbDeviceEndpointStatus,
+                endpoint_type: UsbUsageType) void {
+    usb.chepr[ep_no] = UsbChepr{
+        .ea = ep_no,
+        .utype = endpoint_type,
+        .stattx = @backingInt(stattx),
+        .statrx = @backingInt(statrx)};
+}
+
+pub fn ep0Reset() void {
+    epReset(0, .valid, .nak, .control);
+}
+
+pub inline fn setAddress(address: u7) void {
+    usb.daddr = UsbDaddr{.add = address, .ef = true};
+}
+
+pub fn enableEndpoint(ep_no: u3, rx_enable: bool, tx_enable: bool) void {
+    if (rx_enable) {
+        const pma_offset = allocatePMABuffer(usb_device.USB_FS_MAX_PACKET_SIZE);
+        pma_buffers_rx[ep_no] = @ptrCast(&usb.sram[pma_offset]);
+        // 2 blocks of 32 bytes each
+        usb.chep[ep_no].rx = UsbChepRx{.addr_rx =  @truncate(pma_offset*4+64), .num_block = 2, .blsize = true};
+    }
+    if (tx_enable) {
+        const pma_offset = allocatePMABuffer(usb_device.USB_FS_MAX_PACKET_SIZE);
+        pma_buffers_tx[ep_no] = @ptrCast(&usb.sram[pma_offset]);
+        usb.chep[ep_no].tx = UsbChepTx{.addr_tx = @truncate(pma_offset*4+64)};
+    }
+}
+
+pub fn getEndpointRxLength(ep_no: u3) u10 {
+    return usb.chep[ep_no].rx.count_rx;
+}
+
+pub fn setEndpointTxLength(ep_no: u3, length: u16) void {
+    usb.chep[ep_no].tx.count_tx = @truncate(length);
+}
+
+pub fn setEndpointTxStatus(ep_no: u3, status: UsbDeviceEndpointStatus) void {
+    var chepr: u32 = @bitCast(usb.chepr[ep_no]);
+    chepr &= 0xFFFF_8FBF;
+    chepr ^= @as(u32, @backingInt(status)) << 4;
+    usb.chepr[ep_no] = @bitCast(chepr);
+}
+
+pub fn setEndpointRxStatus(ep_no: u3, status: UsbDeviceEndpointStatus) void {
+    var chepr: u32 = @bitCast(usb.chepr[ep_no]);
+    chepr &= 0xFFFF_BF8F;
+    chepr ^= @as(u32, @backingInt(status)) << 12;
+    usb.chepr[ep_no] = @bitCast(chepr);
+}
+
+pub fn getEndpointTxStatus(ep_no: u3) usb_device.EndpointStatus {
+    return if (usb.chepr[ep_no].stattx == @backingInt(UsbDeviceEndpointStatus.stall)) .stall else .ok;
+}
+
+pub fn getEndpointRxStatus(ep_no: u3) usb_device.EndpointStatus {
+    return if (usb.chepr[ep_no].statrx == @backingInt(UsbDeviceEndpointStatus.stall)) .stall else .ok;
+}
+
+pub inline fn haltEndpointTx(ep_no: u3, halt: bool) void {
+    setEndpointTxStatus(ep_no, if (halt) .stall else .nak);
+}
+
+pub inline fn haltEndpointRx(ep_no: u3, halt: bool) void {
+    setEndpointRxStatus(ep_no, if (halt) .stall else .valid);
+}
+
+pub fn devicePreinit(usb_clock_source: rcc.Ck48sel) void {
+    rcc.enableUsbClock(usb_clock_source);
+    nvic.enableInterrupt(interrupts.Interrupt.USB_DRD_FS.toU8());
+
+    usb.cntr = UsbCntr{
+        .errm = true,
+        .pmaovrm = true,
+        .ctrm = true,
+        .thr512m = true,
+        .suspm = true,
+        .wkupm = true,
+        .rst_dconm = true,
+        .usbrst = false,
+        .pdwn = false
+    };
+    sram_pointer = 0;
+    enableEndpoint(0, true, true);
+    ep0Reset();
+}
+
+pub fn deviceInit() void {
+    usb.daddr = UsbDaddr{.ef = true};
+    usb.bcdr = UsbBcdr{.dppu_dpd = true};
+}
+
+pub fn tx(ep_no: u3, data: []const u8) void {
+    usb_device.copyToPMA32(pma_buffers_tx[ep_no], data.ptr, data.len);
+    setEndpointTxLength(ep_no, @truncate(data.len));
+    setEndpointTxStatus(ep_no, .valid);
+}
+
+pub fn txZeroPacket(ep_no: u3) void {
+    setEndpointTxLength(ep_no, 0);
+    setEndpointTxStatus(ep_no, .valid);
+}
 
 fn allocatePMABuffer(size: usize) usize {
     const current_pointer = sram_pointer;

@@ -55,15 +55,15 @@ pub const Icache = extern struct {
     mmonr: u32,
     reserved1: [2]u32,
     crr: [4]IcacheCrr,
-
-    pub fn enable(self: *volatile Icache) void {
-        self.cr = IcacheCr{.cacheinv = true};
-        while (!self.sr.bsyendf) {
-            asm volatile ("nop");
-        }
-        self.cr = IcacheCr{.en = true};
-    }
 };
+
+pub fn enable() void {
+    icache.cr = IcacheCr{.cacheinv = true};
+    while (!icache.sr.bsyendf) {
+        asm volatile ("nop");
+    }
+    icache.cr = IcacheCr{.en = true};
+}
 
 pub const icache: *volatile Icache = @ptrFromInt(ICACHE_BASE);
 

@@ -50,6 +50,9 @@ const USART_TX_PIN_MASK: u16 = 1 << USART_TX_PIN;
 //--------------------------------
 const USART_RX_PIN = 3;
 const USART_RX_PIN_MASK: u16 = 1 << USART_RX_PIN;
+//--------------------------------
+const USART_DMA_INSTANCE = lpdma.lpdma1;
+const USART_DMA_CHANNEL = 0;
 
 pub const I2C_INSTANCE = i2c.i2c1;
 //--------------------------
@@ -165,8 +168,8 @@ pub fn initButton() void {
 pub fn usartDmaInit(buffer_size: usize, allocator: std.mem.Allocator) error{OutOfMemory}!void {
     try dma_sender_instance.init(buffer_size, allocator);
     rcc.rcc.ahb1enr.lpdma1en = true;
-    lpdma.lpdma1.channels[0].initMemoryToPeripheral8(@intFromPtr(&USART_INSTANCE.tdr), .usart2_tx);
-    nvic.nvic.enableInterrupt(interrupts.Interrupt.LPDMA1_CH0.toU8());
+    USART_DMA_INSTANCE.channels[USART_DMA_CHANNEL].initMemoryToPeripheral8(@intFromPtr(&USART_INSTANCE.tdr), .usart2_tx);
+    nvic.enableInterrupt(interrupts.Interrupt.LPDMA1_CH0.toU8());
 }
 
 pub fn initUsart(baud: u32, callback: *const fn(u8) void, use_dma: bool) void {
@@ -189,7 +192,7 @@ pub fn initUsart(baud: u32, callback: *const fn(u8) void, use_dma: bool) void {
         USART_INSTANCE.init(baud, cpu.cpu.pclk1_frequency);
         usart_writer.usart_writer.writeCharFunc = usartWrite;
     }
-    nvic.nvic.enableInterrupt(interrupts.Interrupt.USART2.toU8());
+    nvic.enableInterrupt(interrupts.Interrupt.USART2.toU8());
 }
 
 pub fn initArduinoI2c() void {
@@ -221,8 +224,8 @@ pub fn arduinoSpiCsSet(state: bool) void {
 }
 
 pub fn init(led_green_pg0: bool) void {
-    rcc.rcc.hseOn(false);
-    rcc.rcc.clockSwitch(.hse);
+    rcc.hseOn(false);
+    rcc.clockSwitch(.hse);
     system_timer.delay_init(system_timer.init_div8);
     initLeds(led_green_pg0);
     initButton();
@@ -256,11 +259,11 @@ pub fn usartFlushDma() void {
 }
 
 fn usartDmaStart(data: []const u8) usize {
-    lpdma.lpdma1.channels[0].startTransferMemoryToPeripheral8(data);
+    USART_DMA_INSTANCE.channels[USART_DMA_CHANNEL].startTransferMemoryToPeripheral8(data);
     return data.len;
 }
 
 export fn LPDMA1_CH0_IRQHandler() callconv(.c) void {
-    lpdma.lpdma1.channels[0].clearInterruptFlags();
+    USART_DMA_INSTANCE.channels[USART_DMA_CHANNEL].clearInterruptFlags();
     dma_sender_instance.dmaDone();
 }

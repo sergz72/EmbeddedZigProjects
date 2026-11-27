@@ -21,7 +21,7 @@ const date_set_command = shell.ShellCommand{
 
 fn dateGetHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!isize {
     var rtc_data: generic_rtc.RtcData = undefined;
-    rtc.rtc.getTime(&rtc_data) catch |err| {
+    rtc.getTime(&rtc_data) catch |err| {
         try parameters.writer.print("{s}\n", .{ @errorName(err) });
         return 1;
     };
@@ -66,7 +66,7 @@ fn dateSetHandler(parameters: shell.ShellHandlerParameters) std.Io.Writer.Error!
         try parameters.writer.print("{s}\n", .{ @errorName(err) });
         return 9;
     };
-    rtc.rtc.setTime(&rtc_data, RTC_TIMEOUT) catch |err| {
+    rtc.setTime(&rtc_data, RTC_TIMEOUT) catch |err| {
         try parameters.writer.print("{s}\n", .{ @errorName(err)});
         return 10;
     };

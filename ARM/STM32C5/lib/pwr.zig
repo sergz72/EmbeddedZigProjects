@@ -127,15 +127,15 @@ pub const Pwr = extern struct {
     ioretr: PwrIoretr,
     reserved4: [44]u32,
     privcfgr: PwrPrivcfgr,
-
-    pub fn unlockRtcDomain(self: *volatile Pwr) void {
-        self.rtccr = PwrRtccr{.drtcp = true};
-    }
-
-    pub fn lockRtcDomain(self: *volatile Pwr) void {
-        self.rtccr = PwrRtccr{};
-    }
 };
+
+pub fn unlockRtcDomain() void {
+    pwr.rtccr = PwrRtccr{.drtcp = true};
+}
+
+pub fn lockRtcDomain() void {
+    pwr.rtccr = PwrRtccr{};
+}
 
 pub const pwr: *volatile Pwr = @ptrFromInt(PWR_BASE);
 

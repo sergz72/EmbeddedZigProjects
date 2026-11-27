@@ -258,118 +258,118 @@ pub const Rtc = extern struct {
     reserved1: [3]u32,
     alrabinr: u32,
     alrbbinr: u32,
+};
 
-    pub fn unlock(self: *volatile Rtc) void {
-        // Write the key sequence to the write protection register to unlock
-        self.wpr = 0xCA;
-        self.wpr = 0x53;
+pub fn unlock() void {
+    // Write the key sequence to the write protection register to unlock
+    rtc.wpr = 0xCA;
+    rtc.wpr = 0x53;
+}
+
+pub fn lock() void {
+    // Write any value to the write protection register to lock
+    rtc.wpr = 0xFF;
+}
+
+pub fn enterInit(timeout: usize) RtcError!void {
+    if (rtc.icsr.initf) return;
+    rtc.icsr.init = true;
+    for (0..timeout) |_| {
+        if (rtc.icsr.initf) return;
     }
+    return InternalRtcError.Timeout;
+}
 
-    pub fn lock(self: *volatile Rtc) void {
-        // Write any value to the write protection register to lock
-        self.wpr = 0xFF;
+fn exitInit() void {
+    rtc.icsr.init = false;
+}
+
+fn waitSync(timeout: usize) RtcError!void {
+    for (0..timeout) |_| {
+        if (rtc.icsr.rsf) return;
     }
+    return InternalRtcError.Timeout;
+}
 
-    pub fn enterInit(self: *volatile Rtc, timeout: usize) RtcError!void {
-        if (self.icsr.initf) return;
-        self.icsr.init = true;
-        for (0..timeout) |_| {
-            if (self.icsr.initf) return;
-        }
-        return InternalRtcError.Timeout;
+pub fn init(drv: rcc.Lsedrv, timeout: usize) RtcError!void {
+    rcc.rcc.apb3enr.rtcapben = true;
+    if (rcc.rcc.rtccr.rtcen and rtc.icsr.inits) {
+        return;
     }
+    pwr.unlockRtcDomain();
+    defer pwr.lockRtcDomain();
+    rcc.rtcReset();
+    rcc.lseOn(drv);
+    rcc.rcc.rtccr.rtcsel = .lse;
+    rcc.rcc.rtccr.rtcen = true;
 
-    fn exitInit(self: *volatile Rtc) void {
-        self.icsr.init = false;
+    unlock();
+    defer lock();
+    try enterInit(timeout);
+    rtc.dr = RtcDr{.yu = 6, .yt = 2}; // year field should be not 0 to set inits flag. Setting year 2026
+    exitInit();
+    try waitSync(timeout);
+}
+
+pub fn setTime(data: *generic_rtc.RtcData, timeout: usize) RtcError!void {
+    try data.validate();
+    var wd: u3 = @truncate(@backingInt(data.wday));
+    if (wd == 0) {
+        wd = 7;
     }
+    const month = @backingInt(data.month);
+    const mu = month % 10;
+    const mt = month / 10;
+    const year = data.year - 2000;
+    pwr.unlockRtcDomain();
+    defer pwr.lockRtcDomain();
+    unlock();
+    defer lock();
+    try enterInit(timeout);
+    rtc.tr = RtcTr{
+        .hu = @truncate(data.hours % 10),
+        .ht = @truncate(data.hours / 10),
+        .mnu = @truncate(data.minutes % 10),
+        .mnt = @truncate(data.minutes / 10),
+        .su = @truncate(data.seconds % 10),
+        .st = @truncate(data.seconds / 10),
+    };
+    rtc.dr = RtcDr{
+        .yu = @truncate(year % 10),
+        .yt = @truncate(year / 10),
+        .mu = @truncate(mu),
+        .mt = @truncate(mt),
+        .du = @truncate(data.day % 10),
+        .dt = @truncate(data.day / 10),
+        .wdu = @bitCast(wd),
+    };
+    exitInit();
+    try waitSync(timeout);
+}
 
-    fn waitSync(self: *volatile Rtc, timeout: usize) RtcError!void {
-        for (0..timeout) |_| {
-            if (self.icsr.rsf) return;
-        }
-        return InternalRtcError.Timeout;
-    }
-
-    pub fn init(self: *volatile Rtc, drv: rcc.Lsedrv, timeout: usize) RtcError!void {
-        rcc.rcc.apb3enr.rtcapben = true;
-        if (rcc.rcc.rtccr.rtcen and self.icsr.inits) {
+pub fn getTime(rtc_data: *generic_rtc.RtcData) RtcError!void {
+    while (true) {
+        const tr = rtc.tr;
+        const dr = rtc.dr;
+        const tr2 = rtc.tr;
+        const dr2 = rtc.dr;
+        if (tr == tr2 and dr == dr2) {
+            var weekday = @as(u8, @backingInt(dr.wdu));
+            if (weekday == 7) {
+                weekday = 0;
+            }
+            rtc_data.seconds = @as(u8, tr.st) * 10 + tr.su;
+            rtc_data.minutes = @as(u8, tr.mnt) * 10 + tr.mnu;
+            rtc_data.hours = @as(u8, tr.ht) * 10 + tr.hu;
+            rtc_data.day = @as(u8, dr.dt) * 10 + dr.du;
+            rtc_data.month = @bitCast(@as(u8, dr.mt) * 10 + dr.mu);
+            rtc_data.year = @as(u32, dr.yt) * 10 + dr.yu + 2000;
+            rtc_data.wday = @bitCast(weekday);
+            rtc_data.buildYDay();
             return;
         }
-        pwr.pwr.unlockRtcDomain();
-        defer pwr.pwr.lockRtcDomain();
-        rcc.rcc.rtcReset();
-        rcc.rcc.lseOn(drv);
-        rcc.rcc.rtccr.rtcsel = .lse;
-        rcc.rcc.rtccr.rtcen = true;
-
-        self.unlock();
-        defer self.lock();
-        try self.enterInit(timeout);
-        self.dr = RtcDr{.yu = 6, .yt = 2}; // year field should be not 0 to set inits flag. Setting year 2026
-        self.exitInit();
-        try self.waitSync(timeout);
     }
-
-    pub fn setTime(self: *volatile Rtc, data: *generic_rtc.RtcData, timeout: usize) RtcError!void {
-        try data.validate();
-        var wd: u3 = @truncate(@backingInt(data.wday));
-        if (wd == 0) {
-            wd = 7;
-        }
-        const month = @backingInt(data.month);
-        const mu = month % 10;
-        const mt = month / 10;
-        const year = data.year - 2000;
-        pwr.pwr.unlockRtcDomain();
-        defer pwr.pwr.lockRtcDomain();
-        self.unlock();
-        defer self.lock();
-        try self.enterInit(timeout);
-        self.tr = RtcTr{
-            .hu = @truncate(data.hours % 10),
-            .ht = @truncate(data.hours / 10),
-            .mnu = @truncate(data.minutes % 10),
-            .mnt = @truncate(data.minutes / 10),
-            .su = @truncate(data.seconds % 10),
-            .st = @truncate(data.seconds / 10),
-        };
-        self.dr = RtcDr{
-            .yu = @truncate(year % 10),
-            .yt = @truncate(year / 10),
-            .mu = @truncate(mu),
-            .mt = @truncate(mt),
-            .du = @truncate(data.day % 10),
-            .dt = @truncate(data.day / 10),
-            .wdu = @bitCast(wd),
-        };
-        self.exitInit();
-        try self.waitSync(timeout);
-    }
-
-    pub fn getTime(self: *volatile Rtc, rtc_data: *generic_rtc.RtcData) RtcError!void {
-        while (true) {
-            const tr = self.tr;
-            const dr = self.dr;
-            const tr2 = self.tr;
-            const dr2 = self.dr;
-            if (tr == tr2 and dr == dr2) {
-                var weekday = @as(u8, @backingInt(dr.wdu));
-                if (weekday == 7) {
-                    weekday = 0;
-                }
-                rtc_data.seconds = @as(u8, tr.st) * 10 + tr.su;
-                rtc_data.minutes = @as(u8, tr.mnt) * 10 + tr.mnu;
-                rtc_data.hours = @as(u8, tr.ht) * 10 + tr.hu;
-                rtc_data.day = @as(u8, dr.dt) * 10 + dr.du;
-                rtc_data.month = @bitCast(@as(u8, dr.mt) * 10 + dr.mu);
-                rtc_data.year = @as(u32, dr.yt) * 10 + dr.yu + 2000;
-                rtc_data.wday = @bitCast(weekday);
-                rtc_data.buildYDay();
-                return;
-            }
-        }
-    }
-};
+}
 
 pub const rtc: *volatile Rtc = @ptrFromInt(RTC_BASE);
 

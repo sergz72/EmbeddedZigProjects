@@ -22,41 +22,41 @@ var dma_sender_instance = dma_sender.DmaSender {
 
 fn endpointStatus(endpoint: u8) usb_device.EndpointStatus {
     return switch (endpoint) {
-        0x80 + usb_cdc.INTERRUPT_ENDPOINT => usb.usb.getEndpointTxStatus(usb_cdc.INTERRUPT_ENDPOINT),
-        usb_cdc.DATA_IN_ENDPOINT => usb.usb.getEndpointRxStatus(usb_cdc.DATA_IN_ENDPOINT),
-        0x80 + usb_cdc.DATA_OUT_ENDPOINT => usb.usb.getEndpointTxStatus(usb_cdc.DATA_OUT_ENDPOINT),
+        0x80 + usb_cdc.INTERRUPT_ENDPOINT => usb.getEndpointTxStatus(usb_cdc.INTERRUPT_ENDPOINT),
+        usb_cdc.DATA_IN_ENDPOINT => usb.getEndpointRxStatus(usb_cdc.DATA_IN_ENDPOINT),
+        0x80 + usb_cdc.DATA_OUT_ENDPOINT => usb.getEndpointTxStatus(usb_cdc.DATA_OUT_ENDPOINT),
         else => .invalid_request
     };
 }
 
 fn haltEp(endpoint: u8, halt: bool) bool {
     switch (endpoint) {
-        0x80 + usb_cdc.INTERRUPT_ENDPOINT => usb.usb.haltEndpointTx(usb_cdc.INTERRUPT_ENDPOINT, halt),
-        usb_cdc.DATA_IN_ENDPOINT => usb.usb.haltEndpointRx(usb_cdc.DATA_IN_ENDPOINT, halt),
-        0x80 + usb_cdc.DATA_OUT_ENDPOINT => usb.usb.haltEndpointTx(usb_cdc.DATA_OUT_ENDPOINT, halt),
+        0x80 + usb_cdc.INTERRUPT_ENDPOINT => usb.haltEndpointTx(usb_cdc.INTERRUPT_ENDPOINT, halt),
+        usb_cdc.DATA_IN_ENDPOINT => usb.haltEndpointRx(usb_cdc.DATA_IN_ENDPOINT, halt),
+        0x80 + usb_cdc.DATA_OUT_ENDPOINT => usb.haltEndpointTx(usb_cdc.DATA_OUT_ENDPOINT, halt),
         else => return false
     }
     return true;
 }
 
 fn epReset() void {
-    usb.usb.epReset(usb_cdc.DATA_IN_ENDPOINT, .valid, .disabled, .bulk);
-    usb.usb.epReset(usb_cdc.INTERRUPT_ENDPOINT, .disabled, .nak, .interrupt);
-    usb.usb.setEndpointTxLength(usb_cdc.INTERRUPT_ENDPOINT, 0);
-    usb.usb.epReset(usb_cdc.DATA_OUT_ENDPOINT, .disabled, .nak, .bulk);
-    usb.usb.setEndpointTxLength(usb_cdc.DATA_OUT_ENDPOINT, 0);
+    usb.epReset(usb_cdc.DATA_IN_ENDPOINT, .valid, .disabled, .bulk);
+    usb.epReset(usb_cdc.INTERRUPT_ENDPOINT, .disabled, .nak, .interrupt);
+    usb.setEndpointTxLength(usb_cdc.INTERRUPT_ENDPOINT, 0);
+    usb.epReset(usb_cdc.DATA_OUT_ENDPOINT, .disabled, .nak, .bulk);
+    usb.setEndpointTxLength(usb_cdc.DATA_OUT_ENDPOINT, 0);
 }
 
 pub fn init(usb_clock_source: rcc.Ck48sel, callback: *const fn (data: []const u8) void, buffer_size: usize,
                 allocator: std.mem.Allocator) error{OutOfMemory}!void {
     try dma_sender_instance.init(buffer_size, allocator);
     rx_callback = callback;
-    usb.usb.devicePreinit(usb_clock_source);
-    usb.usb.enableEndpoint(usb_cdc.INTERRUPT_ENDPOINT, false, true);
-    usb.usb.enableEndpoint(usb_cdc.DATA_IN_ENDPOINT, true, false);
-    usb.usb.enableEndpoint(usb_cdc.DATA_OUT_ENDPOINT, false, true);
+    usb.devicePreinit(usb_clock_source);
+    usb.enableEndpoint(usb_cdc.INTERRUPT_ENDPOINT, false, true);
+    usb.enableEndpoint(usb_cdc.DATA_IN_ENDPOINT, true, false);
+    usb.enableEndpoint(usb_cdc.DATA_OUT_ENDPOINT, false, true);
     epReset();
-    usb.usb.deviceInit();
+    usb.deviceInit();
 }
 
 pub fn tx(data: []const u8) void {
@@ -75,10 +75,10 @@ pub fn flush() void {
 
 fn usbDmaStart(data: []const u8) usize {
     if (data.len <= usb_device.USB_FS_MAX_PACKET_SIZE) {
-        usb.usb.tx(usb_cdc.DATA_OUT_ENDPOINT, data);
+        usb.tx(usb_cdc.DATA_OUT_ENDPOINT, data);
         return data.len;
     } else {
-        usb.usb.tx(usb_cdc.DATA_OUT_ENDPOINT, data[0..usb_device.USB_FS_MAX_PACKET_SIZE]);
+        usb.tx(usb_cdc.DATA_OUT_ENDPOINT, data[0..usb_device.USB_FS_MAX_PACKET_SIZE]);
         return usb_device.USB_FS_MAX_PACKET_SIZE;
     }
 }
@@ -100,24 +100,24 @@ export fn USB_DRD_FS_IRQHandler() callconv(.c) void {
                     usb_device.copyFromPMA32(@ptrCast(&usb.ep0_buffer), usb.pma_buffers_rx[0], 8);
                     const result = device.setup(@ptrCast(&usb.ep0_buffer));
                     if (result.tx) |tx_data| {
-                        usb.usb.tx(usb_cdc.CONTROL_ENDPOINT, tx_data);
+                        usb.tx(usb_cdc.CONTROL_ENDPOINT, tx_data);
                     }
                     if (result.invalid_request) {
-                        usb.usb.setEndpointTxStatus(usb_cdc.CONTROL_ENDPOINT, .stall);
+                        usb.setEndpointTxStatus(usb_cdc.CONTROL_ENDPOINT, .stall);
                     }
-                    usb.usb.setEndpointRxStatus(usb_cdc.CONTROL_ENDPOINT, .valid);
+                    usb.setEndpointRxStatus(usb_cdc.CONTROL_ENDPOINT, .valid);
                 } else {
                     switch (endpoint) {
                         usb_cdc.CONTROL_ENDPOINT => {
                             if (device.outPacket()) {
-                                usb.usb.txZeroPacket(usb_cdc.CONTROL_ENDPOINT);
+                                usb.txZeroPacket(usb_cdc.CONTROL_ENDPOINT);
                             }
                         },
                         usb_cdc.DATA_IN_ENDPOINT => {
-                            const rx_length = usb.usb.getEndpointRxLength(usb_cdc.DATA_IN_ENDPOINT);
+                            const rx_length = usb.getEndpointRxLength(usb_cdc.DATA_IN_ENDPOINT);
                             usb_device.copyFromPMA32(@ptrCast(&in_buffer), usb.pma_buffers_rx[usb_cdc.DATA_IN_ENDPOINT], rx_length);
                             rx_callback(in_buffer[0..rx_length]);
-                            usb.usb.setEndpointRxStatus(usb_cdc.DATA_IN_ENDPOINT, .valid);
+                            usb.setEndpointRxStatus(usb_cdc.DATA_IN_ENDPOINT, .valid);
                         },
                         else => {}
                     }
@@ -129,12 +129,12 @@ export fn USB_DRD_FS_IRQHandler() callconv(.c) void {
                     usb_cdc.CONTROL_ENDPOINT => {
                         const result = device.inPacket();
                         if (result.tx) |tx_data| {
-                            usb.usb.tx(usb_cdc.CONTROL_ENDPOINT, tx_data);
+                            usb.tx(usb_cdc.CONTROL_ENDPOINT, tx_data);
                         }
                         if (result.set_address != 0) {
-                            usb.usb.setAddress(result.set_address);
+                            usb.setAddress(result.set_address);
                         }
-                        usb.usb.setEndpointRxStatus(usb_cdc.CONTROL_ENDPOINT, .valid);
+                        usb.setEndpointRxStatus(usb_cdc.CONTROL_ENDPOINT, .valid);
                     },
                     usb_cdc.DATA_OUT_ENDPOINT => {
                         dma_sender_instance.dmaDone();
@@ -152,8 +152,8 @@ export fn USB_DRD_FS_IRQHandler() callconv(.c) void {
         return;
     }
     if (istr.rst_dcon) {
-        usb.usb.setAddress(0);
-        usb.usb.ep0Reset();
+        usb.setAddress(0);
+        usb.ep0Reset();
         epReset();
         usb.usb.istr.rst_dcon = false;
         return;

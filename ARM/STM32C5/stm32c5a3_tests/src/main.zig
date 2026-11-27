@@ -49,11 +49,11 @@ const crc_generators: crc_commands.Generators = .{
 };
 
 fn crc32(data:[]const u8) u32 {
-    return crc.crc.crc32(data);
+    return crc.crc32(data);
 }
 
 fn trngGen(data: []u32) bool {
-    return rng.rng.generate(data);
+    return rng.generate(data);
 }
 
 fn trngInit(seed: usize) void {

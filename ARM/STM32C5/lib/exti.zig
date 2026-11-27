@@ -45,24 +45,24 @@ pub const Exti = extern struct {
     reserved3: [2]u32,
     imr2: u32,
     emr2: u32,
-
-    pub fn interruptEnable(self: *volatile Exti, line: u4, rising_edge: bool, falling_edge: bool) void {
-        self.imr1 |= (1 << line);
-        if (rising_edge) {
-            self.rtsr1 |= (1 << line);
-        }
-        if (falling_edge) {
-            self.ftsr1 |= (1 << line);
-        }
-    }
-
-    pub fn setExtiPort(self: *volatile Exti, port: ExtiPort, line: u4) void {
-        const shift = @as(u5, line & 3) << 3;
-        const idx = line >> 2;
-        const mask = 0xFF << shift;
-        self.cr[idx] = (self.cr[idx] & ~mask) | (@as(u32, @backingInt(port)) << shift);
-    }
 };
+
+pub fn interruptEnable(line: u4, rising_edge: bool, falling_edge: bool) void {
+    exti.imr1 |= (1 << line);
+    if (rising_edge) {
+        exti.rtsr1 |= (1 << line);
+    }
+    if (falling_edge) {
+        exti.ftsr1 |= (1 << line);
+    }
+}
+
+pub fn setExtiPort(port: ExtiPort, line: u4) void {
+    const shift = @as(u5, line & 3) << 3;
+    const idx = line >> 2;
+    const mask = 0xFF << shift;
+    exti.cr[idx] = (exti.cr[idx] & ~mask) | (@as(u32, @backingInt(port)) << shift);
+}
 
 pub const exti: *volatile Exti = @ptrFromInt(EXTI_BASE);
 

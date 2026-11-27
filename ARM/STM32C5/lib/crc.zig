@@ -46,37 +46,37 @@ pub const Crc = extern struct {
     reserved: u32,
     init: u32,
     pol: u32,
-
-    pub fn reset(self: *volatile Crc) void {
-        self.cr.reset = true;
-    }
-
-    pub fn crc32(self: *volatile Crc, data: []const u8) u32 {
-        self.reset();
-        self.cr = CrcCr{};
-        var idx: usize = 0;
-        var l = data.len;
-        while (l != 0) {
-            if (l >= 4) {
-                const d: u32 = std.mem.readInt(u32, data[idx..][0..4], .big);
-                self.dr.w = d;
-                l -= 4;
-                idx += 4;
-                continue;
-            }
-            if (l >= 2) {
-                const d: u16 = std.mem.readInt(u16, data[idx..][0..2], .big);
-                self.dr.h = d;
-                l -= 2;
-                idx += 2;
-                continue;
-            }
-            self.dr.b = data[idx];
-            l = 0;
-        }
-        return self.dr.w;
-    }
 };
+
+pub fn reset() void {
+    crc.cr.reset = true;
+}
+
+pub fn crc32(data: []const u8) u32 {
+    reset();
+    crc.cr = CrcCr{};
+    var idx: usize = 0;
+    var l = data.len;
+    while (l != 0) {
+        if (l >= 4) {
+            const d: u32 = std.mem.readInt(u32, data[idx..][0..4], .big);
+            crc.dr.w = d;
+            l -= 4;
+            idx += 4;
+            continue;
+        }
+        if (l >= 2) {
+            const d: u16 = std.mem.readInt(u16, data[idx..][0..2], .big);
+            crc.dr.h = d;
+            l -= 2;
+            idx += 2;
+            continue;
+        }
+        crc.dr.b = data[idx];
+        l = 0;
+    }
+    return crc.dr.w;
+}
 
 pub const crc: *volatile Crc = @ptrFromInt(CRC_BASE);
 

@@ -265,90 +265,90 @@ pub const Flash = extern struct {
     reserved24: [2]u32,
     hdp2r_cur: FlashHdp,
     hdp2r_prg: FlashHdp,
-
-    pub fn flashUnlock(self: *volatile Flash) void {
-        self.keyr = FLASH_UNLOCK_KEY1;
-        self.keyr = FLASH_UNLOCK_KEY2;
-    }
-
-    pub fn flashLock(self: *volatile Flash) void {
-        self.cr.lock = true;
-    }
-
-    pub fn wait(self: *volatile Flash, timeout: usize) FlashError!void {
-        for (0..timeout) |_| {
-            const sts = self.sr;
-            if (sts.wrperr) {
-                return FlashError.WriteProtectionError;
-            }
-            if (sts.pgserr) {
-                return FlashError.ProgramError;
-            }
-            if (sts.strberr) {
-                return FlashError.StrobeError;
-            }
-            if (sts.incerr) {
-                return FlashError.InconsistencyError;
-            }
-            if (!sts.bsy) {
-                return;
-            }
-        }
-        return FlashError.Timeout;
-    }
-
-    fn setBankAndSector(self: *volatile Flash, address: usize) FlashError!void {
-        if (address < FLASH_BASE_ADDR) return FlashError.InvalidAddress;
-        const bank: usize = if (address < FLASH_BASE_ADDR + FLASH_BANK_SIZE) 0 else 1;
-        const sector = (address - (FLASH_BASE_ADDR + bank * FLASH_BANK_SIZE)) / FLASH_SECTOR_SIZE;
-        if (sector > 127) return FlashError.InvalidAddress;
-        self.cr.bksel = bank != 0;
-        self.cr.snb = @truncate(sector);
-    }
-
-    pub fn sectorErase(self: *volatile Flash, address: usize) FlashError!void {
-        self.ccr = FlashCcr{}; // clear all flags
-        try self.setBankAndSector(address);
-        self.cr.ser = true;
-        self.cr.strt = true;
-        defer self.cr.ser = false;
-        try self.wait(ERASE_TIMEOUT);
-    }
-
-    pub fn write(self: *volatile Flash, address: usize, data: []const u8) FlashError!void {
-        if (address & 0x0F != 0 or address < FLASH_BASE_ADDR or address >= FLASH_BASE_ADDR + 2 * FLASH_BANK_SIZE) {
-            return FlashError.InvalidAddress;
-        }
-        self.ccr = FlashCcr{}; // clear all flags
-        self.cr.pg = true;
-        defer self.cr.pg = false;
-        var l = data.len;
-        var idx: usize = 0;
-        var p: [*]u32 = @ptrFromInt(address);
-        var buffer: [4]u32 = undefined;
-        var byte_buffer = std.mem.sliceAsBytes(&buffer);
-        while (l != 0) {
-            const chunk_size = if (l >= 16) 16 else l;
-            buffer[0] = 0xFFFFFFFF;
-            buffer[1] = 0xFFFFFFFF;
-            buffer[2] = 0xFFFFFFFF;
-            buffer[3] = 0xFFFFFFFF;
-            @memcpy(byte_buffer[0..chunk_size], data[idx..][0..chunk_size]);
-            idx += chunk_size;
-            l -= chunk_size;
-            p[0] = buffer[0];
-            p += 1;
-            p[0] = buffer[1];
-            p += 1;
-            p[0] = buffer[2];
-            p += 1;
-            p[0] = buffer[3];
-            p += 1;
-            asm volatile ("dsb");
-            try self.wait(PROGRAMMING_TIMEOUT);
-        }
-    }
 };
+
+pub fn flashUnlock() void {
+    flash.keyr = FLASH_UNLOCK_KEY1;
+    flash.keyr = FLASH_UNLOCK_KEY2;
+}
+
+pub fn flashLock() void {
+    flash.cr.lock = true;
+}
+
+pub fn wait(timeout: usize) FlashError!void {
+    for (0..timeout) |_| {
+        const sts = flash.sr;
+        if (sts.wrperr) {
+            return FlashError.WriteProtectionError;
+        }
+        if (sts.pgserr) {
+            return FlashError.ProgramError;
+        }
+        if (sts.strberr) {
+            return FlashError.StrobeError;
+        }
+        if (sts.incerr) {
+            return FlashError.InconsistencyError;
+        }
+        if (!sts.bsy) {
+            return;
+        }
+    }
+    return FlashError.Timeout;
+}
+
+fn setBankAndSector(address: usize) FlashError!void {
+    if (address < FLASH_BASE_ADDR) return FlashError.InvalidAddress;
+    const bank: usize = if (address < FLASH_BASE_ADDR + FLASH_BANK_SIZE) 0 else 1;
+    const sector = (address - (FLASH_BASE_ADDR + bank * FLASH_BANK_SIZE)) / FLASH_SECTOR_SIZE;
+    if (sector > 127) return FlashError.InvalidAddress;
+    flash.cr.bksel = bank != 0;
+    flash.cr.snb = @truncate(sector);
+}
+
+pub fn sectorErase(address: usize) FlashError!void {
+    flash.ccr = FlashCcr{}; // clear all flags
+    try setBankAndSector(address);
+    flash.cr.ser = true;
+    flash.cr.strt = true;
+    defer flash.cr.ser = false;
+    try wait(ERASE_TIMEOUT);
+}
+
+pub fn write(address: usize, data: []const u8) FlashError!void {
+    if (address & 0x0F != 0 or address < FLASH_BASE_ADDR or address >= FLASH_BASE_ADDR + 2 * FLASH_BANK_SIZE) {
+        return FlashError.InvalidAddress;
+    }
+    flash.ccr = FlashCcr{}; // clear all flags
+    flash.cr.pg = true;
+    defer flash.cr.pg = false;
+    var l = data.len;
+    var idx: usize = 0;
+    var p: [*]u32 = @ptrFromInt(address);
+    var buffer: [4]u32 = undefined;
+    var byte_buffer = std.mem.sliceAsBytes(&buffer);
+    while (l != 0) {
+        const chunk_size = if (l >= 16) 16 else l;
+        buffer[0] = 0xFFFFFFFF;
+        buffer[1] = 0xFFFFFFFF;
+        buffer[2] = 0xFFFFFFFF;
+        buffer[3] = 0xFFFFFFFF;
+        @memcpy(byte_buffer[0..chunk_size], data[idx..][0..chunk_size]);
+        idx += chunk_size;
+        l -= chunk_size;
+        p[0] = buffer[0];
+        p += 1;
+        p[0] = buffer[1];
+        p += 1;
+        p[0] = buffer[2];
+        p += 1;
+        p[0] = buffer[3];
+        p += 1;
+        asm volatile ("dsb");
+        try wait(PROGRAMMING_TIMEOUT);
+    }
+}
 
 pub const flash: *volatile Flash = @ptrFromInt(FLASH_BASE);
 

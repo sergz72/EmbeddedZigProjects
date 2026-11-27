@@ -54,23 +54,23 @@ pub const Iwdg = extern struct {
     winr: u32,
     ewcr: IwdgEwcr,
     icr: IwdgIcr,
-
-    pub fn init(self: *volatile Iwdg, interval_ms: usize) bool {
-        const rld = interval_ms * 1000 / (128000000/cpu.LSI_FREQUENCY);
-        if (rld == 0 or rld > 4095) {
-            return false;
-        }
-        self.kr = IwdgKey.unlock;
-        self.pr = .div128;
-        self.rlr = @truncate(rld);
-        self.kr = IwdgKey.enable;
-        return true;
-    }
-
-    pub fn reload(self: *volatile Iwdg) void {
-        self.kr = IwdgKey.reload_counter;
-    }
 };
+
+pub fn init(interval_ms: usize) bool {
+    const rld = interval_ms * 1000 / (128000000/cpu.LSI_FREQUENCY);
+    if (rld == 0 or rld > 4095) {
+        return false;
+    }
+    iwdg.kr = IwdgKey.unlock;
+    iwdg.pr = .div128;
+    iwdg.rlr = @truncate(rld);
+    iwdg.kr = IwdgKey.enable;
+    return true;
+}
+
+pub fn reload() void {
+    iwdg.kr = IwdgKey.reload_counter;
+}
 
 pub const iwdg: *volatile Iwdg = @ptrFromInt(IWDG_BASE);
 

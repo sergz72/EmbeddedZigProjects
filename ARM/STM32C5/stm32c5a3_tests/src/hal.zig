@@ -44,12 +44,12 @@ inline fn initTimer() void {
     TIMER_INSTANCE.psc = @truncate(cpu.cpu.pclk1_frequency / 10000 - 1);
     TIMER_INSTANCE.arr = 10000 - 1; //1 second interval
     TIMER_INSTANCE.dier = .{.u = true};
-    nvic.nvic.enableInterrupt(interrupts.Interrupt.TIM7.toU8());
+    nvic.enableInterrupt(interrupts.Interrupt.TIM7.toU8());
     timer_interrupt = false;
 }
 
 fn initClock() void {
-    rcc.rcc.lsiOn();
+    rcc.lsiOn();
 }
 
 export fn SystemInit() callconv(.c) void {
@@ -58,13 +58,13 @@ export fn SystemInit() callconv(.c) void {
     initClock();
     board.initUsart(115200, &usart_callback, true);
     initTimer();
-    rng.rng.init();
+    rng.init();
     rcc.rcc.ahb1enr.crcen = true;
     board.initArduinoI2c();
     board.initArduinoSPI(1000000, .full_duplex);
-    rtc.rtc.init(.low, RTC_TIMEOUT) catch { while (true){} };
+    rtc.init(.low, RTC_TIMEOUT) catch { while (true){} };
     dbgmcu.dbgmcu.apb1lfzr.dbg_iwdg_stop = true;
-    if (!iwdg.iwdg.init(10000)) {
+    if (!iwdg.init(10000)) {
         while (true) {}
     }
 }
@@ -100,15 +100,15 @@ pub fn flashSectorErase(address: usize) flash.FlashError!void {
 }
 
 pub fn reboot() void {
-    scb.scb.reboot();
+    scb.reboot();
 }
 
 pub fn wdtReset() void {
-    iwdg.iwdg.reload();
+    iwdg.reload();
 }
 
 pub fn getResetCause() []const u8 {
-    return rcc.rcc.getResetCause();
+    return rcc.getResetCause();
 }
 
 pub fn i2cScan(channel: usize, address: u10) [2]u8 {

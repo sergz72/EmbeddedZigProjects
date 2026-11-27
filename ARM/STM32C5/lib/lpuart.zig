@@ -171,24 +171,24 @@ pub const Lpuart = extern struct {
     rdr: u32,
     tdr: u32,
     presc: LpuartPresc,
-
-    pub fn init(self: *volatile Lpuart, baud_rate: u32, apbclock: u32) void {
-        self.brr = apbclock / baud_rate;
-        self.cr1 = LpuartCr1{.ue = true, .te = true, .re = true, .rxfneie = true, .fifoen = true};
-    }
-
-    pub fn initDma(self: *volatile Lpuart, baud_rate: u32, apbclock: u32) void {
-        self.init(baud_rate, apbclock);
-        self.cr3 = LpuartCr3{.dmat = true};
-    }
-
-    pub fn write(self: *volatile Lpuart, byte: u8) void {
-        while (!self.isr.txfnf) { // TX fifo not full flag
-            asm volatile ("nop");
-        }
-        self.tdr = byte;
-    }
 };
+
+pub fn init(baud_rate: u32, apbclock: u32) void {
+    lpuart.brr = apbclock / baud_rate;
+    lpuart.cr1 = LpuartCr1{.ue = true, .te = true, .re = true, .rxfneie = true, .fifoen = true};
+}
+
+pub fn initDma(baud_rate: u32, apbclock: u32) void {
+    init(baud_rate, apbclock);
+    lpuart.cr3 = LpuartCr3{.dmat = true};
+}
+
+pub fn write(byte: u8) void {
+    while (!lpuart.isr.txfnf) { // TX fifo not full flag
+        asm volatile ("nop");
+    }
+    lpuart.tdr = byte;
+}
 
 pub const lpuart: *volatile Lpuart = @ptrFromInt(LPUART_BASE);
 
