@@ -1,4 +1,5 @@
 const PWM0_BASE = 0x400CE000;
+const PWM1_BASE = 0x400D0000;
 
 pub const ClkSel = enum(u2) {
     ipbus = 0,
@@ -369,7 +370,7 @@ pub const Pwm = extern struct {
 };
 
 pub const pwm0: *volatile Pwm = @ptrFromInt(PWM0_BASE);
-
+pub const pwm1: *volatile Pwm = @ptrFromInt(PWM1_BASE);
 test "sizeof test" {
     const std = @import("std");
     try std.testing.expectEqual(0x196, @sizeOf(Pwm));

@@ -9,6 +9,8 @@ const i2c_commands = @import("i2c_commands");
 const spi_commands = @import("spi_commands");
 const veml7700_commands = @import("veml7700_commands");
 const scd4x_commands = @import("scd4x_commands");
+const spi_memory = @import("spi_memory");
+const spi_memory_commands = @import("spi_memory_commands");
 
 const shell_init = shell.ShellInit{
     .max_commands = 50,
@@ -24,6 +26,8 @@ const shell_init = shell.ShellInit{
     }
 };
 
+const spi_chip_init: spi_memory.SpiMemoryInit = .{.memory_type = .flash, .address_size = ._3bytes, .spi_transfer = hal.spiFlashTransfer};
+
 export fn main() callconv(.c) noreturn {
     const a = allocator.buildAllocator();
 
@@ -34,6 +38,7 @@ export fn main() callconv(.c) noreturn {
     spi_commands.registerCommands(hal.sh, hal.spiSendReceive) catch { while (true){} };
     veml7700_commands.registerCommands(hal.sh, &hal.veml_device) catch { while (true){} };
     scd4x_commands.registerCommands(hal.sh, &hal.scd_device) catch { while (true){} };
+    spi_memory_commands.registerCommands(hal.sh, &spi_chip_init) catch { while (true){} };
 
     _ = usart_writer.usart_writer.writer.write(hal.getResetCause()) catch { while (true){} };
 

@@ -343,19 +343,19 @@ pub const Vbat = extern struct {
     reserved15: [118]u32,
     waklcka: Waklcka,
     waklckb: Waklckb,
-
-    pub fn enableOsc32k(self: *volatile Vbat) void {
-        self.oscctla = Oscctla{
-            .osc_en = true,
-            .cap_sel_en = true,
-            .extal_cap_sel = ._12pf,
-            .xtal_cap_sel = ._12pf
-        };
-        while (!self.statusa.osc_rdy) {
-            asm volatile ("nop");
-        }
-    }
 };
+
+pub fn enableOsc32k() void {
+    vbat0.oscctla = Oscctla{
+        .osc_en = true,
+        .cap_sel_en = true,
+        .extal_cap_sel = ._12pf,
+        .xtal_cap_sel = ._12pf
+    };
+    while (!vbat0.statusa.osc_rdy) {
+        asm volatile ("nop");
+    }
+}
 
 pub const vbat0: *volatile Vbat = @ptrFromInt(VBAT0_BASE);
 

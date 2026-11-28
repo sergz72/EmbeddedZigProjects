@@ -6,7 +6,7 @@ const nvic = @import("nvic");
 const interrupts = @import("interrupts");
 const shell = @import("shell");
 const scb = @import("scb");
-const fmu = @import("fmu");
+//const fmu = @import("fmu");
 const scd4x = @import("scd4x");
 const veml = @import("veml7700");
 const cmc = @import("cmc");
@@ -31,13 +31,13 @@ fn initTimer() void {
     TIMER_INSTANCE.pr = 1000;
     TIMER_INSTANCE.mr[0] = 1000;
     TIMER_INSTANCE.mcr = ctimer.Mcr{.mr0i = true, .mr0r = true};
-    nvic.nvic.enableInterrupt(interrupts.Interrupt.CTIMER0.toU8());
+    nvic.enableInterrupt(interrupts.Interrupt.CTIMER0.toU8());
 }
 
 fn initWwdt0() void {
     syscon.syscon0.ahbclkctrlset0.wwdt0 = true;
     syscon.syscon0.wdt0clkdiv = syscon.Wdtclkdiv{.halt = false};
-    if (!wwdt.wwdt0.init(10000, 1000000)) {
+    if (!wwdt.init(10000, 1000000)) {
         board.ledRedOn();
         while (true) {}
     }
@@ -59,28 +59,41 @@ pub fn startTimer() void {
     TIMER_INSTANCE.tcr = ctimer.Tcr{.cen = true};
 }
 
-pub fn flashWrite(address: usize, data: []u8) fmu.FmuError!void {
-    if (data.len > 64) {
-        try fmu.fmu0.writePages(address, data);
-    } else {
-        try fmu.fmu0.writePhrases(address, data);
-    }
+// pub fn flashWrite(address: usize, data: []u8) fmu.FmuError!void {
+//     if (data.len > 64) {
+//         try fmu.writePages(address, data);
+//     } else {
+//         try fmu.writePhrases(address, data);
+//     }
+// }
+
+// pub fn flashSectorErase(address: usize) fmu.FmuError!void {
+//     try fmu.sectorErase(address);
+// }
+
+const FlashError = error{SpiError};
+
+pub fn flashWrite(address: usize, data: []u8) FlashError!void {
+    _ = address;
+    _ = data;
+    return FlashError.SpiError;
 }
 
-pub fn flashSectorErase(address: usize) fmu.FmuError!void {
-    try fmu.fmu0.sectorErase(address);
+pub fn flashSectorErase(address: usize) FlashError!void {
+    _ = address;
+    return FlashError.SpiError;
 }
 
 pub fn reboot() void {
-    scb.scb.reboot();
+    scb.reboot();
 }
 
 pub fn wdtReset() void {
-    wwdt.wwdt0.reload();
+    wwdt.reload();
 }
 
 pub fn getResetCause() []const u8 {
-    return cmc.cmc0.getResetCause();
+    return cmc.getResetCause();
 }
 
 pub fn i2cScan(channel: usize, address: u10) [2]u8 {
@@ -94,10 +107,22 @@ pub fn i2cScan(channel: usize, address: u10) [2]u8 {
 }
 
 pub fn spiSendReceive(channel: usize, wdata: []const u8, rdata: []u8) bool {
-    _ = channel;
-    board.arduinoSpiCsSet(false);
-    board.ARDUINO_SPI_INSTANCE.sendReceivePoll8(wdata, rdata);
-    board.arduinoSpiCsSet(true);
+    if (channel == 0) {
+        board.arduinoSpiCsSet(false);
+        board.ARDUINO_SPI_INSTANCE.sendReceivePoll8(wdata, rdata);
+        board.arduinoSpiCsSet(true);
+    } else {
+        board.flashSpiCsSet(false);
+        board.FLASH_SPI_INSTANCE.sendReceivePoll8(wdata, rdata);
+        board.flashSpiCsSet(true);
+    }
+    return true;
+}
+
+pub fn spiFlashTransfer(write_data: []const u8, read_data: ?[]u8, set_cs: bool) bool {
+    board.flashSpiCsSet(false);
+    board.FLASH_SPI_INSTANCE.transferPoll8(write_data, read_data);
+    if (set_cs) board.flashSpiCsSet(true);
     return true;
 }
 

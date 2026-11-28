@@ -224,32 +224,32 @@ pub const Cmc = extern struct {
     corectl: Corectl,
     reserved9: [3]u32,
     dbgctl: Dbgctl,
-
-    pub fn getResetCause(self: *volatile Cmc) []const u8 {
-        const srs = self.srs;
-        const ssrs = self.ssrs;
-        self.ssrs = ssrs;
-        if (srs.wakeup) return "Wakeup reset";
-        if (srs.por) return "Power on reset";
-        if (srs.vd) return "Voltage detect reset";
-        if (srs.pin) return "Pin reset";
-        if (srs.dap) return "Dap reset";
-        if (srs.rstack) return "Rstack reset";
-        if (srs.lpack) return "Lpack reset";
-        if (srs.scg) return "Scg reset";
-        if (srs.wwdt0) return "Wwdt0 reset";
-        if (srs.sw) return "Software reset";
-        if (srs.lockup) return "Lockup reset";
-        if (srs.vbat) return "Vbat reset";
-        if (srs.wwdt1) return "Wwdt1 reset";
-        if (srs.cdog0) return "Cdog0 reset";
-        if (srs.cdog1) return "Cdog1 reset";
-        if (srs.jtag) return "Jtag reset";
-        if (srs.secvio) return "Security violation reset";
-        if (srs.tamper) return "Tamper reset";
-        return "Unknown";
-    }
 };
+
+pub fn getResetCause() []const u8 {
+    const srs = cmc0.srs;
+    const ssrs = cmc0.ssrs;
+    cmc0.ssrs = ssrs;
+    if (srs.wakeup) return "Wakeup reset";
+    if (srs.por) return "Power on reset";
+    if (srs.vd) return "Voltage detect reset";
+    if (srs.pin) return "Pin reset";
+    if (srs.dap) return "Dap reset";
+    if (srs.rstack) return "Rstack reset";
+    if (srs.lpack) return "Lpack reset";
+    if (srs.scg) return "Scg reset";
+    if (srs.wwdt0) return "Wwdt0 reset";
+    if (srs.sw) return "Software reset";
+    if (srs.lockup) return "Lockup reset";
+    if (srs.vbat) return "Vbat reset";
+    if (srs.wwdt1) return "Wwdt1 reset";
+    if (srs.cdog0) return "Cdog0 reset";
+    if (srs.cdog1) return "Cdog1 reset";
+    if (srs.jtag) return "Jtag reset";
+    if (srs.secvio) return "Security violation reset";
+    if (srs.tamper) return "Tamper reset";
+    return "Unknown";
+}
 
 pub const cmc0: *volatile Cmc = @ptrFromInt(CMC0_BASE);
 

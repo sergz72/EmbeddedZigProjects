@@ -369,94 +369,94 @@ pub const Scg = extern struct {
     upllcsr: Upllcsr,
     reserved17: [63]u32,
     ldocsr: Ldocsr,
-
-    pub fn enable() void {
-        syscon.syscon0.ahbclkctrlset2 = syscon.Ahbclkctrl2{.scg = true};
-    }
-
-    pub fn enableLdo(self: *volatile Scg) void {
-        self.trimUnlock();
-        self.ldocsr.ldoen = true;
-        while (!self.ldocsr.vout_ok) {
-            asm volatile ("nop");
-        }
-    }
-
-    pub fn enableXosc(self: *volatile Scg, frequency: usize) void {
-        if (frequency <= 20000000) {
-            self.sosccfg = Sosccfg{
-                .erefs = true,
-                .range = ._16to20mhz
-            };
-        } else if (frequency <= 30000000) {
-            self.sosccfg = Sosccfg{
-                .erefs = true,
-                .range = ._20to30mhz
-            };
-        } else if (frequency <= 50000000) {
-            self.sosccfg = Sosccfg{
-                .erefs = true,
-                .range = ._30to50mhz
-            };
-        } else {
-            self.sosccfg = Sosccfg{
-                .erefs = true,
-                .range = ._50to66mhz
-            };
-        }
-        self.sosccsr = Sosccsr{
-            .soscen = true,
-        };
-        while (!self.sosccsr.soscvld) {
-            asm volatile ("nop");
-        }
-    }
-
-    pub fn switchMainClockTo(self: *volatile Scg, source: Scs) void {
-        self.rccr = Csr{
-            .scs = source
-        };
-        while (self.csr.scs != source) {
-            asm volatile ("nop");
-        }
-    }
-
-    pub fn trimUnlock(self: *volatile Scg) void {
-        self.trim_lock = TrimLock{.trim_unlock = true, .ifr_disable = false, .trim_lock_key = 0x5A5A};
-    }
-
-    pub fn pllInit(self: *volatile Scg, pll1: bool, source: Source, source_frequency: usize, output_frequency: usize) bool {
-        const fi = source_frequency / 2;
-        var m: usize = PLL_VCO_MIN_FREQUENCY / fi;
-        if (PLL_VCO_MIN_FREQUENCY % fi != 0) {
-            m += 1;
-        }
-        var f: usize = fi * m;
-        while (f <= PLL_VCO_MAX_FREQUENCY) : (f += fi) {
-            if (f % output_frequency == 0 and (f / output_frequency) & 1 == 0) {
-                const pll = if (pll1) &self.pll[1] else &self.pll[0];
-                const selp = m / 4 + 1;
-                const seli = 2 * (m / 4) + 3;
-                pll.ctrl = Pllctrl{.source = source, .seli = @truncate(seli), .selp = @truncate(selp)};
-                pll.ndiv = Pllndiv{.ndiv = 2};
-                pll.mdiv = Pllmdiv{.mdiv = @truncate(m)};
-                pll.pdiv = Pllpdiv{.pdiv = @truncate(f / output_frequency / 2)};
-                self.trimUnlock();
-                pll.lock_cnfg = PlllockCnfg{.lock_time = @truncate(fi / 2000 + 300)};
-                pll.csr = Pllcsr{
-                    .pwren = true,
-                    .clken = true
-                };
-                while (!pll.csr.lock) {
-                    asm volatile ("nop");
-                }
-                return true;
-            }
-            m += 1;
-        }
-        return false;
-    }
 };
+
+pub fn enable() void {
+    syscon.syscon0.ahbclkctrlset2 = syscon.Ahbclkctrl2{.scg = true};
+}
+
+pub fn enableLdo() void {
+    trimUnlock();
+    scg0.ldocsr.ldoen = true;
+    while (!scg0.ldocsr.vout_ok) {
+        asm volatile ("nop");
+    }
+}
+
+pub fn enableXosc(frequency: usize) void {
+    if (frequency <= 20000000) {
+        scg0.sosccfg = Sosccfg{
+            .erefs = true,
+            .range = ._16to20mhz
+        };
+    } else if (frequency <= 30000000) {
+        scg0.sosccfg = Sosccfg{
+            .erefs = true,
+            .range = ._20to30mhz
+        };
+    } else if (frequency <= 50000000) {
+        scg0.sosccfg = Sosccfg{
+            .erefs = true,
+            .range = ._30to50mhz
+        };
+    } else {
+        scg0.sosccfg = Sosccfg{
+            .erefs = true,
+            .range = ._50to66mhz
+        };
+    }
+    scg0.sosccsr = Sosccsr{
+        .soscen = true,
+    };
+    while (!scg0.sosccsr.soscvld) {
+        asm volatile ("nop");
+    }
+}
+
+pub fn switchMainClockTo(source: Scs) void {
+    scg0.rccr = Csr{
+        .scs = source
+    };
+    while (scg0.csr.scs != source) {
+        asm volatile ("nop");
+    }
+}
+
+pub fn trimUnlock() void {
+    scg0.trim_lock = TrimLock{.trim_unlock = true, .ifr_disable = false, .trim_lock_key = 0x5A5A};
+}
+
+pub fn pllInit(pll1: bool, source: Source, source_frequency: usize, output_frequency: usize) bool {
+    const fi = source_frequency / 2;
+    var m: usize = PLL_VCO_MIN_FREQUENCY / fi;
+    if (PLL_VCO_MIN_FREQUENCY % fi != 0) {
+        m += 1;
+    }
+    var f: usize = fi * m;
+    while (f <= PLL_VCO_MAX_FREQUENCY) : (f += fi) {
+        if (f % output_frequency == 0 and (f / output_frequency) & 1 == 0) {
+            const pll = if (pll1) &scg0.pll[1] else &scg0.pll[0];
+            const selp = m / 4 + 1;
+            const seli = 2 * (m / 4) + 3;
+            pll.ctrl = Pllctrl{.source = source, .seli = @truncate(seli), .selp = @truncate(selp)};
+            pll.ndiv = Pllndiv{.ndiv = 2};
+            pll.mdiv = Pllmdiv{.mdiv = @truncate(m)};
+            pll.pdiv = Pllpdiv{.pdiv = @truncate(f / output_frequency / 2)};
+            trimUnlock();
+            pll.lock_cnfg = PlllockCnfg{.lock_time = @truncate(fi / 2000 + 300)};
+            pll.csr = Pllcsr{
+                .pwren = true,
+                .clken = true
+            };
+            while (!pll.csr.lock) {
+                asm volatile ("nop");
+            }
+            return true;
+        }
+        m += 1;
+    }
+    return false;
+}
 
 pub const scg0: *volatile Scg = @ptrFromInt(SCG0_BASE);
 

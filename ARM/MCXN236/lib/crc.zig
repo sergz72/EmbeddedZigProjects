@@ -46,56 +46,56 @@ pub const Crc = extern struct {
     data: CrcData,
     gpoly: CrcPoly,
     ctrl: CrcCtrl,
-
-    pub fn crc32(self: *volatile Crc, parameters: *const CrcParameters32, data: []const u8) u32 {
-        self.gpoly.w = parameters.poly;
-        self.ctrl = CrcCtrl{.was = true};
-        self.data.w = parameters.seed;
-        self.ctrl = CrcCtrl{.fxor = parameters.fxor};
-        var idx: usize = 0;
-        var l = data.len;
-        while (l != 0) {
-            if (l >= 4) {
-                const d: u32 = std.mem.readInt(u32, data[idx..][0..4], .big);
-                self.data.w = d;
-                l -= 4;
-                idx += 4;
-                continue;
-            }
-            if (l >= 2) {
-                const d: u16 = std.mem.readInt(u16, data[idx..][0..2], .big);
-                self.data.h = d;
-                l -= 2;
-                idx += 2;
-                continue;
-            }
-            self.data.b = data[idx];
-            l = 0;
-        }
-        return self.data.w;
-    }
-
-    pub fn crc16(self: *volatile Crc, parameters: *const CrcParameters16, data: []const u8) u16 {
-        self.gpoly.h = parameters.poly;
-        self.ctrl = CrcCtrl{.was = true};
-        self.data.h = parameters.seed;
-        self.ctrl = CrcCtrl{.fxor = parameters.fxor};
-        var idx: usize = 0;
-        var l = data.len;
-        while (l != 0) {
-            if (l >= 2) {
-                const d: u16 = std.mem.readInt(u16, data[idx..][0..2], .big);
-                self.data.h = d;
-                l -= 2;
-                idx += 2;
-                continue;
-            }
-            self.data.b = data[idx];
-            l = 0;
-        }
-        return self.data.h;
-    }
 };
+
+pub fn crc32(parameters: *const CrcParameters32, data: []const u8) u32 {
+    crc0.gpoly.w = parameters.poly;
+    crc0.ctrl = CrcCtrl{.was = true};
+    crc0.data.w = parameters.seed;
+    crc0.ctrl = CrcCtrl{.fxor = parameters.fxor};
+    var idx: usize = 0;
+    var l = data.len;
+    while (l != 0) {
+        if (l >= 4) {
+            const d: u32 = std.mem.readInt(u32, data[idx..][0..4], .big);
+            crc0.data.w = d;
+            l -= 4;
+            idx += 4;
+            continue;
+        }
+        if (l >= 2) {
+            const d: u16 = std.mem.readInt(u16, data[idx..][0..2], .big);
+            crc0.data.h = d;
+            l -= 2;
+            idx += 2;
+            continue;
+        }
+        crc0.data.b = data[idx];
+        l = 0;
+    }
+    return crc0.data.w;
+}
+
+pub fn crc16(parameters: *const CrcParameters16, data: []const u8) u16 {
+    crc0.gpoly.h = parameters.poly;
+    crc0.ctrl = CrcCtrl{.was = true};
+    crc0.data.h = parameters.seed;
+    crc0.ctrl = CrcCtrl{.fxor = parameters.fxor};
+    var idx: usize = 0;
+    var l = data.len;
+    while (l != 0) {
+        if (l >= 2) {
+            const d: u16 = std.mem.readInt(u16, data[idx..][0..2], .big);
+            crc0.data.h = d;
+            l -= 2;
+            idx += 2;
+            continue;
+        }
+        crc0.data.b = data[idx];
+        l = 0;
+    }
+    return crc0.data.h;
+}
 
 pub const crc0: *volatile Crc = @ptrFromInt(CRC0_BASE);
 

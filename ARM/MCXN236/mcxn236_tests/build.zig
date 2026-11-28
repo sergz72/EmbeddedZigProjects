@@ -4,8 +4,8 @@ pub fn build(b: *std.Build) !void {
     const target = b.resolveTargetQuery(.{
         .cpu_arch = .thumb,
         .os_tag = .freestanding,
-        .abi = .eabi,
-        .cpu_model = .{ .explicit = &std.Target.arm.cpu.cortex_m0plus }
+        .abi = .eabihf,
+        .cpu_model = .{ .explicit = &std.Target.arm.cpu.cortex_m33 }
     });
 
     const optimize = b.standardOptimizeOption(.{});
@@ -88,14 +88,14 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
-    const fmu = b.addModule("fmu", .{
-        .root_source_file = b.path("../lib/fmu.zig"),
-        .target = target,
-        .optimize = optimize,
-        .imports = &.{
-            .{ .name = "nvic", .module = nvic }
-        },
-    });
+    // const fmu = b.addModule("fmu", .{
+    //     .root_source_file = b.path("../lib/fmu.zig"),
+    //     .target = target,
+    //     .optimize = optimize,
+    //     .imports = &.{
+    //         .{ .name = "nvic", .module = nvic }
+    //     },
+    // });
 
     const lpi2c = b.addModule("lpi2c", .{
         .root_source_file = b.path("../lib/lpi2c.zig"),
@@ -196,6 +196,12 @@ pub fn build(b: *std.Build) !void {
         }
     });
 
+    const spi_memory = b.addModule("spi_memory", .{
+        .root_source_file = b.path("../../../common_lib/memory/spi_memory.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const hal = b.addModule("hal", .{
         .root_source_file = b.path("src/hal.zig"),
         .target = target,
@@ -208,7 +214,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "board", .module = board },
             .{ .name = "scb", .module = scb },
             .{ .name = "shell", .module = shell },
-            .{ .name = "fmu", .module = fmu },
+            // .{ .name = "fmu", .module = fmu },
             .{ .name = "scd4x", .module = scd4x },
             .{ .name = "veml7700", .module = veml7700 },
             .{ .name = "cmc", .module = cmc },
@@ -278,6 +284,17 @@ pub fn build(b: *std.Build) !void {
         }
     });
 
+    const spi_memory_commands = b.addModule("spi_memory_commands", .{
+        .root_source_file = b.path("../../../common_lib/shell_commands/spi_memory_commands.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "shell", .module = shell },
+            .{ .name = "spi_memory", .module = spi_memory },
+            .{ .name = "utils", .module = utils },
+        }
+    });
+
     const exe = b.addExecutable(.{
         .name = "mcxn236_tests.elf",
         .root_module = b.createModule(.{
@@ -296,6 +313,8 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "spi_commands", .module = spi_commands },
                 .{ .name = "scd4x_commands", .module = scd4x_commands },
                 .{ .name = "veml7700_commands", .module = veml7700_commands },
+                .{ .name = "spi_memory", .module = spi_memory },
+                .{ .name = "spi_memory_commands", .module = spi_memory_commands },
             }
         }),
     });

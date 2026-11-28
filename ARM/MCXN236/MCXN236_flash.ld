@@ -35,7 +35,7 @@ MEMORY
   m_sramx               (RW)  : ORIGIN = 0x04000000, LENGTH = 0x00018000
 }
 
-__stack_size = 0x800; /* required amount of stack */
+__stack_size = 0x1000; /* required amount of stack */
 
 /* Define output sections */
 SECTIONS

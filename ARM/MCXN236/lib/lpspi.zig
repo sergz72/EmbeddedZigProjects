@@ -185,7 +185,7 @@ pub const Rsr = bitpack struct(u32) {
     reserved0: u30,
 };
 
-pub const Tdr = extern union {
+pub const Dr = extern union {
     b: u8,
     h: u16,
     w: u32,
@@ -211,17 +211,17 @@ pub const Lpspi = extern struct {
     fcr: Fcr,
     fsr: Fsr,
     tcr: Tcr,
-    tdr: Tdr,
+    tdr: Dr,
     reserved4: [2]u32,
     rsr: Rsr,
-    rdr: u32,
+    rdr: Dr,
     rdror: u32,
     reserved5: [224]u32,
     tcbr: u32,
     tdbr: [128]u32,
     rdbr: [128]u32,
 
-    pub fn initMasterSoftwareCs(self: *volatile Lpspi, baud: usize, spi_clock: usize) void {
+    pub fn initMaster(self: *volatile Lpspi, baud: usize, spi_clock: usize) void {
         self.cfgr1 = Cfgr1{.master = true};
         var divider = spi_clock / baud;
         if (divider > 257) {
@@ -233,6 +233,7 @@ pub const Lpspi = extern struct {
         self.ccr = Ccr{.sckdiv = @truncate(divider - 2), .dbt = divider2, .pcssck = divider2, .sckpcs = divider2};
         const txwater: u3 = @truncate(@min((@as(usize, 1) << @truncate(self.param.txfifo)) - 1, 7));
         self.fcr = Fcr{.txwater = txwater};
+        self.tcr = Tcr{.framesz = 7};
         self.cr = Cr{.men = true};
     }
 
@@ -248,15 +249,15 @@ pub const Lpspi = extern struct {
     }
 
     pub fn sendPoll8(self: *volatile Lpspi, data: []const u8) void {
-        var tx_idx = 0;
-        var rx_idx = 0;
+        var tx_idx: usize = 0;
+        var rx_idx: usize = 0;
         while (tx_idx < data.len or rx_idx < data.len) {
             while (tx_idx < data.len and self.sr.tdf) {
                 self.tdr.b = data[tx_idx];
                 tx_idx += 1;
             }
             while (self.sr.rdf) {
-                _ = self.rdr;
+                _ = self.rdr.b;
                 rx_idx += 1;
             }
         }
@@ -264,15 +265,15 @@ pub const Lpspi = extern struct {
     }
 
     pub fn receivePoll8(self: *volatile Lpspi, data: []u8) void {
-        var tx_idx = 0;
-        var rx_idx = 0;
+        var tx_idx: usize = 0;
+        var rx_idx: usize = 0;
         while (tx_idx < data.len or rx_idx < data.len) {
             while (tx_idx < data.len and self.sr.tdf) {
                 self.tdr.b = 0;
                 tx_idx += 1;
             }
             while (self.sr.rdf) {
-                data[rx_idx] = @truncate(self.rdr);
+                data[rx_idx] = self.rdr.b;
                 rx_idx += 1;
             }
         }
@@ -288,11 +289,17 @@ pub const Lpspi = extern struct {
                 tx_idx += 1;
             }
             while (self.sr.rdf) {
-                data_out[rx_idx] = @truncate(self.rdr);
+                data_out[rx_idx] = self.rdr.b;
                 rx_idx += 1;
             }
         }
         self.waitForTransferComplete();
+    }
+
+    pub fn transferPoll8(self: *volatile Lpspi, write_data: []const u8, read_data: ?[]u8) void {
+        self.sendPoll8(write_data);
+        if (read_data != null)
+            self.receivePoll8(read_data.?);
     }
 };
 

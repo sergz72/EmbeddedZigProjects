@@ -21,24 +21,24 @@ pub const Wwdt = extern struct {
     reserved0: u32,
     warnint: u32,
     window: u32,
-
-    pub fn init(self: *volatile Wwdt, interval_ms: usize, wdt_clock: usize) bool {
-        const tc = @as(u64, interval_ms) * @as(u64, wdt_clock) / 4000;
-        if (tc < 256 or tc > 0xFFFFFF) return false;
-        self.tc = @truncate(tc);
-        self.mod = Mod{.wdreset = true, .wden = true};
-        self.reload();
-        return true;
-    }
-
-    pub fn reload(self: *volatile Wwdt) void {
-        const primask = nvic.getPrimask();
-        nvic.disableIrq();
-        self.feed = 0xAA;
-        self.feed = 0x55;
-        nvic.setPrimask(primask);
-    }
 };
+
+pub fn init(interval_ms: usize, wdt_clock: usize) bool {
+    const tc = @as(u64, interval_ms) * @as(u64, wdt_clock) / 4000;
+    if (tc < 256 or tc > 0xFFFFFF) return false;
+    wwdt0.tc = @truncate(tc);
+    wwdt0.mod = Mod{.wdreset = true, .wden = true};
+    reload();
+    return true;
+}
+
+pub fn reload() void {
+    const primask = nvic.getPrimask();
+    nvic.disableIrq();
+    wwdt0.feed = 0xAA;
+    wwdt0.feed = 0x55;
+    nvic.setPrimask(primask);
+}
 
 pub const wwdt0: *volatile Wwdt = @ptrFromInt(WWDT0_BASE);
 

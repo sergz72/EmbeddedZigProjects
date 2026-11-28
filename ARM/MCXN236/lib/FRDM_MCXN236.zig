@@ -28,12 +28,14 @@ const SW3_GPIO_PIN = 6;
 
 const UART_PORT = port.port1;
 pub const UART_INSTANCE = lpuart.lpuart4;
+pub const USART_FLEXCOMM = lp_flexcomm.lp_flexcomm4;
 const UART_RX_PIN = 8;
 const UART_RX_PIN_MASK = 1 << UART_RX_PIN;
 const UART_TX_PIN = 9;
 const UART_TX_PIN_MASK = 1 << UART_TX_PIN;
 
 pub const ARDUINO_I2C_INSTANCE = lpi2c.lpi2c5;
+const ARDUINO_I2C_FLEXCOMM = lp_flexcomm.lp_flexcomm5;
 const ARDUINO_I2C_PORT = port.port1;
 //--------------------------
 const ARDUINO_I2C_SCL_PIN = 17;
@@ -55,6 +57,7 @@ const I2C_SPEED = 100000;
 const ARDUINO_SPI_PORT = port.port1;
 const ARDUINO_SPI_GPIO = gpio.gpio1;
 pub const ARDUINO_SPI_INSTANCE = lpspi.lpspi3;
+const ARDUINO_SPI_FLEXCOMM = lp_flexcomm.lp_flexcomm3;
 //--------------------------
 const ARDUINO_SPI_RX_PIN = 2;
 const ARDUINO_SPI_RX_PIN_MASK = 1 << ARDUINO_SPI_RX_PIN;
@@ -69,7 +72,10 @@ const ARDUINO_SPI_CS_PIN = 3;
 const ARDUINO_SPI_CS_PIN_MASK = 1 << ARDUINO_SPI_CS_PIN;
 
 const FLASH_SPI_PORT = port.port3;
+const FLASH_SPI_GPIO = gpio.gpio3;
 pub const FLASH_SPI_INSTANCE = lpspi.lpspi6;
+const FLASH_SPI_FLEXCOMM = lp_flexcomm.lp_flexcomm6;
+const FLASH_SPI_ALT = 3;
 //--------------------------
 const FLASH_SPI_D0_PIN = 20;
 const FLASH_SPI_D0_PIN_MASK = 1 << FLASH_SPI_D0_PIN;
@@ -138,15 +144,15 @@ pub fn getSW3() bool {
 }
 
 pub fn initClock() void {
-    scg.Scg.enable();
+    scg.enable();
     //scg.scg0.enableLdo();
-    scg.scg0.enableXosc(24000000);
-    vbat.vbat0.enableOsc32k();
-    if (!scg.scg0.pllInit(false, .sosc, 24000000, 48000000)) {
+    scg.enableXosc(24000000);
+    vbat.enableOsc32k();
+    if (!scg.pllInit(false, .sosc, 24000000, 48000000)) {
         ledRedOn();
         while (true) {}
     }
-    scg.scg0.switchMainClockTo(.apll);
+    scg.switchMainClockTo(.apll);
     system_timer.delay_init(system_timer.init_div1);
     syscon.syscon0.pllclkdiv = syscon.Clkdiv{.halt = false};
     syscon.syscon0.pllclkdivsel = .pll0;
@@ -170,9 +176,9 @@ pub fn initUart(baud: usize, callback: *const fn(u8) void) void {
     syscon.syscon0.lp_flexcommclkdiv[4] = syscon.Clkdiv{.halt = false};
     UART_PORT.pcr[UART_RX_PIN] = port.Pcr{.mux = 2, .ibe = true};
     UART_PORT.pcr[UART_TX_PIN] = port.Pcr{.mux = 2, .ibe = true};
-    lp_flexcomm.lp_flexcomm4.pselid = lp_flexcomm.Pselid{.persel = .uart};
+    USART_FLEXCOMM.pselid = lp_flexcomm.Pselid{.persel = .uart};
     lpuart.lpuart4.init(baud, cpu.cpu.current_frequency);
-    nvic.nvic.enableInterrupt(interrupts.Interrupt.LP_FLEXCOMM4.toU8());
+    nvic.enableInterrupt(interrupts.Interrupt.LP_FLEXCOMM4.toU8());
     usart_writer.usart_writer.writeCharFunc = uartWrite;
 }
 
@@ -183,27 +189,38 @@ pub fn initArduinoI2c() void {
     syscon.syscon0.lp_flexcommclkdiv[5] = syscon.Clkdiv{.halt = false};
     ARDUINO_I2C_PORT.pcr[ARDUINO_I2C_SCL_PIN] = port.Pcr{.mux = 2, .ibe = true, .ode = true, .pe = true, .ps = true};
     ARDUINO_I2C_PORT.pcr[ARDUINO_I2C_SDA_PIN] = port.Pcr{.mux = 2, .ibe = true, .ode = true, .pe = true, .ps = true};
-    lp_flexcomm.lp_flexcomm5.pselid = lp_flexcomm.Pselid{.persel = .i2c};
+    ARDUINO_I2C_FLEXCOMM.pselid = lp_flexcomm.Pselid{.persel = .i2c};
     ARDUINO_I2C_INSTANCE.init(100000, cpu.cpu.current_frequency) catch {
         while(true) {}
     };
 }
 
 pub fn initArduinoSpi() void {
-    syscon.syscon0.ahbclkctrlset0 = syscon.Ahbclkctrl0{.port1 = true};
+    syscon.syscon0.ahbclkctrlset0 = syscon.Ahbclkctrl0{.port1 = true, .gpio1 = true};
     syscon.syscon0.ahbclkctrlset1 = syscon.Ahbclkctrl1{.fc3 = true};
     syscon.syscon0.fcclksel[3] = .pll_div;
     syscon.syscon0.lp_flexcommclkdiv[3] = syscon.Clkdiv{.halt = false};
-    lp_flexcomm.lp_flexcomm3.pselid = lp_flexcomm.Pselid{.persel = .spi};
-    ARDUINO_I2C_PORT.pcr[ARDUINO_SPI_CLK_PIN] = port.Pcr{.mux = 2, .ibe = true};
-    ARDUINO_I2C_PORT.pcr[ARDUINO_SPI_TX_PIN] = port.Pcr{.mux = 2, .ibe = true};
-    ARDUINO_I2C_PORT.pcr[ARDUINO_SPI_RX_PIN] = port.Pcr{.mux = 2, .ibe = true, .pe = true, .ps = true};
+    ARDUINO_SPI_FLEXCOMM.pselid = lp_flexcomm.Pselid{.persel = .spi};
+    ARDUINO_SPI_PORT.pcr[ARDUINO_SPI_CLK_PIN] = port.Pcr{.mux = 2, .ibe = true};
+    ARDUINO_SPI_PORT.pcr[ARDUINO_SPI_TX_PIN] = port.Pcr{.mux = 2, .ibe = true};
+    ARDUINO_SPI_PORT.pcr[ARDUINO_SPI_RX_PIN] = port.Pcr{.mux = 2, .ibe = true, .pe = true, .ps = true};
+    arduinoSpiCsSet(true);
     ARDUINO_SPI_GPIO.setAsOutput(ARDUINO_SPI_CS_PIN_MASK);
-    ARDUINO_SPI_INSTANCE.initMasterSoftwareCs(1000000, cpu.cpu.current_frequency);
+    ARDUINO_SPI_INSTANCE.initMaster(1000000, cpu.cpu.current_frequency);
 }
 
 pub fn initFlashSpi() void {
-    //todo: implement flash spi init
+    syscon.syscon0.ahbclkctrlset0 = syscon.Ahbclkctrl0{.port3 = true, .gpio3 = true};
+    syscon.syscon0.ahbclkctrlset1 = syscon.Ahbclkctrl1{.fc6 = true};
+    syscon.syscon0.fcclksel[6] = .pll_div;
+    syscon.syscon0.lp_flexcommclkdiv[6] = syscon.Clkdiv{.halt = false};
+    FLASH_SPI_FLEXCOMM.pselid = lp_flexcomm.Pselid{.persel = .spi};
+    FLASH_SPI_PORT.pcr[FLASH_SPI_CLK_PIN] = port.Pcr{.mux = FLASH_SPI_ALT, .ibe = true};
+    FLASH_SPI_PORT.pcr[FLASH_SPI_D0_PIN] = port.Pcr{.mux = FLASH_SPI_ALT, .ibe = true}; // D0 is DI
+    FLASH_SPI_PORT.pcr[FLASH_SPI_D1_PIN] = port.Pcr{.mux = FLASH_SPI_ALT, .ibe = true, .pe = true, .ps = true}; // D1 is DO
+    flashSpiCsSet(true);
+    FLASH_SPI_GPIO.setAsOutput(FLASH_SPI_CS_PIN_MASK);
+    FLASH_SPI_INSTANCE.initMaster(1000000, cpu.cpu.current_frequency);
 }
 
 pub fn initLightSensor() void {
@@ -228,6 +245,14 @@ pub fn arduinoSpiCsSet(state: bool) void {
         ARDUINO_SPI_GPIO.setPins(ARDUINO_SPI_CS_PIN_MASK);
     } else {
         ARDUINO_SPI_GPIO.clearPins(ARDUINO_SPI_CS_PIN_MASK);
+    }
+}
+
+pub fn flashSpiCsSet(state: bool) void {
+    if (state) {
+        FLASH_SPI_GPIO.setPins(FLASH_SPI_CS_PIN_MASK);
+    } else {
+        FLASH_SPI_GPIO.clearPins(FLASH_SPI_CS_PIN_MASK);
     }
 }
 
